@@ -1,0 +1,19 @@
+# OpenTimestamps — hashes normativos v1.2
+# Fecha (UTC): 2026-10-26T19:15:56Z
+# Fichero anclado: docs/evidence/normative_hashes_v1.2.txt
+QUANT-ARENA v2 — hashes normativos del preregistro v1.2
+Fecha (UTC): 2026-10-26T19:15:50Z
+Motivo: correccion del defecto 1 del gate M0b (benchmark exposure-matched sesgado
+por Jensen): benchmark primario H1 = vol-matched; criterio = permutacion del vector
+de exposicion; potencia recalculada con habilidad plantada (drift AR(1), objetivos
+dSharpe 0.1/0.3/0.5); bandas de rebalanceo simuladas y documentadas. Rejilla y
+sizing sin cambios. v1.0 y v1.1 permanecen selladas e intactas.
+
+SHA256 (docs/PREREGISTRO.md v1.2)    = 5c71bd61921ead73f7d145601ee6b810e7e0934a0000c5bde3f2d09fbe266ad8
+SHA256 (config/hypotheses.yaml v1.2) = f95b0a887dc69a21de9ea9a24e2014e5a872e283eecd1de3bc44baed7d14e702
+
+# ots verify (inmediato):
+Assuming target filename is 'docs/evidence/normative_hashes_v1.2.txt'
+Calendar https://alice.btc.calendar.opentimestamps.org: Pending confirmation in Bitcoin blockchain
+Calendar https://finney.calendar.eternitywall.com: Pending confirmation in Bitcoin blockchain
+Calendar https://bob.btc.calendar.opentimestamps.org: Pending confirmation in Bitcoin blockchain
