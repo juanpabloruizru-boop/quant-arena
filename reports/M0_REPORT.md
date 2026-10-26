@@ -1,4 +1,4 @@
-# M0 · Preregistro y diseño · 2026-10-26T14:35Z · git SHA `82bf4309813d55c3e8dc534faff305a268634123` (tag `prereg-v1`)
+# M0 · Preregistro y diseño · 2026-10-26T14:33Z · git SHA `82bf4309813d55c3e8dc534faff305a268634123` (tag `prereg-v1`)
 
 ## Resumen en 5 líneas
 
