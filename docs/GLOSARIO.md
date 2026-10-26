@@ -66,6 +66,30 @@ documentos de M0.
   (no pareado): por eso H1 se juzga por drawdown, no por Sharpe.
 - **Walk-forward**: entrenar en una ventana, probar en la siguiente, deslizar y
   repetir.
+- **B&H matched-exposure (misma exposición media)**: benchmark que invierte en
+  el activo la MISMA fracción media de capital que la estrategia (ē), todos los
+  días. Si tu estrategia pasa menos tiempo dentro, este benchmark también: así
+  la comparación mide *cuándo* estuviste dentro (timing), no *cuánto*
+  (exposición). Ej.: estrategia expuesta 60 % del tiempo → benchmark = 0.6 ×
+  retorno diario del activo.
+- **Test de permutación (de timing)**: barajamos CUÁNDO estuvo puesta la
+  posición (conservando cuánto) miles de veces y miramos cuántas veces el azar
+  lo hace igual o mejor que la regla real. Si el azar lo iguala el 20 % de las
+  veces, no hay skill demostrable (p = 0.20).
+- **Ulcer Index**: promedio de cuánto "duele" la cartera bajo el agua
+  (caída media cuadrática desde máximos). Cuanto más bajo, menos sufrimiento.
+- **Tiempo bajo el agua (time underwater)**: cuántos días pasa la cartera sin
+  recuperar su máximo histórico. Ej.: 400 días bajo el agua = más de un año
+  sin ver un nuevo máximo.
+- **Banda de rebalanceo**: solo se toca la posición si el objetivo cambia más
+  de X puntos (nosotros: 10 pp). Sin banda, los micro-ajustes diarios
+  acumulan comisiones que se comen el beneficio.
+- **OpenTimestamps (OTS)**: servicio gratuito que ancla el hash de un fichero
+  en la blockchain de Bitcoin vía calendarios públicos: prueba de que el
+  fichero existía en una fecha, verificable por cualquiera sin confiar en
+  nosotros. Tarda horas en confirmar (el ancla entra en un bloque BTC).
+- **Subperíodos**: trozos fijos de la historia (2017-19, 2020-22, 2023-25)
+  para exigir que un resultado no dependa de un único régimen de mercado.
 - **Volatilidad objetivo (vol targeting)**: dimensionar la posición para que la
   cartera tenga una σ fijada (p. ej. 25 % anual): si el activo se desboca, se
   reduce posición; si se calma, se sube (tope 1×, sin apalancar).

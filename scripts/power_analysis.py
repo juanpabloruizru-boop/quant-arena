@@ -18,6 +18,11 @@ Metodos:
 2. Monte Carlo (semilla fija) del montaje concreto de H1 (long/flat SMA +
    vol targeting sobre el mismo activo), que estima la potencia del test
    PAREADO de diferencia de Sharpe y de diferencia de max drawdown.
+   v1.1 (condiciones del gate M0): ademas del B&H crudo, se simula el
+   benchmark PRIMARIO de H1 = B&H con la misma exposicion media que la
+   estrategia (matched-exposure), y la regla compuesta de subperiodos
+   (mejora en el in-sample completo Y en >=2 de 3 subperiodos
+   2017-19 / 2020-22 / 2023-25), con su potencia empirica.
 
 Supuestos de planificacion (NO son predicciones de mercado): estan marcados
 como ASSUMPTION y se exploran en tablas de sensibilidad.
@@ -167,6 +172,18 @@ class MCResult:
     mean_d_maxdd_pp: float  # strat - B&H, negativo = mejora, en puntos porcentuales
     sd_d_maxdd_pp: float
     power_d_maxdd_improves: float
+    dgp: str = "gbm"
+    # --- v1.1: benchmark primario matched-exposure (B&H x exposicion media) ---
+    mean_d_sharpe_matched: float | None = None
+    sd_d_sharpe_matched: float | None = None
+    power_d_sharpe_matched_gt0: float | None = None
+    mean_d_maxdd_matched_pp: float | None = None
+    sd_d_maxdd_matched_pp: float | None = None
+    power_d_maxdd_matched_improves: float | None = None
+    # --- v1.1: regla compuesta de subperiodos (solo horizonte real de H1) ---
+    frac_full_improves: float | None = None
+    frac_subperiods_ge2of3: float | None = None
+    frac_composite_rule_pass: float | None = None
 
 
 def _f64(a: Any) -> NDArray[np.float64]:
@@ -195,6 +212,19 @@ def _sharpe_ann(r: NDArray[np.float64]) -> NDArray[np.float64]:
     return _f64(mu / sd * math.sqrt(DAYS_PER_YEAR))
 
 
+def _markov_states(
+    rng: np.random.Generator, n_sims: int, t_len: int, p_stay: float
+) -> NDArray[np.bool_]:
+    """Cadena de Markov de 2 estados (True = estado 'alto'), vectorizada en el tiempo."""
+    u = rng.random((n_sims, t_len))
+    state = np.zeros((n_sims, t_len), dtype=bool)
+    state[:, 0] = rng.random(n_sims) < 0.5
+    for t in range(1, t_len):
+        stay = u[:, t] < p_stay
+        state[:, t] = np.where(stay, state[:, t - 1], ~state[:, t - 1])
+    return state
+
+
 def simulate_h1(
     *,
     years: float,
@@ -205,12 +235,49 @@ def simulate_h1(
     n_sims: int,
     cost_per_side: float,
     seed: int,
+    dgp: str = "gbm",
 ) -> MCResult:
     rng = np.random.default_rng(seed)
     t_days = int(round(years * DAYS_PER_YEAR))
     mu_d = math.log1p(mu_ann) / DAYS_PER_YEAR  # deriva log-normal equivalente
     sig_d = sigma_ann / math.sqrt(DAYS_PER_YEAR)
-    r = rng.normal(mu_d, sig_d, size=(n_sims, t_days + 1))
+    n_steps = t_days + 1
+    if dgp == "gbm":
+        r = rng.normal(mu_d, sig_d, size=(n_sims, n_steps))
+    elif dgp == "ms_vol":
+        # ASSUMPTION: vol en 2 estados persistentes (cripto tiene clustering fuerte)
+        p_stay, sig_low, sig_high = (
+            0.99,
+            0.35 / math.sqrt(DAYS_PER_YEAR),
+            1.00 / math.sqrt(DAYS_PER_YEAR),
+        )
+        state = _markov_states(rng, n_sims, n_steps, p_stay)
+        sig_path = np.where(state, sig_high, sig_low)
+        r = rng.normal(mu_d, sig_path)
+    elif dgp == "ms_vol_jump":
+        # ASSUMPTION (la mas realista para cripto): vol persistente en 2 estados Y
+        # crashes (saltos negativos) con intensidad mayor en el estado de alta vol.
+        # Es la estructura que una regla flat/deleveraging en alta vol puede explotar.
+        p_stay = 0.99
+        sig_low = 0.35 / math.sqrt(DAYS_PER_YEAR)
+        sig_high = 1.00 / math.sqrt(DAYS_PER_YEAR)
+        state = _markov_states(rng, n_sims, n_steps, p_stay)
+        sig_path = np.where(state, sig_high, sig_low)
+        r = rng.normal(mu_d, sig_path)
+        lam_day = np.where(state, 2.0 / DAYS_PER_YEAR, 0.2 / DAYS_PER_YEAR)
+        n_jumps = rng.poisson(lam_day)
+        jump_sizes = rng.normal(-0.15, 0.08, size=(n_sims, n_steps))
+        r = r + n_jumps * jump_sizes
+    elif dgp == "ms_drift":
+        # ASSUMPTION: regimenes alcista/bajista persistentes (lo que una SMA detecta)
+        p_stay = 0.995
+        mu_bull = math.log1p(0.80) / DAYS_PER_YEAR
+        mu_bear = math.log1p(-0.40) / DAYS_PER_YEAR
+        state = _markov_states(rng, n_sims, n_steps, p_stay)
+        mu_path = np.where(state, mu_bull, mu_bear)
+        r = rng.normal(mu_path, sig_d)
+    else:
+        raise ValueError(f"dgp desconocido: {dgp}")
 
     close = _f64(np.exp(np.cumsum(np.log1p(r), axis=1)))
     sma = _rolling_mean(close, window)
@@ -226,8 +293,19 @@ def simulate_h1(
     scale = _f64(np.nan_to_num(scale_raw, nan=0.0))
 
     pos_desired = long_sig * scale
+    # v1.1: rebalanceo por BANDA de 10 pp; los flips de senal (long<->flat) siempre
+    # operan. Sin banda, el vol-target diario rearma la posicion cada dia y el coste
+    # de turnover sangra el drawdown (hallazgo de este analisis de potencia, previo
+    # a tocar datos reales; queda pre-registrado en PREREGISTRO v1.1 s6 H1).
+    band = 0.10
     pos = np.zeros_like(pos_desired)
-    pos[:, 1:] = pos_desired[:, :-1]  # decision en cierre de t, posicion desde t+1
+    last = np.zeros(n_sims)
+    for t in range(1, t_days + 1):
+        target = pos_desired[:, t - 1]  # decision en cierre de t-1
+        flip = (target > 0.0) != (last > 0.0)
+        trade = flip | (np.abs(target - last) >= band)
+        last = np.where(trade, target, last)
+        pos[:, t] = last
 
     strat_r = pos[:, :-1] * r[:, 1:]
     turnover = np.abs(np.diff(pos, axis=1, prepend=np.zeros((n_sims, 1))))[:, :-1]
@@ -244,6 +322,50 @@ def simulate_h1(
     m_dd, s_dd = float(d_maxdd.mean()), float(d_maxdd.std(ddof=1))
     power_sr = NORM.cdf(m_sr / s_sr - Z_ALPHA) if s_sr > 0 else 0.0
     power_dd = NORM.cdf(-Z_ALPHA - m_dd / s_dd) if s_dd > 0 else 0.0
+
+    # --- v1.1: benchmark primario de H1 = B&H con la MISMA exposicion media ---
+    # (la exposicion media se computa dentro de cada periodo de evaluacion, como
+    #  exige el PRERREGISTRO v1.1 s7; aqui, por simulacion completa o subperiodo)
+    pos_applied = pos[:, :-1]
+    ebar = pos_applied.mean(axis=1, keepdims=True)
+    bh_matched_r = ebar * bh_r
+    d_sharpe_m = _sharpe_ann(strat_r) - _sharpe_ann(bh_matched_r)
+    w_bh_matched = _f64(np.cumprod(1.0 + bh_matched_r, axis=1))
+    d_maxdd_m = _max_drawdown(w_strat) - _max_drawdown(w_bh_matched)  # <0 = mejora
+    d_sharpe_m = d_sharpe_m[np.isfinite(d_sharpe_m)]
+    matched_ok = len(d_sharpe_m) > 10 and float(d_sharpe_m.std(ddof=1)) > 0
+    if matched_ok:
+        m_srm, s_srm = float(d_sharpe_m.mean()), float(d_sharpe_m.std(ddof=1))
+        m_ddm, s_ddm = float(d_maxdd_m.mean()), float(d_maxdd_m.std(ddof=1))
+        power_srm = NORM.cdf(m_srm / s_srm - Z_ALPHA) if s_srm > 0 else 0.0
+        power_ddm = NORM.cdf(-Z_ALPHA - m_ddm / s_ddm) if s_ddm > 0 else 0.0
+    else:
+        m_srm = s_srm = power_srm = m_ddm = s_ddm = power_ddm = float("nan")
+
+    # --- v1.1: subperiodos fijos (solo tienen sentido en el horizonte real H1) ---
+    frac_full: float | None = None
+    frac_sub23: float | None = None
+    frac_comp: float | None = None
+    b1 = (datetime(2020, 1, 1) - datetime(2017, 8, 17)).days
+    b2 = (datetime(2023, 1, 1) - datetime(2017, 8, 17)).days
+    if t_days >= b2 + 120:
+        improves = np.zeros((n_sims, 3), dtype=bool)
+        for j, (a, b) in enumerate(((0, b1), (b1, b2), (b2, t_days))):
+            sp_strat = strat_r[:, a:b]
+            eb_sp = pos_applied[:, a:b].mean(axis=1, keepdims=True)
+            sp_bhm = eb_sp * bh_r[:, a:b]
+            dd_s = _max_drawdown(_f64(np.cumprod(1.0 + sp_strat, axis=1)))
+            dd_b = _max_drawdown(_f64(np.cumprod(1.0 + sp_bhm, axis=1)))
+            improves[:, j] = (dd_s - dd_b) < 0.0
+        full_ok = d_maxdd_m < 0.0
+        n_sub = improves.sum(axis=1)
+        frac_full = round(float(full_ok.mean()), 4)
+        frac_sub23 = round(float((n_sub >= 2).mean()), 4)
+        frac_comp = round(float((full_ok & (n_sub >= 2)).mean()), 4)
+
+    def _rnd(x: float, nd: int) -> float | None:
+        return None if math.isnan(x) else round(x, nd)
+
     return MCResult(
         years=years,
         mu_ann=mu_ann,
@@ -251,12 +373,22 @@ def simulate_h1(
         window=window,
         sigma_obj=sigma_obj,
         n_sims=n_sims,
+        dgp=dgp,
         mean_d_sharpe=round(m_sr, 4),
         sd_d_sharpe=round(s_sr, 4),
         power_d_sharpe_gt0=round(power_sr, 4),
         mean_d_maxdd_pp=round(m_dd * 100.0, 2),
         sd_d_maxdd_pp=round(s_dd * 100.0, 2),
         power_d_maxdd_improves=round(power_dd, 4),
+        mean_d_sharpe_matched=_rnd(m_srm, 4),
+        sd_d_sharpe_matched=_rnd(s_srm, 4),
+        power_d_sharpe_matched_gt0=_rnd(power_srm, 4),
+        mean_d_maxdd_matched_pp=_rnd(m_ddm * 100.0, 2),
+        sd_d_maxdd_matched_pp=_rnd(s_ddm * 100.0, 2),
+        power_d_maxdd_matched_improves=_rnd(power_ddm, 4),
+        frac_full_improves=frac_full,
+        frac_subperiods_ge2of3=frac_sub23,
+        frac_composite_rule_pass=frac_comp,
     )
 
 
@@ -329,12 +461,64 @@ def build_results() -> dict[str, Any]:
                     )
                 )
                 i += 1
+    for dgp_alt in ("ms_vol", "ms_vol_jump", "ms_drift"):
+        for window in (100, 200):
+            mc.append(
+                simulate_h1(
+                    years=round(H1_YEARS, 1),
+                    mu_ann=0.15,
+                    sigma_ann=0.60,
+                    window=window,
+                    sigma_obj=0.25,
+                    n_sims=1200,
+                    cost_per_side=cost_per_side,
+                    seed=SEED + i,
+                    dgp=dgp_alt,
+                )
+            )
+            i += 1
     res["T3_mc_h1"] = [asdict(m) for m in mc]
     res["T3_assumptions"] = {
         "sigma_ann": 0.60,
         "cost_per_side": cost_per_side,
         "n_sims": 1200,
         "note": "MBG log-normal; el test real usara bootstrap por bloques sobre datos reales.",
+    }
+    res["T3b_rule_v1_1"] = {
+        "primary_benchmark": (
+            "B&H matched-exposure (ebar = posicion media de la estrategia en el periodo)"
+        ),
+        "subperiods_utc": [
+            "2017-08-17/2019-12-31",
+            "2020-01-01/2022-12-31",
+            "2023-01-01/fin in-sample",
+        ],
+        "composite_rule": (
+            "mejora de maxDD vs matched-exposure en el in-sample completo Y en >=2 de 3 subperiodos"
+        ),
+        "permutation_note": (
+            "El p-valor por permutacion de timing (bloques circulares de 20 d, 10k, "
+            "semilla fija) se aproxima aqui por el test normal contra la sd del "
+            "ensemble: la permutacion conserva la exposicion media, que es justo "
+            "lo que el benchmark matched ya descuenta."
+        ),
+        "rebalance_band": 0.10,
+        "dgp_alternatives": {
+            "gbm": "MBG iid (nulo sin habilidad): mide la tasa de falsos positivos",
+            "ms_vol": (
+                "volatilidad Markov-switching: p_stay=0.99 (~100 d de duracion), "
+                "sigma_low=0.35, sigma_high=1.00 anual, mu=0.15 constante"
+            ),
+            "ms_drift": (
+                "deriva Markov-switching: p_stay=0.995 (~200 d), mu_bull=+0.80, "
+                "mu_bear=-0.40 anual, sigma=0.60 constante"
+            ),
+            "ms_vol_jump": (
+                "como ms_vol + crashes de Poisson: intensidad 2/anio en estado alto "
+                "vs 0.2/anio en bajo, tamanho N(-15%, 8%). La estructura de DD real "
+                "de cripto es jump-driven; esta es la alternativa relevante para H1"
+            ),
+        },
     }
 
     # T4: H2 momentum transversal semanal
@@ -437,17 +621,40 @@ def render_md(res: dict[str, Any]) -> str:
             f"{r['kurtosis']} | {r['sr0_ann']} | {'INF' if sr is None else sr} |"
         )
     a("")
-    a("## T3. Monte Carlo H1 (pareado: misma ruta para estrategia y B&H)")
+    a("## T3. Monte Carlo H1 vs B&H crudo (referencia v1.0; pareado: misma ruta)")
     a(
-        "| anios | ventana | mu_ann | E[DSR] | sd(DSR) | potencia(DSharpe>0) | "
+        "| dgp | anios | ventana | mu_ann | E[DSR] | sd(DSR) | potencia(DSharpe>0) | "
         "E[DmaxDD] pp | sd pp | potencia(mejora DD) |"
     )
-    a("|---|---|---|---|---|---|---|---|---|")
+    a("|---|---|---|---|---|---|---|---|---|---|")
     for r in res["T3_mc_h1"]:
         a(
-            f"| {r['years']} | {r['window']} | {r['mu_ann']} | {r['mean_d_sharpe']} | "
+            f"| {r['dgp']} | {r['years']} | {r['window']} | {r['mu_ann']} | "
+            f"{r['mean_d_sharpe']} | "
             f"{r['sd_d_sharpe']} | {r['power_d_sharpe_gt0']} | {r['mean_d_maxdd_pp']} | "
             f"{r['sd_d_maxdd_pp']} | {r['power_d_maxdd_improves']} |"
+        )
+    a("")
+    a("## T3b. Monte Carlo H1 v1.1 - benchmark PRIMARIO: B&H matched-exposure")
+    a("Regla compuesta: mejora de maxDD en el in-sample completo Y en >=2 de 3 subperiodos.")
+    a(
+        "| dgp | anios | ventana | mu_ann | E[DSharpe_m] | sd | pot(DSharpe_m>0) | "
+        "E[DmaxDD_m] pp | sd pp | pot(mejora DD_m) | P(full) | P(>=2/3) | P(compuesta) |"
+    )
+    a("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for r in res["T3_mc_h1"]:
+
+        def _v(key: str, row: dict[str, Any] = r) -> str:
+            val = row.get(key)
+            return "-" if val is None else str(val)
+
+        a(
+            f"| {r['dgp']} | {r['years']} | {r['window']} | {r['mu_ann']} | "
+            f"{_v('mean_d_sharpe_matched')} | "
+            f"{_v('sd_d_sharpe_matched')} | {_v('power_d_sharpe_matched_gt0')} | "
+            f"{_v('mean_d_maxdd_matched_pp')} | {_v('sd_d_maxdd_matched_pp')} | "
+            f"{_v('power_d_maxdd_matched_improves')} | {_v('frac_full_improves')} | "
+            f"{_v('frac_subperiods_ge2of3')} | {_v('frac_composite_rule_pass')} |"
         )
     a("")
     a("## T4. H2 momentum transversal (spread semanal)")

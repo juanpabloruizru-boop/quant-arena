@@ -46,3 +46,37 @@ es reescribible por su propio dueño: el tag prueba poco frente a un escéptico.
   informe M0 y mitigada por el hash de contenido + sello externo en cuanto el
   usuario lo autorice (no bloquea la investigación; bloquea *afirmar* que el
   preregistro es a prueba de manipulación).
+
+## Addendum (M0b, 2026-10-26) — sellado ejecutado
+
+1. **Firma SSH disponible y usada.** Se instaló `openssh-client` en el entorno
+   y se generó una clave dedicada ed25519 de firma de preregistros:
+   - Privada: `~/.ssh/qa_prereg_ed25519` (fuera del repo; NUNCA se commitea).
+   - Pública: `docs/keys/prereg_signer_ed25519.pub` (committeada a propósito:
+     cualquiera debe poder verificar).
+   - `allowed_signers`: `~/.ssh/allowed_signers` con
+     `quant-arena-prereg-signer@localhost`.
+   - Tag **`prereg-v1-signed`** creado sobre el MISMO commit `82bf430`
+     (prereg-v1 queda intacto). Verificación OK: `git tag -v
+     prereg-v1-signed` → *Good "git" signature … ED25519 key
+     SHA256:SyPjyq4EimJ2X48XuJRQgHiIh/5XFHYqhC/Sd86OyYQ*
+     (evidencia: `docs/evidence/ssh_signature_log.txt`).
+   - Alcance honesto: la firma SSH acredita *control de la clave del
+     proyecto*, no identidad civil; el ancla de fecha externa la da
+     OpenTimestamps. Verificar requiere `openssh-client` + el allowed_signers.
+   - Nota de entorno: este sandbox NO persiste `.git/config` entre sesiones;
+     `make git-config` re-aplica identidad y configuración de firma.
+2. **OpenTimestamps ejecutado (P3: "ya").** `ots stamp` sobre
+   `docs/evidence/normative_hashes_v1.0.txt` (contiene los SHA256 v1.0 de
+   PREREGISTRO.md e hypotheses.yaml). Cuatro calendarios respondieron; estado
+   inicial *Pending confirmation in Bitcoin blockchain* (el anclaje BTC tarda
+   horas). Prueba: `normative_hashes_v1.0.txt.ots`; log:
+   `ots_stamp_log_v1.0.txt`. **Checklist M1:** `make ots-check`
+   (`ots upgrade` + `ots verify`) hasta obtener success con altura de bloque.
+   Idéntico procedimiento para los hashes v1.1.
+3. **OSF antes de M3 (P3):** el usuario crea la cuenta; se registrará el
+   PREREGISTRO vigente + hashes y se añadirá aquí la URL/DOI de registro.
+4. **Remoto git / CI:** se requiere que el usuario proporcione un remoto
+   (p. ej. GitHub) con credenciales; instrucciones exactas en el informe M0b.
+   Se realizó un push de prueba a un remoto-bare local para validar que ramas
+   y tags viajan limpios.

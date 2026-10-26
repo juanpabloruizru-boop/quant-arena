@@ -50,3 +50,15 @@ Disponibilidad verificada en vivo (2026-10-26, `docs/evidence/binance_probes.jso
   (PREREGISTRO §9.4) en vez de descubrirlo tras gastar el holdout.
 - La ingesta de ~9 años × decenas de símbolos exige paginación cuidadosa
   (límite real de klines: 1000 filas) y reintentos; trabajo de M1.
+
+## Addendum (M0b, 2026-10-26) — resolución P2 del gate M0
+
+El orquestador **aprueba** la extensión de horizonte con dos condiciones, ya
+incorporadas a PREREGISTRO v1.1 §3:
+1. **Declarar el régimen 2017-18**: SP1 (2017-08→2019-12) es microestructura
+   temprana (liquidez baja, spreads amplios, boom ICO); se reporta siempre por
+   separado y ningún PASA puede apoyarse solo en SP1; el stress ×2 de costes
+   cubre la probable subestimación de costes de la época.
+2. **Universo PIT fino pre-2019**: H2 empieza ~2019-01; los meses anteriores
+   se excluyen de H2 (no se rellenan con menos símbolos de los que la regla
+   exige); M1 documentará candidatos efectivos por mes.

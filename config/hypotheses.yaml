@@ -1,9 +1,9 @@
-# Rejilla pre-registrada de hipotesis (v1.0). Espejo legible por maquina de
+# Rejilla pre-registrada de hipotesis (v1.1). Espejo legible por maquina de
 # docs/PREREGISTRO.md. NORMA: el texto de PREREGISTRO.md manda; si hay divergencia,
 # bug. Cambiar esta rejilla tras ver resultados = nueva version del preregistro
 # y n_trials += celdas nuevas. Prohibido anadir/quitar celdas en M3.
 
-version: "1.0"
+version: "1.1"
 registered_at_utc: "2026-10-26"
 max_families: 3
 
@@ -15,6 +15,7 @@ benchmarks: [buy_hold, buy_hold_vol_target, cash]
 
 accounting:
   trials_table: ledger/trials.duckdb
+  non_trial_kinds: [benchmark, null_permutation, synthetic_validation, diagnostic]
   n_trials_rule: >
     n_trials para DSR/Reality-Check = numero de filas DISTINCTAS de configuraciones
     de estrategia ejecutadas y registradas en `trials` (incluidas fallidas/diagnostico),
@@ -33,6 +34,8 @@ success_criteria:
   cost_stress_multiplier: 2.0   # neto positivo tambien con costes x2
   min_fraction_folds_positive: 0.60   # CPCV purgado con embargo
   multiple_testing: "Reality Check/SPA sobre todas las celdas de la familia vs benchmark"
+  dsr_gating_for: [H2, H3]        # v1.1 (condicion 3 gate M0): en H1 se computa y reporta, no veta
+  h1_primary_multiple_testing: "SPA/Reality Check sobre mejora de delta_maxDD_matched (rejilla 12 celdas por activo)"
   validation_scheme:
     cpcv: { n_splits: 10, n_test_splits: 2 }   # C(10,2) = 45 trayectorias de test
     purge: "eliminar del train las muestras cuya ventana de formacion solape el test"
@@ -56,14 +59,27 @@ hypotheses:
       sma: "close[t] > SMA(n)[t]  -> long en t+1"
       ret: "sum(log returns, L days)[t] > 0 -> long en t+1"
     position_sizing: "min(1, sigma_obj / sigma_realized_20d) ; flat => 0"
+    rebalance_band: 0.10        # v1.1: solo se opera si |target-actual|>=10pp o hay flip (hallazgo pre-datos de potencia, s9.3)
+    benchmark_primary:          # v1.1 (condicion 1 gate M0)
+      kind: matched_exposure_bh
+      formula: "r_bh_matched[t] = e_bar * r_activo[t]; e_bar = posicion media de la estrategia DENTRO del periodo de evaluacion"
+      secondary: [buy_hold_crudo, cash]
+    permutation_null:           # v1.1: nulo de timing con exposicion preservada
+      type: circular_block
+      block_days: 20
+      n_permutations: 10000
+      seed: 20261026
+    co_metrics: [ulcer_index, calmar, time_underwater]   # v1.1 (condicion 2)
+    subperiods_utc: ["2017-08-17/2019-12-31", "2020-01-01/2022-12-31", "2023-01-01/fin_in_sample"]
+    composite_rule: "mejora de delta_maxDD vs matched en in-sample completo Y en >=2 de 3 subperiodos, por activo (BTC y ETH)"
     grid:
       signal_variant: [sma, ret]        # 2 variantes (decision de interpretacion: ver ADR/PREREGISTRO)
       window: [50, 100, 200]            # n para sma, L para ret
       sigma_obj_annual: [0.15, 0.25]
     cells: 12                            # 2 x 3 x 2 (rejilla disjunta, no producto cruzado)
     evaluated_assets: [BTCUSDT, ETHUSDT] # cada (celda, activo) = 1 trial independiente
-    primary_metric: max_drawdown_reduction_vs_bh
-    secondary_metrics: [sharpe_ann_net_vs_bh, sortino, calmar, expectancy_R]
+    primary_metric: max_drawdown_reduction_vs_matched_exposure_bh
+    secondary_metrics: [sharpe_ann_net_vs_bh_crudo, sharpe_vs_matched, ulcer_index, calmar, time_underwater, sortino, expectancy_R]
     note_no_lookahead: "senales calculadas en cierre de t, ejecutadas en t+1 con slippage"
 
   H2:
@@ -83,6 +99,7 @@ hypotheses:
     primary_metric: sharpe_ann_net_vs_universe_equal_weight
     benchmark: [universe_equal_weight, cash]
     data_start_expected: "2019-01 (profundidad de altcoins liquidas; verificar en M1)"
+    thin_universe_note: "v1.1 (P2): pre-2019 el universo PIT es fino; esos meses quedan excluidos de H2 y M1 documenta candidatos efectivos por mes"
 
   H3:
     family: carry_spot_perp_delta_neutral
@@ -102,3 +119,5 @@ hypotheses:
     primary_metric: mean_daily_net_carry_t_stat_HAC
     benchmark: [cash]
     risks_pregregistered: [basis_blowup, funding_regime_change, ejecucion_asincrona_piernas]
+    per_asset_mde_rule:         # v1.1 (P4 gate M0)
+      policy: "MDE por activo con su n real; si MDE_ETH > 2 * MDE_BTC => ETH INCONTRASTABLE por separado (BTC sigue con todos los criterios)"

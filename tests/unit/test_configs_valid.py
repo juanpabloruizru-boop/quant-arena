@@ -24,7 +24,7 @@ def _load(name: str) -> dict[str, Any]:
 
 def test_hypotheses_grid_v1() -> None:
     h = _load("hypotheses.yaml")
-    assert h["version"] == "1.0"
+    assert h["version"] == "1.1"
     cells = h["accounting"]["preregistered_cells"]
     assert cells == {"H1": 24, "H2": 6, "H3": 8, "total": 38}
     assert h["accounting"]["grid_cells_raw"] == {"H1": 12, "H2": 6, "H3": 4}
@@ -53,6 +53,18 @@ def test_hypotheses_grid_v1() -> None:
     assert sc["cost_stress_multiplier"] == 2.0
     assert sc["min_fraction_folds_positive"] == 0.60
     assert h["holdout"]["sealed"] is True
+    # v1.1 (condiciones del gate M0)
+    assert sc["dsr_gating_for"] == ["H2", "H3"]
+    b1 = h1["benchmark_primary"]
+    assert b1["kind"] == "matched_exposure_bh"
+    assert h1["permutation_null"]["n_permutations"] == 10000
+    assert h1["permutation_null"]["block_days"] == 20
+    assert h1["rebalance_band"] == 0.10
+    assert set(h1["co_metrics"]) == {"ulcer_index", "calmar", "time_underwater"}
+    assert len(h1["subperiods_utc"]) == 3
+    assert h1["primary_metric"] == "max_drawdown_reduction_vs_matched_exposure_bh"
+    assert h1["evaluated_assets"] == ["BTCUSDT", "ETHUSDT"]
+    assert "per_asset_mde_rule" in h3
 
 
 def test_costs_have_status_and_provenance() -> None:
