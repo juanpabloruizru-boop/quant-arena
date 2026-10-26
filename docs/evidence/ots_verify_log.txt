@@ -1,0 +1,15 @@
+# OTS verify/upgrade — estado final M1 (2026-10-26T19:51:50Z)
+
+== docs/evidence/normative_hashes_v1.0.txt.ots
+    verify BitcoinBlockHeaderAttestation(973269)
+    # Bitcoin block merkle root 05b747203670350c89697509bd15d77212fa925ae16b3bd33802501ee278616e
+
+== docs/evidence/normative_hashes_v1.1.txt.ots
+    verify BitcoinBlockHeaderAttestation(973272)
+    # Bitcoin block merkle root 93e6ad4970e9c32618f688eafd4a4465010830cb4c10dfe6ff6475702a2f5dfa
+
+== docs/evidence/normative_hashes_v1.2.txt.ots
+Calendar https://alice.btc.calendar.opentimestamps.org: Pending confirmation in Bitcoin blockchain
+Calendar https://finney.calendar.eternitywall.com: Pending confirmation in Bitcoin blockchain
+
+NOTA: v1.2 pendiente de ancla BTC (estampado hace <1 h). Checklist M2: re-ejecutar 'ots upgrade'+'ots verify' y commitear .ots + este log actualizado ANTES de M3.
