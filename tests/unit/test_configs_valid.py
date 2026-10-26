@@ -24,7 +24,7 @@ def _load(name: str) -> dict[str, Any]:
 
 def test_hypotheses_grid_v1() -> None:
     h = _load("hypotheses.yaml")
-    assert h["version"] == "1.1"
+    assert h["version"] == "1.2"
     cells = h["accounting"]["preregistered_cells"]
     assert cells == {"H1": 24, "H2": 6, "H3": 8, "total": 38}
     assert h["accounting"]["grid_cells_raw"] == {"H1": 12, "H2": 6, "H3": 4}
@@ -56,7 +56,9 @@ def test_hypotheses_grid_v1() -> None:
     # v1.1 (condiciones del gate M0)
     assert sc["dsr_gating_for"] == ["H2", "H3"]
     b1 = h1["benchmark_primary"]
-    assert b1["kind"] == "matched_exposure_bh"
+    assert b1["kind"] == "vol_matched_bh"  # v1.2: exposure-matched era sesgado (Jensen)
+    assert "exposure_matched_bh" in b1["diagnostics"]
+    assert "verdict_policy_power" in h1
     assert h1["permutation_null"]["n_permutations"] == 10000
     assert h1["permutation_null"]["block_days"] == 20
     assert h1["rebalance_band"] == 0.10

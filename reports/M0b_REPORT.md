@@ -1,3 +1,14 @@
+> **CORRECCIÓN POST-GATE (2026-10-26, dictamen del orquestador — defecto 1):**
+> El titular de §9.3 y el riesgo R1 de este informe ("H1 probablemente NO PASA",
+> potencia 1-2 %) quedan **RETIRADOS**. El benchmark exposure-matched (ē·r) está
+> sesgado por Jensen (E[w²] ≥ ē²) contra toda regla de exposición variable bajo el
+> nulo: el +14/+17 pp medido bajo GBM era el sesgo del benchmark, no una propiedad
+> de H1; y los "mundos alternativos" no contenían habilidad plantada, así que la
+> "potencia 1-2 %" no era potencia. Corrección completa en PRERREGISTRO v1.2
+> (benchmark primario vol-matched + criterio permutado + potencia con drift AR(1)
+> calibrado a ΔSharpe ∈ {0.1, 0.3, 0.5}: potencia real 17-43 %) y en
+> `reports/M0_power_analysis.md` v1.2. El resto del informe permanece válido.
+
 # M0b · Preregistro v1.1 y sellado (condiciones del gate M0) · 2026-10-26T18:43Z · git SHA `3f3fbb1562fe4aebde4b5764372a6955b297fbb6` (tag firmado `prereg-v1.1`)
 
 ## Resumen en 5 líneas

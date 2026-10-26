@@ -1,9 +1,9 @@
-# Rejilla pre-registrada de hipotesis (v1.1). Espejo legible por maquina de
+# Rejilla pre-registrada de hipotesis (v1.2). Espejo legible por maquina de
 # docs/PREREGISTRO.md. NORMA: el texto de PREREGISTRO.md manda; si hay divergencia,
 # bug. Cambiar esta rejilla tras ver resultados = nueva version del preregistro
 # y n_trials += celdas nuevas. Prohibido anadir/quitar celdas en M3.
 
-version: "1.1"
+version: "1.2"
 registered_at_utc: "2026-10-26"
 max_families: 3
 
@@ -60,10 +60,11 @@ hypotheses:
       ret: "sum(log returns, L days)[t] > 0 -> long en t+1"
     position_sizing: "min(1, sigma_obj / sigma_realized_20d) ; flat => 0"
     rebalance_band: 0.10        # v1.1: solo se opera si |target-actual|>=10pp o hay flip (hallazgo pre-datos de potencia, s9.3)
-    benchmark_primary:          # v1.1 (condicion 1 gate M0)
-      kind: matched_exposure_bh
-      formula: "r_bh_matched[t] = e_bar * r_activo[t]; e_bar = posicion media de la estrategia DENTRO del periodo de evaluacion"
-      secondary: [buy_hold_crudo, cash]
+    benchmark_primary:          # v1.2 (correccion defecto 1 gate M0b: Jensen E[w^2]>=ebar^2)
+      kind: vol_matched_bh
+      formula: "r_bh_vm[t] = f * r_activo[t]; f = sigma(estrategia neta)/sigma(activo), ex-post DENTRO del periodo de evaluacion; solo para benchmark"
+      diagnostics: [exposure_matched_bh, buy_hold_crudo, cash]
+      note_jensen: "exposure_matched (e_bar constante) tiene sesgo sistematico contra exposicion variable bajo el nulo (+17pp medidos): SOLO diagnostico"
     permutation_null:           # v1.1: nulo de timing con exposicion preservada
       type: circular_block
       block_days: 20
@@ -71,7 +72,8 @@ hypotheses:
       seed: 20261026
     co_metrics: [ulcer_index, calmar, time_underwater]   # v1.1 (condicion 2)
     subperiods_utc: ["2017-08-17/2019-12-31", "2020-01-01/2022-12-31", "2023-01-01/fin_in_sample"]
-    composite_rule: "mejora de delta_maxDD vs matched en in-sample completo Y en >=2 de 3 subperiodos, por activo (BTC y ETH)"
+    composite_rule: "p_perm<0.05 Y delta_maxDD_volmatched<0 en in-sample completo Y delta_maxDD_volmatched<0 (f por subperiodo) en >=2 de 3 subperiodos, por activo (BTC y ETH)"
+    verdict_policy_power: "potencia <50% para todo efecto plantado <=0.5 (potencia v1.2 s9.4): si el test no rechaza, veredicto por defecto INCONTRASTABLE; NO PASA solo con p_adverso<0.05, o holdout opuesto en ambos activos, o C4/C5 claramente en contra"
     grid:
       signal_variant: [sma, ret]        # 2 variantes (decision de interpretacion: ver ADR/PREREGISTRO)
       window: [50, 100, 200]            # n para sma, L para ret

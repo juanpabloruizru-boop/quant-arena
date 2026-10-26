@@ -1,9 +1,15 @@
-# PRERREGISTRO v1.1 — QUANT-ARENA v2
+# PRERREGISTRO v1.2 — QUANT-ARENA v2
 
-**Fecha v1.1:** 2026-10-26 (UTC) · **Estado:** registrado; v1.0 sellada en
+**Fecha v1.2:** 2026-10-26 (UTC) · **Estado:** registrado; v1.0 sellada en
 `prereg-v1`/`prereg-v1-signed` (commit `82bf430`, intacta); v1.1 sellada en
-`prereg-v1.1` + OpenTimestamps.
-**Espejo máquina:** `config/hypotheses.yaml` v1.1 (este documento manda; si
+`prereg-v1.1` + OpenTimestamps; v1.2 sellada en `prereg-v1.2` +
+OpenTimestamps. Corrección del **defecto 1 del gate M0b** (benchmark
+matched-exposure sesgado por Jensen, E[w²] ≥ ē²): benchmark primario de H1 =
+**vol-matched**, criterio = **permutación del vector de exposición**, potencia
+recalculada con mundos de habilidad plantada (ΔSharpe verdadero ∈ {0.1, 0.3,
+0.5}). Sin cambios en rejilla ni sizing. Ninguna métrica de estrategia se ha
+calculado sobre datos reales.
+**Espejo máquina:** `config/hypotheses.yaml` v1.2 (este documento manda; si
 divergen, es un bug y se corrige el YAML).
 
 > Regla de oro: ninguna regla se implementa ni ejecuta si no está en este
@@ -97,9 +103,9 @@ a posteriori. Las declaramos y las congelamos AHORA:
 | Cadencia de rebalanceo PIT | mensual (primer día UTC) | Fija |
 | Edad mínima de listado | 60 días | Fija |
 | Lista de exclusiones | la de `universe.yaml` v1.0 | Fija |
-| Exposición media del benchmark H1 | ē calculado DENTRO de cada periodo de evaluación | Fijo (evita elegir el periodo que favorezca) |
+| Factor del benchmark vol-matched H1 | f = σ_estrategia/σ_B&H, ex-post DENTRO de cada periodo de evaluación (solo para el benchmark) | Fijo; exposure-matched (ē) degradado a diagnóstico por sesgo de Jensen |
 | Bloque de permutación (H1) | circular, 20 días, 10 000 permutaciones, semilla 20261026 | Fijo |
-| Banda de rebalanceo (H1) | 10 pp; los flips long↔flat siempre operan | Fija; justificada por el análisis de potencia PRE-datos (§9): sin banda, el turnover diario sangra el drawdown vía costes |
+| Banda de rebalanceo (H1) | 10 pp; los flips long↔flat siempre operan | Fija. Bandas simuladas PRE-datos {0, 2, 5, 10, 20} pp (§9.5): sangría 1.06/0.99/0.92/0.85/0.80 %/año. 10 pp = rodilla: captura casi todo el ahorro sin ralentizar la reacción ante crashes (20 pp ahorra 0.05 %/año más pero duplica el retardo de salida). Ninguna banda se optimizará con datos reales |
 | Fronteras de subperíodos | SP1 2017-08-17→2019-12-31, SP2 2020-01-01→2022-12-31, SP3 2023-01-01→fin in-sample | Fijas (cubren regímenes: temprano, ciclo 2020-22, ciclo 2023-25) |
 | Embargos CPCV | H1 20 d, H2 14 d, H3 7 d | Fijos |
 | Bloque de bootstrap | estacionario, bloque esperado 20 d (diario) / 8 sem (semanal) | Fijo |
@@ -142,28 +148,39 @@ Verificados en vivo el 2026-10-26:
   de señal disjuntas** (12 celdas), no como señal disyuntiva con producto
   cruzado n×L (18 celdas). **Ratificada por el orquestador en el gate M0 (P1,
   2026-10-26).**
-- **Benchmark primario (v1.1, condición 1 del gate M0): buy & hold con la MISMA
-  exposición media que la estrategia** — `r_bh_matched[t] = ē · r_activo[t]`,
-  con `ē` = media temporal de la posición de la estrategia DENTRO de cada
-  periodo de evaluación (in-sample completo, subperíodo o fold). Benchmarks
-  secundarios (siempre reportados): B&H crudo y caja. La comparación contra
-  B&H crudo mide "estar menos expuesto"; la comparación matched mide **skill de
-  timing**, que es lo que H1 afirma.
-- **Nulo de permutación de timing (v1.1):** la misma serie de posiciones con la
-  exposición preservada pero el timing barajado (permutación circular por
-  bloques de 20 días, 10 000 permutaciones, semilla fija). p-valor = fracción
-  de permutaciones con ΔmaxDD igual o mejor que el observado. Las permutaciones
-  son parte del estadístico de una candidata, **no trials adicionales**
-  (kind=`null` en el ledger).
+- **Benchmark primario (v1.2, corrección del defecto 1 del gate M0b): B&H
+  VOL-MATCHED** — `r_bh_vm[t] = f · r_activo[t]`, con
+  `f = σ(retornos netos de la estrategia) / σ(retornos del activo)` calculado
+  ex-post DENTRO de cada periodo de evaluación (in-sample completo, subperíodo
+  o fold) y usado SOLO para construir el benchmark. Bajo el nulo de timing,
+  E[ΔmaxDD] ≈ 0 (§9.3, verificado). El **exposure-matched de v1.1 (ē·r) queda
+  degradado a diagnóstico**: por Jensen (E[w²] ≥ ē²) penaliza sistemáticamente
+  a toda regla de exposición variable bajo el nulo; no puede ser criterio.
+  Benchmarks reportados: vol-matched (primario), exposure-matched, B&H crudo y
+  caja (diagnósticos). Nota: Sharpe(f·r) = Sharpe(r) ⇒ ΔSharpe vs vol-matched
+  ≡ ΔSharpe vs B&H crudo.
+- **Criterio de permutación (v1.2, condición 2 del gate M0b):** nulo = el
+  PROPIO vector de posiciones de la estrategia, permutado por bloques
+  circulares de 20 días (preserva distribución y autocorrelación de la
+  exposición; destruye su alineación con los retornos). Para cada permutación
+  se recalcula el estadístico COMPLETO (estrategia neta de costes frente a SU
+  vol-matched con f propio). 10 000 permutaciones en evaluación real (199 en
+  las simulaciones de potencia), semilla fija. p-valor = (1 + #{Δ_perm ≤
+  Δ_obs}) / (1 + n_perm) (corrección de Phipson-Smyth). También se computa el
+  p-valor adverso (#{Δ_perm ≥ Δ_obs}) para el veredicto NO PASA. Las
+  permutaciones son parte del estadístico de una candidata, **no trials
+  adicionales** (kind=`null` en el ledger).
 - **Co-métricas obligatorias (v1.1, condición 2):** Ulcer Index, Calmar y
   tiempo bajo el agua (time underwater), además de Sharpe/Sortino/maxDD.
-- **Regla de subperíodos (v1.1, condición 2):** la mejora de ΔmaxDD (frente al
-  benchmark matched) debe darse en el in-sample completo **y** en ≥ 2 de los 3
-  subperíodos: SP1 2017-08-17→2019-12-31, SP2 2020-01-01→2022-12-31,
-  SP3 2023-01-01→fin del in-sample. Se exige por activo (BTC y ETH).
-- **Expectativa (formulación exigida por el prompt y afinada en v1.1):**
-  reducción de drawdown **a igual exposición media** con Sharpe no inferior al
-  de B&H; NO se espera más retorno absoluto.
+- **Regla de subperíodos (v1.2):** usa el MISMO estadístico — ΔmaxDD frente
+  al vol-matched con f calculado DENTRO de cada subperíodo (nunca el punto
+  contra una fracción constante): mejora (Δ < 0) exigida en el in-sample
+  completo **y** en ≥ 2 de los 3 subperíodos: SP1 2017-08-17→2019-12-31, SP2
+  2020-01-01→2022-12-31, SP3 2023-01-01→fin del in-sample. Por activo (BTC y
+  ETH).
+- **Expectativa (v1.2):** reducción de drawdown **a igual volatilidad** (skill
+  de timing) con Sharpe no inferior al de B&H; NO se espera más retorno
+  absoluto.
 
 ### H2 — Momentum transversal semanal en universo PIT
 
@@ -209,52 +226,59 @@ Verificados en vivo el 2026-10-26:
 2. **Métricas por fold y agregadas**: Sharpe y Sortino anualizados, max DD,
    Calmar, expectancy en R, IC (cuando aplique señal continua). **Co-métricas
    H1 (v1.1):** Ulcer Index y tiempo bajo el agua, por periodo de evaluación.
-3. **Benchmarks H1 (v1.1):** B&H matched-exposure (primario; ē dentro de cada
-   periodo de evaluación) + B&H crudo y caja (secundarios). **Nulo de
-   permutación de timing:** permutación circular por bloques de 20 días de la
-   serie de posiciones, 10 000 permutaciones, semilla 20261026; p-valor =
-   fracción de permutaciones con ΔmaxDD igual o mejor que el observado.
-   **Subperíodos:** SP1/SP2/SP3 con fronteras fijas (§4, grados de libertad).
+3. **Benchmarks H1 (v1.2):** vol-matched (primario; f = σ_strat/σ_BH dentro de
+   cada periodo de evaluación) + exposure-matched, B&H crudo y caja
+   (diagnósticos). **Nulo de permutación:** bloques circulares de 20 días
+   sobre el vector de posiciones, 10 000 permutaciones, semilla 20261026;
+   estadístico completo recalculado por permutación; p-valor con corrección
+   +1. **Subperíodos:** SP1/SP2/SP3 con fronteras fijas (§4), mismo
+   estadístico vol-matched por subperíodo.
 4. **Incertidumbre**: bootstrap por bloques estacionario (bloque esperado 20 d
    en series diarias; 8 semanas en semanales; 10 000 remuestreos, semilla
    fija) para ICs de diferencias frente a benchmark; errores estándar HAC
    (Newey-West, lag = ventana de formación) para medias.
 5. **Anti-sobreajuste**: PBO vía CSCV sobre la rejilla de la familia;
    Reality Check/SPA sobre todas las celdas vs benchmark — **en H1 el
-   estadístico de SPA/RC es la mejora de ΔmaxDD matched (criterio primario de
+   estadístico de SPA/RC es la mejora de ΔmaxDD vol-matched (criterio primario de
    multiplicidad, condición 3 del gate M0)**; en H2/H3 el estadístico es el
    retorno/Sharpe neto. DSR (Bailey–López de Prado) con n_trials del ledger,
    asimetría y curtosis empíricas: **criterio de gate en H2 y H3; en H1 se
    computa y reporta, sin poder tumbar un PASA**.
 6. **Costes**: todo neto de costes verificados; repetición obligatoria con ×2.
 7. **Selección de candidata**: por familia, según su métrica primaria — H1:
-   mayor mejora media de ΔmaxDD matched en las 45 trayectorias CPCV
+   mayor mejora media de ΔmaxDD vol-matched en las 45 trayectorias CPCV
    in-sample; H2/H3: mayor Sharpe neto medio en las 45 trayectorias. Regla
    fijada ahora, antes de ver nada. Esa candidata —y solo esa— pasa al holdout.
 8. **Holdout**: evaluación única al final de M3. Prohibido ajustar nada tras
    verlo. Su resultado se reporta tal cual, gane o pierda.
 
-## 8. Criterios de éxito (v1.1 — diferenciados por familia; potencia en §9)
+## 8. Criterios de éxito (v1.2 — diferenciados por familia; potencia en §9)
 
 Veredictos por familia sobre la candidata seleccionada en §7.7.
 
-### H1 (v1.1: el gate primario mide *timing skill* contra matched-exposure)
+### H1 (v1.2: el gate primario mide *timing skill* vs vol-matched, con permutación)
 
 | # | Criterio | Umbral |
 |---|---|---|
-| C1a | ΔmaxDD vs B&H matched-exposure (in-sample completo): mejora (ΔmaxDD < 0) **en BTC y en ETH**, con p-valor del test de permutación de timing | p < 0.05 por activo |
-| C1b | Subperíodos: mejora (ΔmaxDD < 0) en ≥ 2 de 3 (SP1/SP2/SP3) | por activo (BTC y ETH) |
-| C2' | Multiplicidad: **SPA/Reality Check** sobre el estadístico ΔmaxDD matched, rejilla completa de 12 celdas por activo (condición 3 del gate M0: DSR NO es criterio primario de H1; se computa y reporta, sin veto) | p < 0.05 |
+| C1a | ΔmaxDD vs B&H **vol-matched** (in-sample completo): mejora (Δ < 0) **en BTC y en ETH**, con p-valor de permutación del vector de exposición | p < 0.05 por activo |
+| C1b | Subperíodos: ΔmaxDD vol-matched < 0 (f propio del subperíodo) en ≥ 2 de 3 (SP1/SP2/SP3) | por activo (BTC y ETH) |
+| C2' | Multiplicidad: **SPA/Reality Check** sobre el estadístico ΔmaxDD vol-matched, rejilla completa de 12 celdas por activo (DSR se computa y reporta, sin veto — condición 3 del gate M0) | p < 0.05 |
 | C3 | PBO (CSCV de la familia) | < 0.20 |
-| C4 | Costes ×2: ΔmaxDD matched mantiene la mejora **y** ΔSharpe matched ≥ −0.10 | ambos |
-| C5 | Folds CPCV con ΔmaxDD matched < 0 | ≥ 60 % |
-| C7 | Holdout (una sola vez): signo de ΔmaxDD matched coherente con in-sample | no exige significación (n = 1 año); signo opuesto en ambos activos → NO PASA |
+| C4 | Costes ×2: ΔmaxDD vol-matched mantiene la mejora (Δ < 0) **y** ΔSharpe (≡ vs B&H crudo) ≥ −0.10 | ambos |
+| C5 | Folds CPCV con ΔmaxDD vol-matched < 0 | ≥ 60 % |
+| C7 | Holdout (una sola vez): signo de ΔmaxDD vol-matched coherente con in-sample | no exige significación (n = 1 año); signo opuesto en ambos activos → NO PASA |
 
-- Co-métricas (Ulcer Index, Calmar, tiempo bajo el agua) y ΔSharpe vs B&H
-  crudo: se reportan SIEMPRE, no hacen gate.
-- ΔSharpe matched con IC bootstrap: se reporta con nota explícita de potencia
-  (MDE pareado ≈ 0.67 a 8.2 años, §9.1). La no-inferioridad práctica
-  (ΔSharpe matched ≥ −0.10) forma parte de C4.
+- Co-métricas (Ulcer Index, Calmar, tiempo bajo el agua), benchmarks
+  diagnóstico (exposure-matched, B&H crudo, caja) y ΔSharpe con IC bootstrap:
+  se reportan SIEMPRE, no hacen gate.
+- **Política de veredicto por potencia (enmienda 4 del gate M0b):** la
+  potencia medida con habilidad plantada (§9.4) es < 50 % para todo efecto
+  ΔSharpe ≤ 0.5. Por tanto, para H1 se pre-declara: si los tests no rechazan
+  el nulo, el veredicto por defecto es **INCONTRASTABLE** (no NO PASA).
+  **NO PASA** solo si (a) el p-valor adverso de permutación < 0.05 (la
+  estrategia es significativamente PEOR que su propio timing aleatorizado), o
+  (b) C7 con signo opuesto en ambos activos, o (c) C4/C5 fallan claramente
+  con el efecto observado en dirección contraria.
 
 ### H2 (criterios v1.0, sin cambios)
 
@@ -295,66 +319,86 @@ Veredictos por familia sobre la candidata seleccionada en §7.7.
   siempre (tabla completa + distribución), ninguna re-ejecación "para
   comprobar" tras el holdout.
 
-## 9. Análisis de potencia (resumen v1.1; detalle en `reports/M0_power_analysis.md/.json`)
+## 9. Análisis de potencia (v1.2; detalle en `reports/M0_power_analysis.md/.json`)
 
-Script: `scripts/power_analysis.py` (semilla 20261026; α una cola 5 %, potencia
-objetivo 80 %, K = 2.4866; Monte Carlo con 1 200 trayectorias por config).
+Script: `scripts/power_analysis.py` v1.2 (semilla 20261026; α una cola 5 %,
+potencia objetivo 80 %, K = 2.4866). Tests de identidad y calibración del
+nulo en `tests/unit/test_benchmark_identities.py` y
+`tests/synthetic/test_null_calibration.py` (verdes antes de reportar
+potencia, condición 3 del gate M0b).
 
-1. **Diferencia de Sharpe (no pareada):** MDE = 1.94 con 3.3 años; **1.23 con
-   8.2 años**. Detectar ΔSharpe = 0.5 exigiría ~50 años; Δ = 0.3, ~137 años.
-   Monte Carlo pareado de H1 (sd(ΔSharpe) ≈ 0.27 a 8.2 años): MDE pareado
-   ≈ 0.67 (potencia 80 %) o ≈ 0.44 (nivel 5 %). → El test "Sharpe ≥ B&H" es
-   incontrastable para mejoras pequeñas; el Sharpe entra como co-métrica y
-   como no-inferioridad práctica (≥ −0.10) en C4.
-2. **H1 vs B&H CRUDO (comparación v1.0, ya no primaria):** la mejora de
-   maxDD aparece con potencia 77–99 % en TODOS los mundos simulados (incluso
-   bajo GBM sin skill): es casi pura consecuencia de estar menos expuesto.
-   Justifica la condición 1 del gate M0 (benchmark matched-exposure).
-3. **H1 vs B&H MATCHED-EXPOSURE (criterio primario v1.1), espectro de DGPs:**
-   - GBM iid (nulo sin habilidad): la regla compuesta pasa en ~2–3 % de los
-     mundos → el test es **conservador** (por debajo del 5 % nominal).
-   - Vol Markov-switching (σ 35 %/100 %, duraciones ~100 d): E[ΔmaxDD_m]
-     ≈ +7.6/+8.3 pp (PEOR que el matched), potencia ≈ 1.5–1.6 %, regla
-     compuesta ≈ 16–17 %.
-   - Vol MS + crashes de Poisson (2/año en estado alto vs 0.2/año en bajo,
-     tamaño N(−15 %, 8 %)): E[ΔmaxDD_m] ≈ +6.4/+6.9 pp, potencia ≈ 2 %,
-     regla compuesta ≈ 16–19 %.
-   - Deriva MS (bull +80 % / bear −40 %, duraciones ~200 d): E[ΔSharpe_m]
-     ≈ +0.04/+0.07, E[ΔmaxDD_m] ≈ +10 pp, compuesta ≈ 7–8 %.
-   **Lectura honesta:** en los mundos sintéticos ensayados, el mecanismo H1
-   pre-registrado NO mejora el drawdown a igual exposición media (el vol
-     targeting con σ_real 20d reacciona tarde a los saltos y la SMA llega
-   tarde a los giros). Solo pasaría C1a/C1b si el mercado real contiene
-   estructura anticipatoria de crashes mayor que la de estos mundos. H1 tiene
-   pues una probabilidad sustancial de terminar en **NO PASA o
-   INCONTRASTABLE**; se declara AHORA, antes de ver datos. No se relaja el
-   criterio por eso: es exactamente el claim de skill que debe demostrarse.
-   **Hallazgo de diseño pre-datos:** sin banda de rebalanceo, el turnover
-   diario del vol targeting añade ~1 pp de sangría a ΔmaxDD_m; la banda de
-   10 pp (§6 H1) queda pre-registrada.
-4. **DSR ≥ 0.95 (gate de H2/H3; informativo en H1):** con n_trials = 38 y
-   8.2 años exige Sharpe observado ≈ **1.66–2.22** según dispersión entre
-   celdas (sd 0.5–0.75) y colas; con 3.3 años: ≈ 2.0–2.6.
-5. **H2 (spread semanal, n ≈ 354 semanas):** MDE ≈ 0.46–0.77 %/sem
-   (σ 3–5 %/sem, ρ 0–0.15) ≈ 24–40 % anualizado. Detectar 0.2 %/sem exigiría
-   ~64 años. → **INCONTRASTABLE en el horizonte para spreads típicos
-   (10–20 %/año)**; solo un spread bruto extraordinario (> ~25–30 %/año) sería
-   detectable. Declarado de antemano.
-6. **H3 (carry diario):** n_BTC ≈ 2 237 días → MDE ≈ 1.0–2.1 %/año
-   (σ diaria 5–10 pb, ρ 0–0.1). Carry ≥ 4 %/año: potencia > 80 % con ~1.7
-   años. **P4:** n_ETH se verifica en M1; si el funding de ETHUSDT empieza
-   ~2019-11, n_ETH ≈ 0.95·n_BTC → MDE_ETH ≈ 1.03·MDE_BTC ≪ 2× → ambos
-   contrastables. La regla P4 (§6 H3) protege contra sorpresas mayores.
-7. **Tasas de acierto:** discriminar WR 45 % vs 40 % exige **n ≈ 600 trades**
-   (42 % vs 40 %: ~3 729). H1 genera decenas → ningún criterio basado en WR.
-8. **Consecuencia pre-registrada (v1.1):** con 38 ensayos y estos horizontes,
-   el laboratorio solo confirma **efectos grandes**; H1 exige además skill de
-   timing pura (matched-exposure), que los mundos sintéticos sugieren que el
-   mecanismo no posee por construcción. Todo efecto menor que el MDE se
-   reportará como INCONTRASTABLE con su MDE explícito. Esto no es un fallo del
-   diseño: es la honestidad que exige el principio 9.
+**Retirado (v1.1 → v1.2):** el titular "H1 probablemente NO PASA" y el riesgo
+R1 del informe M0b quedan RETIRADOS. Se basaban en el benchmark
+exposure-matched, sesgado por Jensen contra toda exposición variable (+17 pp
+bajo el nulo, medidos en §9.3), y en mundos sin habilidad plantada: aquellos
+"1-2 %" no eran potencia. El cálculo correcto sigue a continuación.
 
-## 10. Sellado del preregistro (estado v1.1)
+### 9.1 Analítico (sin cambios)
+
+1. **ΔSharpe no pareado:** MDE = 1.94 (3.3 años) / **1.23** (8.2 años).
+   ΔSharpe = 0.5 exigiría ~50 años; 0.3, ~137. Pareado (MC): MDE ≈ 0.67.
+2. **DSR ≥ 0.95** (gate de H2/H3): con n_trials = 38 y 8.2 años exige Sharpe
+   observado ≈ 1.66–2.22 (sd entre celdas 0.5–0.75).
+3. **H2** (n ≈ 354 semanas): MDE ≈ 0.46–0.77 %/sem (24–40 % anualizado) →
+   **INCONTRASTABLE para spreads típicos**; declararlo es parte del diseño.
+4. **H3** (n ≈ 2 237 días): MDE ≈ 1.0–2.1 %/año → **contrastable** para carry
+   ≥ ~2-4 %/año. Regla P4: MDE por activo (ETH se verifica en M1).
+5. **WR:** discriminar 45 % vs 40 % exige ~600 trades → ningún criterio WR.
+
+### 9.2 H1 vs B&H crudo (diagnóstico)
+
+Mejora de ~35-48 pp con potencia 77-99 % en todos los mundos: es el efecto de
+la exposición reducida, no skill. Por eso no es criterio (ya en v1.1).
+
+### 9.3 Calibración del nulo (GBM sin habilidad, 500 sims, 199 permutaciones)
+
+| Estadístico | Bajo nulo | Lectura |
+|---|---|---|
+| E[ΔmaxDD vol-matched] | +4.4 pp | ≈ 0 relativo a su sd (12-16 pp); sesgo residual por mezcla de escalas (colas): lo absorbe la permutación |
+| E[ΔmaxDD exposure-matched] (diagnóstico) | **+17.2 pp** | sesgo de Jensen confirmado: inhabilita este benchmark como criterio |
+| p medio de permutación | 0.520 | uniforme ✓ |
+| FPR de P(p < 0.05) | 6.6 % | ≈ nominal 5 % (±1.5 se con n=500 y 199 perms) ✓ |
+| FPR regla compuesta (p<0.05 ∧ Δ<0 ∧ ≥2/3 SP) | 6.6 % | el test no regala PASS ✓ |
+
+Identidades verificadas por tests unitarios: exposición constante ⇒ Δ = 0
+exacto (vol-matched y exposure-matched); signo Δ > 0 = estrategia peor;
+permutaciones deterministas con semilla y preservan la distribución de
+exposición.
+
+### 9.4 Habilidad plantada (drift latente AR(1), φ = 0.995, calibrado)
+
+Calibración: s_mu diaria por bisección para que el ΔSharpe verdadero (neto,
+vs B&H crudo) valga el objetivo; logrado: 0.11-0.14 / 0.28-0.34 / 0.50-0.57.
+
+| ΔSharpe verdadero | vent. 100: potencia perm | compuesta | vent. 200: potencia perm | compuesta | E[ΔmaxDD vm] |
+|---|---|---|---|---|---|
+| ≈ 0.1 | 17 % | 17 % | 19 % | 18 % | −7 pp |
+| ≈ 0.3 | 28 % | 27 % | 25 % | 24 % | −13/−14 pp |
+| ≈ 0.5 | 40 % | 39 % | 43 % | 42 % | −21 pp |
+
+**Conclusión v1.2:** el estadístico va en la dirección correcta cuando hay
+skill (Δ vm negativo creciente con el efecto), pero la **potencia es < 50 %
+para TODO efecto ≤ 0.5** — incluidos efectos grandes para estándares de la
+literatura. Por la enmienda 4 del gate M0b, el veredicto pre-declarado de H1
+cuando el test no rechace es **INCONTRASTABLE** (política completa en §8-H1).
+Con 8.2 años de datos, H1 solo puede confirmar skill de timing excepcional.
+
+### 9.5 Banda de rebalanceo (soporte del grado de libertad, §4)
+
+Bandas simuladas PRE-datos {0, 2, 5, 10, 20} pp (GBM y MS-vol+jumps):
+sangría de costes 1.06 → 0.80 %/año; el ΔSharpe mejora monótonamente con la
+banda. 10 pp = rodilla entre ahorro de costes y retardo de reacción. Tabla
+completa: `reports/M0_power_analysis.md` S6.
+
+### 9.6 Consecuencia pre-registrada
+
+Con 38 ensayos y estos horizontes, el laboratorio solo confirma efectos
+grandes; para H1, además, el criterio exige timing skill pura a igual
+volatilidad, cuya potencia es baja incluso para efectos grandes. Todo efecto
+menor que el MDE se reportará INCONTRASTABLE con su MDE explícito. Esto no es
+un fallo del diseño: es la honestidad que exige el principio 9.
+
+## 10. Sellado del preregistro (estado v1.2)
 
 - **v1.0 (intacto, no se modifica):** tag anotado `prereg-v1` + tag FIRMADO
   `prereg-v1-signed` (SSH ed25519, clave pública en `docs/keys/`) sobre el
@@ -373,6 +417,11 @@ objetivo 80 %, K = 2.4866; Monte Carlo con 1 200 trayectorias por config).
 - **v1.1:** tag `prereg-v1.1` (anotado y firmado SSH) sobre el commit que
   congela este documento + `config/hypotheses.yaml` v1.1, con SHA256 de ambos
   en el mensaje del tag + anclaje OTS de los hashes (`normative_hashes_v1.1.txt`).
+- **v1.2:** tag `prereg-v1.2` (anotado y firmado SSH) sobre el commit que
+  congela este documento + `config/hypotheses.yaml` v1.2, con SHA256 en el
+  mensaje + anclaje OTS (`normative_hashes_v1.2.txt`). Corrección del defecto
+  1 del gate M0b: benchmark vol-matched + criterio permutado + potencia con
+  habilidad plantada.
 
 ## 11. Hechos heredados del proyecto anterior (estado de verificación)
 
@@ -393,3 +442,4 @@ objetivo 80 %, K = 2.4866; Monte Carlo con 1 200 trayectorias por config).
 |---|---|---|---|
 | 1.0 | 2026-10-26 | Registro inicial (tag `prereg-v1`, commit `82bf430`) | 38 |
 | 1.1 | 2026-10-26 | Condiciones 1-4 del gate M0 (orquestador): benchmark primario H1 = B&H matched-exposure + permutación de timing; co-métricas Ulcer/Calmar/time-underwater y regla de subperíodos (≥2 de 3) por activo; DSR deja de ser gate de H1 (SPA/RC sobre ΔmaxDD matched lo sustituye) y sigue siéndolo de H3; grados de libertad documentados (§4). Resoluciones P1 (rejilla disjunta ratificada), P2 (horizonte 2017/2019 + declaración de régimen 2017-18 y PIT fino), P3 (OTS ya, OSF antes de M3), P4 (ETH se mantiene; MDE por activo; regla 2×). Banda de rebalanceo 10 pp añadida por hallazgo PRE-datos del análisis de potencia (§9.3). Sin celdas nuevas. | 38 |
+| 1.2 | 2026-10-26 | Corrección del defecto 1 del gate M0b (benchmark exposure-matched sesgado por Jensen): benchmark primario H1 = B&H vol-matched; exposure-matched degradado a diagnóstico; criterio y subperíodos basados en permutación del vector de exposición; tests de identidad/calibración del nulo como requisito previo; potencia recalculada con drift AR(1) plantado (ΔSharpe ∈ {0.1,0.3,0.5}) → potencia <50 % ⇒ política de veredicto INCONTRASTABLE por defecto en H1; bandas simuladas {0,2,5,10,20} pp documentadas en §4/§9.5; retirado el titular "H1 probablemente NO PASA" (M0b §9.3/R1). Sin cambios en rejilla ni sizing. | 38 |

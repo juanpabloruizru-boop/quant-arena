@@ -1,11 +1,11 @@
-# Analisis de potencia - M0 (QUANT-ARENA v2)
+# Analisis de potencia v1.2 - M0c/M1 (QUANT-ARENA v2)
 
-- Generado: 2026-10-26T18:31:12+00:00 | semilla: 20261026 | alpha una cola: 0.05 | potencia objetivo: 0.8
-- Horizontes in-sample asumidos (segun disponibilidad verificada): H1 8.19 anios, H2 6.82 anios, H3 6.13 anios.
-- Formula clave: MDE = (z_95 + z_80) x SE = 2.4866 x SE. Cripto = 365 dias/anio.
+- Generado: 2026-10-26T19:06:04+00:00 | semilla: 20261026 | alpha una cola 5% | potencia objetivo 80% | K = 2.4865
+- Horizontes in-sample: H1 8.19 a, H2 6.82 a, H3 6.13 a. Coste por lado: 13 pb. Banda: 10 pp.
+- **Nota v1.2:** Tablas v1.1 de exposure-matched como criterio RETIRADAS (defecto 1 gate M0b: sesgo de Jensen E[w^2]>=ebar^2 contra exposicion variable bajo el nulo). Benchmark primario: vol-matched. Criterio: permutacion del vector de exposicion.
 
-## T1. Diferencia de Sharpe anualizado (no pareada; cota conservadora)
-| anios de datos | MDE DeltaSharpe |
+## S1. MDE de diferencia de Sharpe (no pareada; cota conservadora)
+| anios | MDE DSharpe |
 |---|---|
 | 3.3 | 1.936 |
 | 5.0 | 1.573 |
@@ -16,8 +16,8 @@
 | 30.0 | 0.642 |
 | 50.0 | 0.497 |
 
-## T1b. Anios necesarios segun efecto objetivo
-| DeltaSharpe objetivo | anios necesarios |
+## S1b. Anios necesarios por efecto objetivo
+| DSharpe | anios |
 |---|---|
 | 0.2 | 309.1 |
 | 0.3 | 137.4 |
@@ -25,7 +25,7 @@
 | 1.0 | 12.4 |
 | 1.5 | 5.5 |
 
-## T2. Sharpe minimo observado para DSR >= 0.95
+## S2. Sharpe minimo para DSR >= 0.95 (gate de H2/H3; informativo en H1)
 | anios | n_trials | sd celdas | skew | kurt | SR0 | Sharpe min |
 |---|---|---|---|---|---|---|
 | 3.3 | 38 | 0.5 | 0.0 | 3.0 | 1.085 | 1.993 |
@@ -45,45 +45,54 @@
 | 8.2 | 60 | 0.75 | 0.0 | 3.0 | 1.759 | 2.336 |
 | 8.2 | 60 | 0.75 | -0.5 | 6.0 | 1.759 | 2.356 |
 
-## T3. Monte Carlo H1 vs B&H crudo (referencia v1.0; pareado: misma ruta)
-| dgp | anios | ventana | mu_ann | E[DSR] | sd(DSR) | potencia(DSharpe>0) | E[DmaxDD] pp | sd pp | potencia(mejora DD) |
-|---|---|---|---|---|---|---|---|---|---|
-| gbm | 3.3 | 100 | 0.15 | -0.1776 | 0.4388 | 0.0202 | -40.72 | 14.39 | 0.8821 |
-| gbm | 3.3 | 100 | 0.4 | -0.2648 | 0.4306 | 0.0119 | -35.25 | 14.36 | 0.7911 |
-| gbm | 3.3 | 200 | 0.15 | -0.205 | 0.47 | 0.0187 | -42.39 | 15.79 | 0.8507 |
-| gbm | 3.3 | 200 | 0.4 | -0.3025 | 0.4417 | 0.0099 | -36.75 | 15.34 | 0.7738 |
-| gbm | 8.2 | 100 | 0.15 | -0.1629 | 0.2749 | 0.0126 | -39.65 | 12.69 | 0.9307 |
-| gbm | 8.2 | 100 | 0.4 | -0.219 | 0.2656 | 0.0068 | -36.81 | 13.65 | 0.8535 |
-| gbm | 8.2 | 200 | 0.15 | -0.1565 | 0.3009 | 0.0152 | -40.63 | 14.03 | 0.8945 |
-| gbm | 8.2 | 200 | 0.4 | -0.2376 | 0.2672 | 0.0056 | -36.18 | 14.06 | 0.8233 |
-| ms_vol | 8.2 | 100 | 0.15 | -0.1193 | 0.3149 | 0.0215 | -44.33 | 12.62 | 0.969 |
-| ms_vol | 8.2 | 200 | 0.15 | -0.1042 | 0.3265 | 0.0248 | -46.5 | 12.98 | 0.9737 |
-| ms_vol_jump | 8.2 | 100 | 0.15 | -0.0281 | 0.3304 | 0.0418 | -44.48 | 12.15 | 0.9782 |
-| ms_vol_jump | 8.2 | 200 | 0.15 | 0.0046 | 0.3395 | 0.0514 | -48.49 | 11.91 | 0.9923 |
-| ms_drift | 8.2 | 100 | 0.15 | 0.0381 | 0.3227 | 0.0634 | -45.28 | 12.06 | 0.9826 |
-| ms_drift | 8.2 | 200 | 0.15 | 0.0697 | 0.3317 | 0.0757 | -48.42 | 12.66 | 0.9853 |
+## S3. Calibracion del nulo (GBM sin habilidad) - criterio v1.2 completo
+| metrica | valor | lectura |
+|---|---|---|
+| E[DmaxDD vol-matched] | 4.42 pp | debe ser ~0 (identidad) |
+| E[DmaxDD exposure-matched] (diagnostico) | 17.16 pp | sesgo de Jensen: NO es criterio |
+| E[DmaxDD vs B&H crudo] | -40.24 pp | efecto exposicion, no skill |
+| p medio de permutacion | 0.5198 | ~0.5 = uniforme |
+| FPR P(p<0.05) | 0.066 | <= 0.05 nominal |
+| FPR regla compuesta | 0.066 | <= 0.05 nominal |
+| turnover/ano, sangria costes | 6.57x, 0.854 %/ano | con banda 10 pp |
 
-## T3b. Monte Carlo H1 v1.1 - benchmark PRIMARIO: B&H matched-exposure
-Regla compuesta: mejora de maxDD en el in-sample completo Y en >=2 de 3 subperiodos.
-| dgp | anios | ventana | mu_ann | E[DSharpe_m] | sd | pot(DSharpe_m>0) | E[DmaxDD_m] pp | sd pp | pot(mejora DD_m) | P(full) | P(>=2/3) | P(compuesta) |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gbm | 3.3 | 100 | 0.15 | -0.1776 | 0.4388 | 0.0202 | 11.56 | 10.58 | 0.0031 | - | - | - |
-| gbm | 3.3 | 100 | 0.4 | -0.2648 | 0.4306 | 0.0119 | 10.98 | 10.29 | 0.0033 | - | - | - |
-| gbm | 3.3 | 200 | 0.15 | -0.205 | 0.47 | 0.0187 | 11.89 | 10.32 | 0.0026 | - | - | - |
-| gbm | 3.3 | 200 | 0.4 | -0.3025 | 0.4417 | 0.0099 | 11.53 | 10.26 | 0.0028 | - | - | - |
-| gbm | 8.2 | 100 | 0.15 | -0.1629 | 0.2749 | 0.0126 | 16.06 | 12.93 | 0.0019 | 0.0967 | 0.0567 | 0.0225 |
-| gbm | 8.2 | 100 | 0.4 | -0.219 | 0.2656 | 0.0068 | 14.09 | 12.54 | 0.0028 | 0.1233 | 0.0667 | 0.0333 |
-| gbm | 8.2 | 200 | 0.15 | -0.1565 | 0.3009 | 0.0152 | 16.92 | 13.68 | 0.002 | 0.1033 | 0.0625 | 0.0208 |
-| gbm | 8.2 | 200 | 0.4 | -0.2376 | 0.2672 | 0.0056 | 15.43 | 13.04 | 0.0023 | 0.1092 | 0.0617 | 0.0308 |
-| ms_vol | 8.2 | 100 | 0.15 | -0.1193 | 0.3149 | 0.0215 | 7.58 | 15.31 | 0.0162 | 0.3175 | 0.2567 | 0.1675 |
-| ms_vol | 8.2 | 200 | 0.15 | -0.1042 | 0.3265 | 0.0248 | 8.27 | 15.67 | 0.0149 | 0.3092 | 0.2442 | 0.1617 |
-| ms_vol_jump | 8.2 | 100 | 0.15 | -0.0281 | 0.3304 | 0.0418 | 6.42 | 15.66 | 0.02 | 0.3383 | 0.275 | 0.1892 |
-| ms_vol_jump | 8.2 | 200 | 0.15 | 0.0046 | 0.3395 | 0.0514 | 6.88 | 16.13 | 0.0192 | 0.3383 | 0.2233 | 0.1608 |
-| ms_drift | 8.2 | 100 | 0.15 | 0.0381 | 0.3227 | 0.0634 | 10.4 | 13.29 | 0.0076 | 0.2292 | 0.1183 | 0.0725 |
-| ms_drift | 8.2 | 200 | 0.15 | 0.0697 | 0.3317 | 0.0757 | 10.11 | 13.95 | 0.0089 | 0.2467 | 0.115 | 0.07 |
+## S4. Habilidad plantada (drift AR(1) calibrado) - potencia REAL por efecto
+### S4a. Calibracion
+| ventana | objetivo DSharpe | s_mu diario | logrado (cal) |
+|---|---|---|---|
+| 100 | 0.1 | 0.0001671 | 0.1298 |
+| 100 | 0.3 | 0.00024911 | 0.3376 |
+| 100 | 0.5 | 0.00031601 | 0.5685 |
+| 200 | 0.1 | 0.00015349 | 0.1372 |
+| 200 | 0.3 | 0.00021931 | 0.2999 |
+| 200 | 0.5 | 0.00029777 | 0.5127 |
 
-## T4. H2 momentum transversal (spread semanal)
-| n semanas | sigma semanal | rho | MDE semanal | MDE anualizado |
+### S4b. Potencia del criterio v1.2 (permutacion + subperiodos)
+| ventana | DSharpe obj | DSharpe logrado | pot. perm p<0.05 | pot. (p<.05 y D<0) | P(>=2/3 subp.) | pot. REGLA COMPUESTA | E[DmaxDD_vm] pp |
+|---|---|---|---|---|---|---|---|
+| 100 | 0.1 | 0.1129 | 0.1725 | 0.1725 | 0.6475 | 0.165 | -6.99 |
+| 100 | 0.3 | 0.3115 | 0.28 | 0.28 | 0.7525 | 0.265 | -14.38 |
+| 100 | 0.5 | 0.4967 | 0.4025 | 0.4025 | 0.8525 | 0.39 | -20.48 |
+| 200 | 0.1 | 0.1151 | 0.1875 | 0.1875 | 0.625 | 0.175 | -6.76 |
+| 200 | 0.3 | 0.2794 | 0.245 | 0.245 | 0.7275 | 0.235 | -13.11 |
+| 200 | 0.5 | 0.4961 | 0.4325 | 0.4325 | 0.8275 | 0.415 | -20.6 |
+
+## S6. Sensibilidad de la banda de rebalanceo (ventana 200)
+| dgp | banda | turnover/ano | sangria %/ano | E[DmaxDD_vm] pp | E[DSharpe] |
+|---|---|---|---|---|---|
+| gbm | 0.0 | 8.19 | 1.064 | 4.32 | -0.1614 |
+| gbm | 0.02 | 7.65 | 0.994 | 4.19 | -0.1574 |
+| gbm | 0.05 | 7.05 | 0.916 | 4.07 | -0.1528 |
+| gbm | 0.1 | 6.57 | 0.855 | 4.05 | -0.1488 |
+| gbm | 0.2 | 6.14 | 0.798 | 3.89 | -0.1444 |
+| ms_vol_jump | 0.0 | 7.84 | 1.019 | -0.29 | 0.0112 |
+| ms_vol_jump | 0.02 | 7.44 | 0.968 | -0.38 | 0.0143 |
+| ms_vol_jump | 0.05 | 6.98 | 0.908 | -0.47 | 0.0164 |
+| ms_vol_jump | 0.1 | 6.54 | 0.851 | -0.57 | 0.0185 |
+| ms_vol_jump | 0.2 | 6.14 | 0.798 | -0.73 | 0.019 |
+
+## S7. H2 momentum transversal (spread semanal)
+| n sem | sigma sem | rho | MDE sem | MDE anual |
 |---|---|---|---|---|
 | 354 | 0.03 | 0.0 | 0.00396 | 0.206 |
 | 354 | 0.03 | 0.15 | 0.00461 | 0.2396 |
@@ -92,15 +101,15 @@ Regla compuesta: mejora de maxDD en el in-sample completo Y en >=2 de 3 subperio
 | 354 | 0.05 | 0.0 | 0.0066 | 0.3433 |
 | 354 | 0.05 | 0.15 | 0.00768 | 0.3993 |
 
-### T4b. Anios necesarios (sigma 4%/sem, rho 0.15)
-| mu semanal objetivo | anios |
+### S7b. Anios necesarios (sigma 4%/sem, rho 0.15)
+| mu semanal | anios |
 |---|---|
 | 0.001 | 257.4 |
 | 0.002 | 64.3 |
 | 0.004 | 16.1 |
 
-## T5. H3 carry delta-neutral (P&L neto diario)
-| n dias | sigma diario | rho | MDE diario | MDE anualizado |
+## S8. H3 carry delta-neutral (neto diario)
+| n dias | sigma dia | rho | MDE diario | MDE anual |
 |---|---|---|---|---|
 | 2237 | 0.0005 | 0.0 | 2.63e-05 | 0.0096 |
 | 2237 | 0.0005 | 0.1 | 2.91e-05 | 0.0106 |
@@ -109,15 +118,15 @@ Regla compuesta: mejora de maxDD en el in-sample completo Y en >=2 de 3 subperio
 | 2237 | 0.002 | 0.0 | 0.0001051 | 0.0384 |
 | 2237 | 0.002 | 0.1 | 0.0001162 | 0.0424 |
 
-### T5b. Anios necesarios (sigma 10 bps/dia, rho 0.10)
-| mu anualizado objetivo | anios |
+### S8b. Anios necesarios (sigma 10 pb/dia, rho 0.10)
+| mu anual | anios |
 |---|---|
 | 0.01 | 27.58 |
 | 0.02 | 6.9 |
 | 0.04 | 1.72 |
 
-## T6. Discriminar tasas de acierto (WR)
-| WR nulo | WR alternativo | n trades necesario |
+## S9. Discriminar tasas de acierto
+| WR nulo | WR alt | n trades |
 |---|---|---|
 | 0.4 | 0.42 | 3729 |
 | 0.4 | 0.45 | 600 |
