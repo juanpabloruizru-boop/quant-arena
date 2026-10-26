@@ -1,0 +1,6 @@
+# Prueba de push a remoto (2026-10-26)
+# Remoto-bare local /tmp/qa-ci-mirror.git (temporal): main+tags viajaron limpios.
+# Para CI real en GitHub Actions hace falta un remoto proporcionado por el usuario:
+#   git remote add origin <URL_GITHUB>
+#   git push -u origin main --tags
+# (URL/credenciales: decision del usuario; ver informe M0b)
