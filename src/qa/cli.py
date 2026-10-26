@@ -106,8 +106,29 @@ def research_run(
 
 @stats_app.command("report")
 def stats_report() -> None:
-    """Informe estadistico agregado desde el ledger de trials."""
-    _todo("M2")
+    """Informe agregado desde el ledger de trials (M2: registros y n_trials)."""
+    import json as _json
+
+    from qa.backtest.trials import TrialLedger
+    from qa.data.paths import get_root
+
+    root = get_root()
+    ledger_path = root / "ledger" / "trials.duckdb"
+    if not ledger_path.exists():
+        typer.echo("Ledger de trials vacio (todavia no se ha ejecutado ningun backtest).")
+        raise typer.Exit(code=0)
+    led = TrialLedger(root)
+    rows = led.all_trials()
+    typer.echo(f"trials registrados: {len(rows)}")
+    for h in ("H1", "H2", "H3"):
+        typer.echo(f"  n_trials[{h}] (kind=strategy): {led.n_trials(h)}")
+    for r in rows[-10:]:
+        m = _json.loads(r["metrics"]) if r["metrics"] else {}
+        typer.echo(
+            f"  {r['ts_utc']} {r['hypothesis']}/{r['cell_id']}/{r['asset']} "
+            f"[{r['kind']}] sharpe={m.get('sharpe_ann')} mdd={m.get('max_drawdown')}"
+        )
+    led.close()
 
 
 @forward_app.command("run")

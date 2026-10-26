@@ -20,13 +20,19 @@ def test_version() -> None:
 def test_cli_stubs_exit_not_implemented() -> None:
     for args in (
         ["research", "run", "--hypothesis", "H1"],
-        ["stats", "report"],
         ["forward", "run"],
         ["report", "daily"],
     ):
         result = runner.invoke(app, args)
         assert result.exit_code == NOT_IMPLEMENTED_EXIT, args
         assert "NO IMPLEMENTADO" in result.stdout
+
+
+def test_cli_stats_report_ledger_vacio(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("QA_ROOT", str(tmp_path))
+    result = runner.invoke(app, ["stats", "report"])
+    assert result.exit_code == 0
+    assert "Ledger de trials vacio" in result.stdout
 
 
 def test_cli_data_verify_ok_con_manifiestos_vacios(
