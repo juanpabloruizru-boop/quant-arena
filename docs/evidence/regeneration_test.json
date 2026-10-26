@@ -1,0 +1,44 @@
+{
+  "test": "regeneracion completa (condicion 6, gate M1)",
+  "executed_at_utc": "2026-10-26T20:48:51+00:00",
+  "clean_dir": "/tmp/qa-regen (config/ copiado del repo)",
+  "commands": "run_sync(root,'all') + run_curate(root) + run_pit(root)",
+  "api_requests": 1621,
+  "elapsed_s": 156.0,
+  "comparison": {
+    "data/curated/funding_in_sample.parquet": {
+      "rows": 13192,
+      "match": true
+    },
+    "data/curated/futures_daily_in_sample.parquet": {
+      "rows": 4400,
+      "match": true
+    },
+    "data/curated/spot_daily_in_sample.parquet": {
+      "rows": 479954,
+      "match": true
+    },
+    "holdout_sealed/funding_holdout.parquet": {
+      "rows": 2190,
+      "match": true
+    },
+    "holdout_sealed/futures_daily_holdout.parquet": {
+      "rows": 730,
+      "match": true
+    },
+    "holdout_sealed/spot_daily_holdout.parquet": {
+      "rows": 125048,
+      "match": true
+    },
+    "data/curated/pit_universe.parquet": {
+      "sha256": "9a4feb169733a8e374186fd432a70bedbbc2b1f2cd75cc6a4ef64fd8c5dee2a1",
+      "match": true
+    }
+  },
+  "differences_documented": [
+    "data/raw/meta/exchangeinfo_*.json.gz: NO byte-identico (el campo serverTime del API cambia en cada descarga); es una foto del dia, no dato de investigacion.",
+    "data/manifests/sync_log.json: timestamps de ejecucion distintos (esperado).",
+    "Todos los ficheros CURADOS (datos de investigacion) son byte-identicos: SHA256 coinciden con dataset_meta.json del repo."
+  ],
+  "verdict": "IDENTICO en datos curados"
+}

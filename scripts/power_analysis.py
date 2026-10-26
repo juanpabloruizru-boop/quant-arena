@@ -51,6 +51,7 @@ from qa.stats.benchmarks import (
     circular_block_permutations,
     permutation_delta_stats,
     permutation_pvalue,
+    random_rotations,
 )
 
 SEED = 20261026
@@ -77,6 +78,7 @@ SUB_B2 = (datetime(2023, 1, 1) - datetime(2017, 8, 17)).days  # fin SP2
 COST_PER_SIDE = 0.0013  # taker 0.10% (verificado) + slippage 3 pb (asuncion)
 BAND_FROZEN = 0.10
 PERM_BLOCK = 20
+PERM_THRESH = 0.025  # t* calibrado en el nulo sintetico (5000 sims, FPR 4.36%<=5%)
 AR1_PHI = 0.995  # media-vida ~139 dias: regimenes persistentes de drift
 
 
@@ -285,12 +287,86 @@ class H1Agg:
     sd_d_maxdd_volmatched_pp: float
     power_dd_vm_z: float
     mean_p_perm: float | None
-    fpr_perm_p05: float | None  # P(p<0.05) - bajo nulo es el FPR; bajo habilidad, potencia
+    fpr_perm_p05: float | None  # P(p<t*) - bajo nulo es el FPR; bajo habilidad, potencia
     power_perm_signed: float | None  # P(p<0.05 y Delta_vm<0)
     frac_subperiods_ge2of3: float | None
     power_composite: float | None  # P(p<0.05 y Delta_vm<0 y >=2/3 subperiodos)
     turnover_per_year: float
     cost_drag_pct_year: float
+    null_scheme: str = "block20"
+
+
+def _simulate_chunk(
+    *,
+    dgp: str,
+    t_days: int,
+    window: int,
+    sigma_obj: float,
+    band: float,
+    cost_per_side: float,
+    n_sims: int,
+    seed: int,
+    perm_offset: int,
+    mu_ann: float,
+    sigma_ann: float,
+    s_mu: float,
+    n_perm: int,
+    null_scheme: str,
+) -> dict[str, Any]:
+    rng = np.random.default_rng(seed)
+    r = _gen_returns(dgp, rng, n_sims, t_days + 1, mu_ann, sigma_ann, s_mu)
+    pos = _positions(r[:, 1:], window, sigma_obj, band)
+
+    bh = r[:, 1:]
+    gross = pos * bh
+    turnover = np.abs(np.diff(pos, axis=1, prepend=np.zeros((n_sims, 1))))
+    strat = gross - turnover * cost_per_side
+
+    d_sharpe_raw = np.nan_to_num(_sharpe_rows(strat) - _sharpe_rows(bh))
+    dd_strat = _maxdd_rows(strat)
+    d_raw = dd_strat - _maxdd_rows(bh)
+
+    sd_bh = np.std(bh, axis=1, ddof=1)
+    sd_strat = np.std(strat, axis=1, ddof=1)
+    f_vm = np.where(sd_bh > 1e-15, sd_strat / sd_bh, 1.0)
+    d_vm = dd_strat - _maxdd_rows(f_vm[:, None] * bh)
+    e_bar = np.mean(pos, axis=1)
+    d_em = dd_strat - _maxdd_rows(e_bar[:, None] * bh)
+
+    sub_ok: NDArray[np.bool_] | None = None
+    if t_days >= SUB_B2 + 120:
+        sub_ok = np.zeros((n_sims, 3), dtype=bool)
+        for j, (a, b) in enumerate(((0, SUB_B1), (SUB_B1, SUB_B2), (SUB_B2, t_days))):
+            sd_b = np.std(bh[:, a:b], axis=1, ddof=1)
+            sd_s = np.std(strat[:, a:b], axis=1, ddof=1)
+            f_sp = np.where(sd_b > 1e-15, sd_s / sd_b, 1.0)
+            sub_ok[:, j] = (
+                _maxdd_rows(strat[:, a:b]) - _maxdd_rows(f_sp[:, None] * bh[:, a:b])
+            ) < 0
+
+    p_perm: F64 | None = None
+    if n_perm > 0:
+        p_perm = np.empty(n_sims)
+        for i in range(n_sims):
+            if null_scheme == "rotation":
+                perms = random_rotations(pos[i], n_perm, seed=PERM_SEED + perm_offset + i)
+            else:
+                perms = circular_block_permutations(
+                    pos[i], PERM_BLOCK, n_perm, seed=PERM_SEED + perm_offset + i
+                )
+            d_p, _ = permutation_delta_stats(perms, bh[i], cost_per_side)
+            p_perm[i] = permutation_pvalue(d_vm[i], d_p)
+
+    return {
+        "d_sharpe_raw": d_sharpe_raw,
+        "d_raw": d_raw,
+        "d_vm": d_vm,
+        "d_em": d_em,
+        "sub_ok": sub_ok,
+        "p_perm": p_perm,
+        "turnover_sum": turnover.sum(axis=1),
+        "cost_sum": (turnover * cost_per_side).sum(axis=1),
+    }
 
 
 def simulate_h1_v12(
@@ -307,62 +383,75 @@ def simulate_h1_v12(
     sigma_ann: float = 0.60,
     s_mu: float = 0.0,
     n_perm: int = 0,
+    null_scheme: str = "block20",
     target_d_sharpe: float | None = None,
+    max_chunk: int = 500,
 ) -> H1Agg:
-    rng = np.random.default_rng(seed)
+    """Simula H1 por chunks de memoria acotada; semillas por simulacion globales."""
     t_days = int(round(years * DAYS_PER_YEAR))
-    r = _gen_returns(dgp, rng, n_sims, t_days + 1, mu_ann, sigma_ann, s_mu)
-    pos = _positions(r[:, 1:], window, sigma_obj, band)  # alineado con bh
+    acc: dict[str, list[Any]] = {
+        k: []
+        for k in (
+            "d_sharpe_raw",
+            "d_raw",
+            "d_vm",
+            "d_em",
+            "sub_ok",
+            "p_perm",
+            "turnover_sum",
+            "cost_sum",
+        )
+    }
+    done = 0
+    chunk_idx = 0
+    while done < n_sims:
+        m = min(max_chunk, n_sims - done)
+        part = _simulate_chunk(
+            dgp=dgp,
+            t_days=t_days,
+            window=window,
+            sigma_obj=sigma_obj,
+            band=band,
+            cost_per_side=cost_per_side,
+            n_sims=m,
+            seed=seed + 10_007 * chunk_idx,
+            perm_offset=done,
+            mu_ann=mu_ann,
+            sigma_ann=sigma_ann,
+            s_mu=s_mu,
+            n_perm=n_perm,
+            null_scheme=null_scheme,
+        )
+        for k, v in part.items():
+            if v is not None:
+                acc[k].append(v)
+        done += m
+        chunk_idx += 1
 
-    bh = r[:, 1:]
-    gross = pos * bh
-    turnover = np.abs(np.diff(pos, axis=1, prepend=np.zeros((n_sims, 1))))
-    strat = gross - turnover * cost_per_side
+    d_sharpe_raw = np.concatenate(acc["d_sharpe_raw"])
+    d_raw = np.concatenate(acc["d_raw"])
+    d_vm = np.concatenate(acc["d_vm"])
+    d_em = np.concatenate(acc["d_em"])
+    turnover_sum = np.concatenate(acc["turnover_sum"])
+    cost_sum = np.concatenate(acc["cost_sum"])
+    sub_ok = np.concatenate(acc["sub_ok"]) if acc["sub_ok"] else None
+    p_perm = np.concatenate(acc["p_perm"]) if acc["p_perm"] else None
 
-    d_sharpe_raw = _sharpe_rows(strat) - _sharpe_rows(bh)
-    d_sharpe_raw = np.nan_to_num(d_sharpe_raw)
-
-    dd_strat = _maxdd_rows(strat)
-    dd_bh = _maxdd_rows(bh)
-    d_raw = dd_strat - dd_bh
-
-    sd_bh = np.std(bh, axis=1, ddof=1)
-    sd_strat = np.std(strat, axis=1, ddof=1)
-    f_vm = np.where(sd_bh > 1e-15, sd_strat / sd_bh, 1.0)
-    d_vm = dd_strat - _maxdd_rows(f_vm[:, None] * bh)
-
-    e_bar = np.mean(pos, axis=1)
-    d_em = dd_strat - _maxdd_rows(e_bar[:, None] * bh)
-
+    m_sr = float(d_sharpe_raw.mean())
     m_raw, s_raw = float(d_raw.mean()), float(d_raw.std(ddof=1))
-    power_raw = NORM.cdf(-Z_ALPHA - m_raw / s_raw) if s_raw > 0 else 0.0
     m_vm, s_vm = float(d_vm.mean()), float(d_vm.std(ddof=1))
+    power_raw = NORM.cdf(-Z_ALPHA - m_raw / s_raw) if s_raw > 0 else 0.0
     power_vm = NORM.cdf(-Z_ALPHA - m_vm / s_vm) if s_vm > 0 else 0.0
 
-    # Subperiodos (solo en el horizonte real de H1)
-    sub_ok: NDArray[np.bool_] | None = None
-    if t_days >= SUB_B2 + 120:
-        sub_ok = np.zeros((n_sims, 3), dtype=bool)
-        for j, (a, b) in enumerate(((0, SUB_B1), (SUB_B1, SUB_B2), (SUB_B2, t_days))):
-            sd_b = np.std(bh[:, a:b], axis=1, ddof=1)
-            sd_s = np.std(strat[:, a:b], axis=1, ddof=1)
-            f_sp = np.where(sd_b > 1e-15, sd_s / sd_b, 1.0)
-            sub_ok[:, j] = (
-                _maxdd_rows(strat[:, a:b]) - _maxdd_rows(f_sp[:, None] * bh[:, a:b])
-            ) < 0
-
-    # Permutaciones (p-valor por trayectoria)
-    p_perm: F64 | None = None
-    if n_perm > 0:
-        p_perm = np.empty(n_sims)
-        for i in range(n_sims):
-            perms = circular_block_permutations(pos[i], PERM_BLOCK, n_perm, seed=PERM_SEED + i)
-            d_p, _ = permutation_delta_stats(perms, bh[i], cost_per_side)
-            p_perm[i] = permutation_pvalue(d_vm[i], d_p)
-
+    frac_sub23: float | None = None
+    if sub_ok is not None:
+        frac_sub23 = round(float((sub_ok.sum(axis=1) >= 2).mean()), 4)
     composite: NDArray[np.bool_] | None = None
     if p_perm is not None and sub_ok is not None:
-        composite = (p_perm < 0.05) & (d_vm < 0) & (sub_ok.sum(axis=1) >= 2)
+        composite = (p_perm < PERM_THRESH) & (d_vm < 0) & (sub_ok.sum(axis=1) >= 2)
+
+    def _rnd(x: float, nd: int) -> float | None:
+        return None if math.isnan(x) else round(x, nd)
 
     return H1Agg(
         dgp=dgp,
@@ -372,7 +461,7 @@ def simulate_h1_v12(
         s_mu=None if s_mu == 0 else round(s_mu, 8),
         n_sims=n_sims,
         n_perm=n_perm,
-        mean_d_sharpe_raw=round(float(d_sharpe_raw.mean()), 4),
+        mean_d_sharpe_raw=round(m_sr, 4),
         mean_d_maxdd_raw_pp=round(m_raw * 100, 2),
         power_dd_raw_z=round(power_raw, 4),
         mean_d_maxdd_expmatched_pp=round(float(d_em.mean()) * 100, 2),
@@ -380,18 +469,17 @@ def simulate_h1_v12(
         sd_d_maxdd_volmatched_pp=round(s_vm * 100, 2),
         power_dd_vm_z=round(power_vm, 4),
         mean_p_perm=None if p_perm is None else round(float(p_perm.mean()), 4),
-        fpr_perm_p05=None if p_perm is None else round(float((p_perm < 0.05).mean()), 4),
+        fpr_perm_p05=None if p_perm is None else round(float((p_perm < PERM_THRESH).mean()), 4),
         power_perm_signed=(
-            None if p_perm is None else round(float(((p_perm < 0.05) & (d_vm < 0)).mean()), 4)
+            None
+            if p_perm is None
+            else round(float(((p_perm < PERM_THRESH) & (d_vm < 0)).mean()), 4)
         ),
-        frac_subperiods_ge2of3=(
-            None if sub_ok is None else round(float((sub_ok.sum(axis=1) >= 2).mean()), 4)
-        ),
+        frac_subperiods_ge2of3=frac_sub23,
         power_composite=None if composite is None else round(float(composite.mean()), 4),
-        turnover_per_year=round(float(turnover.sum(axis=1).mean()) / years, 2),
-        cost_drag_pct_year=round(
-            float((turnover * cost_per_side).sum(axis=1).mean()) / years * 100, 3
-        ),
+        turnover_per_year=round(float(turnover_sum.mean()) / years, 2),
+        cost_drag_pct_year=round(float(cost_sum.mean()) / years * 100, 3),
+        null_scheme=null_scheme,
     )
 
 
@@ -435,7 +523,8 @@ def calibrate_ar1(
 # ---------------------------------------------------------------------------
 def build_results() -> dict[str, Any]:
     res: dict[str, Any] = {
-        "version": "1.2",
+        "version": "1.3",
+        "perm_threshold": PERM_THRESH,
         "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "seed": SEED,
         "alpha_one_sided": 0.05,
@@ -610,7 +699,7 @@ def build_results() -> dict[str, Any]:
 def render_md(res: dict[str, Any]) -> str:
     out: list[str] = []
     a = out.append
-    a("# Analisis de potencia v1.2 - M0c/M1 (QUANT-ARENA v2)")
+    a("# Analisis de potencia v1.3 - (QUANT-ARENA v2)")
     a("")
     a(
         f"- Generado: {res['generated_at_utc']} | semilla: {res['seed']} | "
@@ -656,7 +745,7 @@ def render_md(res: dict[str, Any]) -> str:
     )
     a(f"| E[DmaxDD vs B&H crudo] | {n['mean_d_maxdd_raw_pp']} pp | efecto exposicion, no skill |")
     a(f"| p medio de permutacion | {n['mean_p_perm']} | ~0.5 = uniforme |")
-    a(f"| FPR P(p<0.05) | {n['fpr_perm_p05']} | <= 0.05 nominal |")
+    a(f"| FPR P(p<t*=0.025) | {n['fpr_perm_p05']} | nivel calibrado: FPR sintetico <=5% |")
     a(f"| FPR regla compuesta | {n['power_composite']} | <= 0.05 nominal |")
     a(
         f"| turnover/ano, sangria costes | {n['turnover_per_year']}x, "
@@ -675,7 +764,7 @@ def render_md(res: dict[str, Any]) -> str:
     a("")
     a("### S4b. Potencia del criterio v1.2 (permutacion + subperiodos)")
     a(
-        "| ventana | DSharpe obj | DSharpe logrado | pot. perm p<0.05 | pot. (p<.05 y D<0) | "
+        "| ventana | DSharpe obj | DSharpe logrado | pot. perm p<t* | pot. (p<t* y D<0) | "
         "P(>=2/3 subp.) | pot. REGLA COMPUESTA | E[DmaxDD_vm] pp |"
     )
     a("|---|---|---|---|---|---|---|---|")
@@ -740,7 +829,7 @@ def main() -> None:
     OUT_MD.parent.mkdir(parents=True, exist_ok=True)
     OUT_MD.write_text(render_md(res), encoding="utf-8")
     OUT_JSON.write_text(json.dumps(res, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"power analysis v1.2 -> {OUT_MD}")
+    print(f"power analysis v1.3 -> {OUT_MD}")
     print(f"                    -> {OUT_JSON}")
 
 

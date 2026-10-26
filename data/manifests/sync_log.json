@@ -1,11 +1,22 @@
 {
-  "api_requests": 1,
-  "elapsed_s": 0.3,
-  "finished_utc": "2026-10-26T19:44:05+00:00",
+  "api_requests": 715,
+  "elapsed_s": 66.5,
+  "finished_utc": "2026-10-26T20:15:17+00:00",
   "freeze_end_ms": 1792972799999,
   "freeze_end_utc": "2026-10-25T23:59:59.999000+00:00",
-  "funding": "ok+crosscheck",
-  "last_used_weight_1m": 0,
-  "phases_requested": "funding",
-  "started_utc": "2026-10-26T19:44:05+00:00"
+  "last_used_weight_1m": 246,
+  "monthly": {
+    "downloaded_now": 702,
+    "eligible": 702,
+    "vision_extra": [
+      "NBTUSDT"
+    ]
+  },
+  "monthly_progress": "700/702",
+  "phases_requested": "monthly,pool",
+  "pool": {
+    "monthly_universe": 689,
+    "n_pool": 485
+  },
+  "started_utc": "2026-10-26T20:14:11+00:00"
 }

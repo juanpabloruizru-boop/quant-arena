@@ -1,9 +1,9 @@
-# Rejilla pre-registrada de hipotesis (v1.2). Espejo legible por maquina de
+# Rejilla pre-registrada de hipotesis (v1.3). Espejo legible por maquina de
 # docs/PREREGISTRO.md. NORMA: el texto de PREREGISTRO.md manda; si hay divergencia,
 # bug. Cambiar esta rejilla tras ver resultados = nueva version del preregistro
 # y n_trials += celdas nuevas. Prohibido anadir/quitar celdas en M3.
 
-version: "1.2"
+version: "1.3"
 registered_at_utc: "2026-10-26"
 max_families: 3
 
@@ -65,14 +65,17 @@ hypotheses:
       formula: "r_bh_vm[t] = f * r_activo[t]; f = sigma(estrategia neta)/sigma(activo), ex-post DENTRO del periodo de evaluacion; solo para benchmark"
       diagnostics: [exposure_matched_bh, buy_hold_crudo, cash]
       note_jensen: "exposure_matched (e_bar constante) tiene sesgo sistematico contra exposicion variable bajo el nulo (+17pp medidos): SOLO diagnostico"
-    permutation_null:           # v1.1: nulo de timing con exposicion preservada
-      type: circular_block
+    permutation_null:           # v1.3: nivel critico calibrado en nulo sintetico
+      type: circular_block      # bloques circulares 20d; rotacion completa descartada (FPR 2.8%, potencia 6.8%)
       block_days: 20
-      n_permutations: 10000
+      n_permutations: 10000     # 199 en simulaciones de potencia (documentado)
       seed: 20261026
+      critical_level_t_star: 0.025   # FPR sintetico 4.36% <= 5% (5000 sims); a 0.05 daba 6.68%
+      decision_statistic: p_valor_permutado   # NO el delta_maxDD puntual (E[+4pp] bajo nulo)
     co_metrics: [ulcer_index, calmar, time_underwater]   # v1.1 (condicion 2)
     subperiods_utc: ["2017-08-17/2019-12-31", "2020-01-01/2022-12-31", "2023-01-01/fin_in_sample"]
-    composite_rule: "p_perm<0.05 Y delta_maxDD_volmatched<0 en in-sample completo Y delta_maxDD_volmatched<0 (f por subperiodo) en >=2 de 3 subperiodos, por activo (BTC y ETH)"
+    composite_rule: "p_perm<=0.025 Y delta_maxDD_volmatched<0 en in-sample completo Y delta_maxDD_volmatched<0 (f por subperiodo) en >=2 de 3 subperiodos, por activo (BTC y ETH)"
+    fwer_pipeline_simulated: 0.005   # 200 mundos nulos, 24 candidatas, compuesta Y RC (reports/M0_h1_fwer.md)
     verdict_policy_power: "potencia <50% para todo efecto plantado <=0.5 (potencia v1.2 s9.4): si el test no rechaza, veredicto por defecto INCONTRASTABLE; NO PASA solo con p_adverso<0.05, o holdout opuesto en ambos activos, o C4/C5 claramente en contra"
     grid:
       signal_variant: [sma, ret]        # 2 variantes (decision de interpretacion: ver ADR/PREREGISTRO)
@@ -101,7 +104,13 @@ hypotheses:
     primary_metric: sharpe_ann_net_vs_universe_equal_weight
     benchmark: [universe_equal_weight, cash]
     data_start_expected: "2019-01 (profundidad de altcoins liquidas; verificar en M1)"
-    thin_universe_note: "v1.1 (P2): pre-2019 el universo PIT es fino; esos meses quedan excluidos de H2 y M1 documenta candidatos efectivos por mes"
+    thin_universe_note: "v1.1 (P2): pre-2019 el universo PIT es fino; M1 confirmo primer mes con >=20 candidatos: 2019-04"
+    data_hygiene:
+      policy: mark_only          # v1.3: el guard MARCA, nunca borra
+      adjudication_table: config/adjudications.csv   # sellada en v1.3
+      real_move: "se conserva INTEGRO (borrar crashes reales favorece a long-only)"
+      corporate_action: "ruptura de serie: exclusion del ranking PIT 30 dias + ventanas de formacion que crucen la ruptura invalidan al simbolo ese rebalanceo (slot a caja); sin imputacion"
+      delisting_convention: last_observed_price
 
   H3:
     family: carry_spot_perp_delta_neutral

@@ -25,6 +25,11 @@ def curated_dir(root: Path | None = None) -> Path:
     return (root or get_root()) / "data" / "curated"
 
 
+def holdout_sealed_dir(root: Path | None = None) -> Path:
+    """Holdout sellado: FUERA de data/ por defecto (condicion gate M1/M2)."""
+    return (root or get_root()) / "holdout_sealed"
+
+
 def manifests_dir(root: Path | None = None) -> Path:
     return (root or get_root()) / "data" / "manifests"
 

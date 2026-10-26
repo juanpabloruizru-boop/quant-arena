@@ -6,35 +6,35 @@
     "spot_daily": 0
   },
   "files": {
-    "data/curated/funding_holdout.parquet": {
-      "bytes": 49809,
-      "rows": 2190,
-      "sha256": "ffd2de9cbfb1b56eb5df91f2cd7c0a347f9022ff6ab84facc00ca36ddfc70086"
-    },
     "data/curated/funding_in_sample.parquet": {
       "bytes": 181867,
       "rows": 13192,
       "sha256": "a098f215aeb2245e3b6e5b893827ff3cea55d3a547edf29e82807036cce80940"
-    },
-    "data/curated/futures_daily_holdout.parquet": {
-      "bytes": 64154,
-      "rows": 730,
-      "sha256": "7fcc06265f5d799c40880f5f5173ba05f38b1ee26293fabaa915c9dda4e82e06"
     },
     "data/curated/futures_daily_in_sample.parquet": {
       "bytes": 353123,
       "rows": 4400,
       "sha256": "fd1c5142bd37c612bbd544609c60a84a29c96a92acb953194dc1bdafee5ee14e"
     },
-    "data/curated/spot_daily_holdout.parquet": {
-      "bytes": 7026480,
-      "rows": 125123,
-      "sha256": "61a5b723297be7fb217ad3447aa8975bbc6e138abe6b7cb2f36db28138bcd506"
-    },
     "data/curated/spot_daily_in_sample.parquet": {
       "bytes": 24820296,
       "rows": 479954,
       "sha256": "b7d888173ea01975bfd086ff9561bfa035a961b831a6491da299475138404946"
+    },
+    "holdout_sealed/funding_holdout.parquet": {
+      "bytes": 49809,
+      "rows": 2190,
+      "sha256": "ffd2de9cbfb1b56eb5df91f2cd7c0a347f9022ff6ab84facc00ca36ddfc70086"
+    },
+    "holdout_sealed/futures_daily_holdout.parquet": {
+      "bytes": 64154,
+      "rows": 730,
+      "sha256": "7fcc06265f5d799c40880f5f5173ba05f38b1ee26293fabaa915c9dda4e82e06"
+    },
+    "holdout_sealed/spot_daily_holdout.parquet": {
+      "bytes": 7023144,
+      "rows": 125048,
+      "sha256": "8c8218ba5da477154aef145a140d8af05bf197146196c0140e81c03ae8782951"
     }
   },
   "holdout_days": 365,

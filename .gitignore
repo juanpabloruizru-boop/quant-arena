@@ -19,6 +19,9 @@ data/curated/*
 !data/curated/.gitkeep
 !data/manifests/
 
+# Holdout sellado (fuera de data/ por diseño; NUNCA versionar)
+holdout_sealed/
+
 # Ledgers binarios (integridad por cadena de hashes + snapshots, ver ADR y M4)
 ledger/*.duckdb
 ledger/*.duckdb.wal

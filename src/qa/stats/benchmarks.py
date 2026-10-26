@@ -132,6 +132,23 @@ def permutation_delta_stats(
     return dd_strat - dd_bench, sharpe
 
 
+def random_rotations(positions: F64, n_perm: int, seed: int) -> NDArray[np.float64]:
+    """(n_perm, L) rotaciones circulares completas del vector de posiciones.
+
+    Preserva EXACTAMENTE la autocorrelacion de la exposicion (la serie se
+    desplaza en bloque, con wrap-around); destruye solo su alineacion con los
+    retornos. Alternativa a la permutacion por bloques, que rompe la
+    persistencia larga de exposiciones tipo SMA (condicion 3 del gate M1).
+    """
+    pos = np.asarray(positions, dtype=np.float64)
+    length = pos.shape[0]
+    rng = np.random.default_rng(seed)
+    shifts = rng.integers(1, max(2, length), size=n_perm)
+    idx = (np.arange(length)[None, :] + shifts[:, None]) % length
+    out: NDArray[np.float64] = np.asarray(pos[idx], dtype=np.float64)
+    return out
+
+
 def permutation_pvalue(delta_obs: float, deltas_perm: NDArray[np.float64]) -> float:
     """p = (1 + #{perm <= obs}) / (1 + n_perm). Mejora = Delta mas negativo."""
     perm = np.asarray(deltas_perm, dtype=np.float64)

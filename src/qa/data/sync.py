@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import yaml
 
 from qa.data.client import FAPI_BASE, SPOT_BASE, BinancePublicClient
 from qa.data.funding import fetch_funding_paged, funding_frame
@@ -72,13 +73,36 @@ def is_eligible_base(base: str) -> bool:
     return not any(base.endswith(s) and base[: -len(s)] for s in LEV_SUFFIXES)
 
 
-def eligible_symbols(exchange_info: dict[str, Any]) -> list[dict[str, str]]:
+def load_exclusions(root: Path) -> tuple[set[str], set[str], tuple[str, ...]]:
+    """Listas normativas desde config/universe.yaml (fallback: constantes)."""
+    cfg = config_dir(root) / "universe.yaml"
+    if not cfg.exists():
+        return STABLE_BASES, WRAPPED_BASES, LEV_SUFFIXES
+    u = yaml.safe_load(cfg.read_text(encoding="utf-8"))
+    ex = u["pit_universe"]["exclusions"]
+    stables = set(ex.get("fiat_and_stables_bases", []))
+    wrapped = set(ex.get("wrapped_or_duplicates", []))
+    lev = tuple(ex.get("leveraged_tokens_suffix", []))
+    return stables, wrapped, lev
+
+
+def eligible_symbols(
+    exchange_info: dict[str, Any],
+    exclusions: tuple[set[str], set[str], tuple[str, ...]] | None = None,
+) -> list[dict[str, str]]:
+    stables, wrapped, lev = exclusions or (STABLE_BASES, WRAPPED_BASES, LEV_SUFFIXES)
+
+    def ok(base: str) -> bool:
+        if base in stables or base in wrapped:
+            return False
+        return not any(base.endswith(x) and base[: -len(x)] for x in lev)
+
     out = []
     for s in exchange_info.get("symbols", []):
         if (
             s.get("quoteAsset") == "USDT"
             and s.get("status") in ("TRADING", "BREAK")
-            and is_eligible_base(s.get("baseAsset", ""))
+            and ok(s.get("baseAsset", ""))
         ):
             out.append({"symbol": s["symbol"], "base": s["baseAsset"], "status": s["status"]})
     return sorted(out, key=lambda d: d["symbol"])
@@ -106,7 +130,7 @@ def phase_meta(client: BinancePublicClient, root: Path, log: dict[str, Any]) -> 
 
 def phase_monthly(client: BinancePublicClient, root: Path, log: dict[str, Any]) -> None:
     raw = read_json_gz(raw_dir(root) / "meta" / "exchangeinfo_spot.json.gz")
-    symbols = eligible_symbols(raw)
+    symbols = eligible_symbols(raw, load_exclusions(root))
     man = Manifest(root, "spot_monthly")
     done = {Path(p).stem for p in man.paths()}
     freeze_ms = to_ms(int(log["freeze_end_ms"]))
@@ -121,6 +145,9 @@ def phase_monthly(client: BinancePublicClient, root: Path, log: dict[str, Any]) 
         if not rows:
             continue
         df = klines_frame(rows, sym, "1M")
+        # determinismo: descartar la vela mensual EN CURSO (close_time > freeze)
+        freeze_ts = pd.Timestamp(freeze_ms, unit="ms", tz="UTC")
+        df = df[df["close_time"] <= freeze_ts]
         out = raw_dir(root) / "spot_monthly" / f"{sym}.parquet"
         _to_parquet(df, out)
         man.add_file(

@@ -24,7 +24,7 @@ def _load(name: str) -> dict[str, Any]:
 
 def test_hypotheses_grid_v1() -> None:
     h = _load("hypotheses.yaml")
-    assert h["version"] == "1.2"
+    assert h["version"] == "1.3"
     cells = h["accounting"]["preregistered_cells"]
     assert cells == {"H1": 24, "H2": 6, "H3": 8, "total": 38}
     assert h["accounting"]["grid_cells_raw"] == {"H1": 12, "H2": 6, "H3": 4}
@@ -59,8 +59,15 @@ def test_hypotheses_grid_v1() -> None:
     assert b1["kind"] == "vol_matched_bh"  # v1.2: exposure-matched era sesgado (Jensen)
     assert "exposure_matched_bh" in b1["diagnostics"]
     assert "verdict_policy_power" in h1
-    assert h1["permutation_null"]["n_permutations"] == 10000
-    assert h1["permutation_null"]["block_days"] == 20
+    pn = h1["permutation_null"]
+    assert pn["n_permutations"] == 10000
+    assert pn["block_days"] == 20
+    assert pn["critical_level_t_star"] == 0.025
+    assert pn["decision_statistic"] == "p_valor_permutado"
+    hy = h2["data_hygiene"]
+    assert hy["policy"] == "mark_only"
+    assert hy["adjudication_table"] == "config/adjudications.csv"
+    assert hy["delisting_convention"] == "last_observed_price"
     assert h1["rebalance_band"] == 0.10
     assert set(h1["co_metrics"]) == {"ulcer_index", "calmar", "time_underwater"}
     assert len(h1["subperiods_utc"]) == 3
@@ -88,5 +95,14 @@ def test_universe_is_point_in_time() -> None:
     assert u["pit_universe"]["include_delisted"] is True
     assert u["quote_asset"] == "USDT"
     assert len(u["known_biases"]) >= 3
-    # regla de higiene (M1, pre-datos de estrategia): guard de redenominacion
-    assert u["data_hygiene"]["redenomination_guard_abs_log_return"] == 5.0
+    # higiene v1.3 (gate M1): guard solo MARCA; adjudicacion con evidencia
+    dh = u["data_hygiene"]
+    assert dh["guard_abs_log_return"] == 5.0
+    assert dh["policy"] == "mark_only"
+    assert dh["imputation"] == "never"
+    assert dh["delisting_convention"] == "last_observed_price"
+    assert dh["corporate_action_exclusion_days"] == 30
+    assert dh["adjudication_table"] == "config/adjudications.csv"
+    ea = u["exclusions_audit"]
+    assert ea["leaked_into_ingest"] == 0
+    assert ea["eligible"] == 702

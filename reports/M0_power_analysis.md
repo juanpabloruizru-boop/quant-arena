@@ -1,6 +1,6 @@
-# Analisis de potencia v1.2 - M0c/M1 (QUANT-ARENA v2)
+# Analisis de potencia v1.3 - (QUANT-ARENA v2)
 
-- Generado: 2026-10-26T19:06:04+00:00 | semilla: 20261026 | alpha una cola 5% | potencia objetivo 80% | K = 2.4865
+- Generado: 2026-10-26T20:51:48+00:00 | semilla: 20261026 | alpha una cola 5% | potencia objetivo 80% | K = 2.4865
 - Horizontes in-sample: H1 8.19 a, H2 6.82 a, H3 6.13 a. Coste por lado: 13 pb. Banda: 10 pp.
 - **Nota v1.2:** Tablas v1.1 de exposure-matched como criterio RETIRADAS (defecto 1 gate M0b: sesgo de Jensen E[w^2]>=ebar^2 contra exposicion variable bajo el nulo). Benchmark primario: vol-matched. Criterio: permutacion del vector de exposicion.
 
@@ -52,8 +52,8 @@
 | E[DmaxDD exposure-matched] (diagnostico) | 17.16 pp | sesgo de Jensen: NO es criterio |
 | E[DmaxDD vs B&H crudo] | -40.24 pp | efecto exposicion, no skill |
 | p medio de permutacion | 0.5198 | ~0.5 = uniforme |
-| FPR P(p<0.05) | 0.066 | <= 0.05 nominal |
-| FPR regla compuesta | 0.066 | <= 0.05 nominal |
+| FPR P(p<t*=0.025) | 0.028 | nivel calibrado: FPR sintetico <=5% |
+| FPR regla compuesta | 0.028 | <= 0.05 nominal |
 | turnover/ano, sangria costes | 6.57x, 0.854 %/ano | con banda 10 pp |
 
 ## S4. Habilidad plantada (drift AR(1) calibrado) - potencia REAL por efecto
@@ -68,14 +68,14 @@
 | 200 | 0.5 | 0.00029777 | 0.5127 |
 
 ### S4b. Potencia del criterio v1.2 (permutacion + subperiodos)
-| ventana | DSharpe obj | DSharpe logrado | pot. perm p<0.05 | pot. (p<.05 y D<0) | P(>=2/3 subp.) | pot. REGLA COMPUESTA | E[DmaxDD_vm] pp |
+| ventana | DSharpe obj | DSharpe logrado | pot. perm p<t* | pot. (p<t* y D<0) | P(>=2/3 subp.) | pot. REGLA COMPUESTA | E[DmaxDD_vm] pp |
 |---|---|---|---|---|---|---|---|
-| 100 | 0.1 | 0.1129 | 0.1725 | 0.1725 | 0.6475 | 0.165 | -6.99 |
-| 100 | 0.3 | 0.3115 | 0.28 | 0.28 | 0.7525 | 0.265 | -14.38 |
-| 100 | 0.5 | 0.4967 | 0.4025 | 0.4025 | 0.8525 | 0.39 | -20.48 |
-| 200 | 0.1 | 0.1151 | 0.1875 | 0.1875 | 0.625 | 0.175 | -6.76 |
-| 200 | 0.3 | 0.2794 | 0.245 | 0.245 | 0.7275 | 0.235 | -13.11 |
-| 200 | 0.5 | 0.4961 | 0.4325 | 0.4325 | 0.8275 | 0.415 | -20.6 |
+| 100 | 0.1 | 0.1129 | 0.105 | 0.105 | 0.6475 | 0.105 | -6.99 |
+| 100 | 0.3 | 0.3115 | 0.195 | 0.195 | 0.7525 | 0.19 | -14.38 |
+| 100 | 0.5 | 0.4967 | 0.3025 | 0.3025 | 0.8525 | 0.295 | -20.48 |
+| 200 | 0.1 | 0.1151 | 0.12 | 0.12 | 0.625 | 0.115 | -6.76 |
+| 200 | 0.3 | 0.2794 | 0.1825 | 0.1825 | 0.7275 | 0.1775 | -13.11 |
+| 200 | 0.5 | 0.4961 | 0.3 | 0.3 | 0.8275 | 0.285 | -20.6 |
 
 ## S6. Sensibilidad de la banda de rebalanceo (ventana 200)
 | dgp | banda | turnover/ano | sangria %/ano | E[DmaxDD_vm] pp | E[DSharpe] |

@@ -22,9 +22,19 @@ from typing import Any
 import pandas as pd
 
 from qa.data.manifest import Manifest, write_json
-from qa.data.paths import curated_dir
+from qa.data.paths import curated_dir, holdout_sealed_dir
 
 PIT_COLS = ["month", "rank", "symbol", "trailing_mean", "n_days", "in_top10", "in_top20"]
+
+
+def load_adjudications(root: Path) -> pd.DataFrame:
+    """Tabla sellada de adjudicacion (config/adjudications.csv)."""
+    p = root / "config" / "adjudications.csv"
+    if not p.exists():
+        return pd.DataFrame(columns=["symbol", "event_date_utc", "log_return", "classification"])
+    adj = pd.read_csv(p)
+    adj["event_date_utc"] = pd.to_datetime(adj["event_date_utc"], utc=True)
+    return adj
 
 
 def build_pit_from_frame(
@@ -33,10 +43,17 @@ def build_pit_from_frame(
     window_days: int = 30,
     min_age_days: int = 60,
     min_days: int = 15,
+    adjudications: pd.DataFrame | None = None,
+    corporate_exclusion_days: int = 30,
 ) -> pd.DataFrame:
     df = daily.loc[:, ["symbol", "open_time", "quote_volume"]].copy()
     if df.empty:
         return pd.DataFrame(columns=PIT_COLS)
+    corp = (
+        adjudications[adjudications["classification"] == "corporate_action"]
+        if adjudications is not None and len(adjudications)
+        else pd.DataFrame(columns=["symbol", "event_date_utc"])
+    )
     first_trade = df.groupby("symbol")["open_time"].min()
     t_min = df["open_time"].min()
     t_max = df["open_time"].max()
@@ -54,6 +71,17 @@ def build_pit_from_frame(
         )
         age_ok = first_trade[first_trade <= m_start - pd.Timedelta(days=min_age_days)].index
         stats = stats[stats.index.isin(age_ok)]
+        # v1.3: excluir del ranking los simbolos en ventana de ruptura (corporate_action)
+        if len(corp):
+            win_start_excl = m_start - pd.Timedelta(days=corporate_exclusion_days)
+            blocked = set(
+                corp.loc[
+                    (corp["event_date_utc"] >= win_start_excl) & (corp["event_date_utc"] < m_start),
+                    "symbol",
+                ]
+            )
+            if blocked:
+                stats = stats[~stats.index.isin(blocked)]
         stats = stats[(stats["n_days"] >= min_days) & (stats["trailing_mean"] > 0)]
         if stats.empty:
             continue
@@ -71,12 +99,14 @@ def build_pit_from_frame(
 
 def run_pit(root: Path) -> dict[str, Any]:
     frames = []
-    for tag in ("in_sample", "holdout"):
-        p = curated_dir(root) / f"spot_daily_{tag}.parquet"
+    for p in (
+        curated_dir(root) / "spot_daily_in_sample.parquet",
+        holdout_sealed_dir(root) / "spot_daily_holdout.parquet",
+    ):
         if p.exists():
             frames.append(pd.read_parquet(p, columns=["symbol", "open_time", "quote_volume"]))
     daily = pd.concat(frames, ignore_index=True)
-    pit = build_pit_from_frame(daily)
+    pit = build_pit_from_frame(daily, adjudications=load_adjudications(root))
     out = curated_dir(root) / "pit_universe.parquet"
     out.parent.mkdir(parents=True, exist_ok=True)
     pit.to_parquet(out, index=False, engine="pyarrow")

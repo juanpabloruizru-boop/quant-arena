@@ -22,24 +22,46 @@ pit_universe:
     quote_assets: [USDC, FDUSD, TUSD, BUSD, DAI, USDP, AEUR, EUR, GBP, XUSD, USD1]
     wrapped_or_duplicates: [WBTC, WBETH, WBNB, BTCB, PAXG]   # PAXG es commodity tokenizado
     leveraged_tokens_suffix: [UP, DOWN, BULL, BEAR]
-    fiat_and_stables_bases: [USDC, FDUSD, TUSD, BUSD, DAI, USDP, EUR]
+    fiat_and_stables_bases: [USDC, FDUSD, TUSD, BUSD, DAI, USDP, AEUR, EUR, GBP, XUSD, USD1, PAX, UST, USTC, USDD, GUSD, PYUSD, USDE]
   include_delisted: true       # usar dumps de data.binance.vision (FTTUSDT/LUNA verificados)
 
-# Regla de higiene de datos (congelada en M1, ANTES de cualquier computo de
-# estrategia). Motivacion: artefactos de redenominacion/token-swap documentados
-# en reports/M1_data_quality.md (LUNAUSDT 2022-05-31 log-ret +12.1;
-# VENUSDT 2018-10-19 -9.8; SUNUSDT 2021-06-18 -6.7; COCOSUSDT 2021-01-23 +7.2).
-# Umbral GENERICO, no afinado contra resultados: |log-ret| > 5 (~150x).
+# Higiene de datos v1.3 (condicion 1 del gate M1): el guard SOLO MARCA, NUNCA borra.
+# Los eventos candidatos son los |log-ret diario| > 5 enumerados en el informe de
+# calidad M1 (enumeracion completa in-sample: 5 eventos). Cada evento se adjudica
+# contra anuncios oficiales (URL+fecha) SIN mirar P&L de ninguna estrategia:
+#   - corporate_action: ruptura de serie (swap/redenominacion/relistado). Tratamiento:
+#       * el simbolo queda EXCLUIDO del ranking PIT durante exclusion_days tras el evento;
+#       * las velas a ambos lados de la ruptura se MARCAN (flags, no se borran ni imputan);
+#       * en H2, toda ventana de formacion que cruce la fecha de ruptura invalida al
+#         simbolo para ese rebalanceo (se audita en M3).
+#   - real_move: movimiento autentico del MISMO token (p. ej. colapso Terra 2022-05-12).
+#       Se conserva INTEGRO. Borrar crashes reales favoreceria a las estrategias long-only.
+#   - Regla de evidencia: sin anuncio oficial localizable => real_move por defecto
+#       (conservador con los datos, no con el P&L).
+# Tabla de adjudicacion sellada en v1.3: config/adjudications.csv (hash en PREREGISTRO s10).
 data_hygiene:
-  redenomination_guard_abs_log_return: 5.0
-  policy_h2: >
-    Symbol-weeks con |log-ret semanal| > 5 quedan excluidas de la formacion del
-    ranking y de la cartera; ese slot mantiene caja esa semana. Toda exclusion
-    queda auditada (simbolo, semana, valor) en el informe de M3.
-  policy_h1_h3: >
-    BTC/ETH no tienen redenominaciones conocidas; el guard se aplica igualmente
-    por uniformidad y cualquier activacion se registra.
-  status: "PRE-datos de estrategia (M1 solo audito calidad); cambio post-M3 = nueva version"
+  guard_abs_log_return: 5.0            # umbral de MARCADO (no de borrado)
+  policy: mark_only
+  adjudication_table: config/adjudications.csv
+  corporate_action_exclusion_days: 30  # exclusion del ranking PIT tras ruptura
+  imputation: never                    # prohibido imputar
+  delisting_convention: last_observed_price  # posicion mantenida al ultimo precio observado; sin retornos posteriores ni imputacion
+  status: "v1.3 sellada con hashes (PREREGISTRO s10); cambios post-M3 = nueva version"
+
+# Auditoria de exclusiones del universo (condicion 2 del gate M1), 2026-10-26:
+# exchangeInfo USDT TRADING+BREAK: 770 pares -> 702 elegibles; excluidos en ingesta:
+#   15 stablecoin/fiat (TUSD,PAX,USDC,BUSD,EUR,GBP,DAI,USDP,...),
+#   50 tokens apalancados (BULL/BEAR/UP/DOWN),
+#   3 wrapped/pegged (PAXG, WBTC, WBETH).
+# Verificado: 0 excluidos presentes en spot_monthly, pool o PIT top-40.
+exclusions_audit:
+  usdt_pairs_total: 770
+  eligible: 702
+  excluded_stablecoins: 15
+  excluded_leveraged: 50
+  excluded_wrapped_pegged: 3
+  leaked_into_ingest: 0
+  verified_at_utc: "2026-10-26T20:05:00Z"
 
 # Sesgos que NO se pueden eliminar (documentar siempre en informes):
 known_biases:

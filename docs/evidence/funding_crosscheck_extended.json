@@ -1,0 +1,154 @@
+{
+  "generated_at_utc": "2026-10-26T20:39:36+00:00",
+  "seed": 20261026,
+  "months": {
+    "BTCUSDT": [
+      "2020-05",
+      "2021-10",
+      "2021-11",
+      "2023-01",
+      "2023-05",
+      "2024-02",
+      "2025-02"
+    ],
+    "ETHUSDT": [
+      "2021-10",
+      "2022-01",
+      "2023-06",
+      "2024-02",
+      "2024-04",
+      "2025-03",
+      "2025-08"
+    ]
+  },
+  "results": [
+    {
+      "symbol": "BTCUSDT",
+      "month": "2020-05",
+      "dump_rows": 93,
+      "api_common": 93,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "BTCUSDT",
+      "month": "2021-10",
+      "dump_rows": 93,
+      "api_common": 93,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "BTCUSDT",
+      "month": "2021-11",
+      "dump_rows": 90,
+      "api_common": 90,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "BTCUSDT",
+      "month": "2023-01",
+      "dump_rows": 93,
+      "api_common": 93,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "BTCUSDT",
+      "month": "2023-05",
+      "dump_rows": 93,
+      "api_common": 93,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "BTCUSDT",
+      "month": "2024-02",
+      "dump_rows": 87,
+      "api_common": 87,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "BTCUSDT",
+      "month": "2025-02",
+      "dump_rows": 84,
+      "api_common": 84,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "month": "2021-10",
+      "dump_rows": 93,
+      "api_common": 93,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "month": "2022-01",
+      "dump_rows": 93,
+      "api_common": 93,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "month": "2023-06",
+      "dump_rows": 90,
+      "api_common": 90,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "month": "2024-02",
+      "dump_rows": 87,
+      "api_common": 87,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "month": "2024-04",
+      "dump_rows": 90,
+      "api_common": 90,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "month": "2025-03",
+      "dump_rows": 93,
+      "api_common": 93,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    },
+    {
+      "symbol": "ETHUSDT",
+      "month": "2025-08",
+      "dump_rows": 93,
+      "api_common": 93,
+      "dump_only": 0,
+      "api_only_in_month": null,
+      "mismatched": 0
+    }
+  ],
+  "total_common": 1272,
+  "total_mismatched": 0
+}

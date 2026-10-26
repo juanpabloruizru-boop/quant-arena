@@ -17,7 +17,7 @@ from typing import Any
 import pandas as pd
 
 from qa.data.manifest import Manifest, write_json
-from qa.data.paths import curated_dir, manifests_dir, raw_dir
+from qa.data.paths import curated_dir, holdout_sealed_dir, manifests_dir, raw_dir
 
 
 def _load_dir(d: Path) -> pd.DataFrame:
@@ -40,7 +40,10 @@ def _write_split(
         ("in_sample", df[df[time_col] < holdout_start]),
         ("holdout", df[df[time_col] >= holdout_start]),
     ):
-        p = curated_dir(root) / f"{name}_{tag}.parquet"
+        # v1.3/M2: el holdout vive FUERA de data/ por defecto (guard de runtime
+        # en qa.backtest.data_access; solo QA_HOLDOUT_UNLOCK=1 lo abre, con log)
+        base = holdout_sealed_dir(root) if tag == "holdout" else curated_dir(root)
+        p = base / f"{name}_{tag}.parquet"
         p.parent.mkdir(parents=True, exist_ok=True)
         part.to_parquet(p, index=False, engine="pyarrow")
         entry = man.add_file(p, rows=len(part), source=f"curated:{name}")

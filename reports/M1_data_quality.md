@@ -6,7 +6,7 @@
 - Fallos de manifiestos SHA256: 0
 
 ## Spot diario (in-sample)
-- Simbolos: **427** · filas: 479954 (holdout: 125123)
+- Simbolos: **427** · filas: 479954 (holdout: 125048)
 - Rango: 2017-08-17 00:00:00+00:00 → 2025-10-25 00:00:00+00:00 · tz UTC: True
 - Grupos duplicados residuales: 0 · filas con precios imposibles (close<=0 o high<low): 0
 - Simbolos sin ningun hueco: 415 (detalle completo: `reports/M1_coverage_by_symbol.csv`)
@@ -29,7 +29,7 @@
 - Simbolos distintos que alguna vez estuvieron en top-20: 172
 
 ## Pool de ingesta y deslistados
-- Pool (union top-60 mensual + BTC/ETH): 488 simbolos (universo mensual: 703)
+- Pool (union top-60 mensual + BTC/ETH): 485 simbolos (universo mensual: 689)
 - Deslistados/ausentes del exchangeInfo actual incluidos: 135 → ['AGIXUSDT', 'AIONUSDT', 'AKROUSDT', 'ALPACAUSDT', 'ALPHAUSDT', 'AMBUSDT', 'ANCUSDT', 'ANTUSDT', 'ATAUSDT', 'AUDUSDT', 'BAKEUSDT', 'BCCUSDT']
 
 ## Futures diario (perp USDT-M)

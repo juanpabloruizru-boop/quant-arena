@@ -53,7 +53,7 @@ line-ending = "lf"
 python_version = "3.11"
 strict = true
 files = ["src", "scripts", "tests"]
-mypy_path = "src"
+mypy_path = "src:scripts"
 explicit_package_bases = true
 warn_unreachable = true
 

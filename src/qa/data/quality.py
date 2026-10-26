@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from qa.data.manifest import Manifest, read_json_gz
-from qa.data.paths import curated_dir, manifests_dir, raw_dir, reports_dir
+from qa.data.paths import curated_dir, holdout_sealed_dir, manifests_dir, raw_dir, reports_dir
 
 ROBUST_Z_THRESHOLD = 8.0
 
@@ -68,11 +68,11 @@ def run_quality(root: Path) -> dict[str, Any]:
     meta = json.loads((manifests_dir(root) / "dataset_meta.json").read_text())
     pool_audit = json.loads((manifests_dir(root) / "ingest_pool.json").read_text())
     spot_in = pd.read_parquet(curated_dir(root) / "spot_daily_in_sample.parquet")
-    spot_ho_path = curated_dir(root) / "spot_daily_holdout.parquet"
+    spot_ho_path = holdout_sealed_dir(root) / "spot_daily_holdout.parquet"
     spot_ho = pd.read_parquet(spot_ho_path) if spot_ho_path.exists() else spot_in.iloc[:0]
     fut_in = pd.read_parquet(curated_dir(root) / "futures_daily_in_sample.parquet")
     fund_in = pd.read_parquet(curated_dir(root) / "funding_in_sample.parquet")
-    fund_ho = pd.read_parquet(curated_dir(root) / "funding_holdout.parquet")
+    fund_ho = pd.read_parquet(holdout_sealed_dir(root) / "funding_holdout.parquet")
     pit = pd.read_parquet(curated_dir(root) / "pit_universe.parquet")
 
     con.register("spot_in", spot_in)
