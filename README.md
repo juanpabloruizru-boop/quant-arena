@@ -32,20 +32,24 @@ quant-arena/
   reports/  ledger/
 ```
 
-## Uso (a partir de M1)
+## Uso
 
 ```bash
 make install          # crea .venv e instala el paquete + herramientas dev
 make ci               # ruff + mypy --strict + pytest (mismos gates que CI)
-make power            # re-genera el analisis de potencia de M0
+make power            # re-genera el analisis de potencia (v1.2)
 make verify-sources   # re-verifica la bibliografia contra Crossref/arXiv
 make verify-endpoints # re-verifica endpoints/fees/minimos de Binance en vivo
 make reproduce        # ci + power (reproduccion completa del hito actual)
+
+qa data sync          # M1: ingesta cruda resumible (meta,monthly,pool,daily,futures,funding)
+qa data curate        # M1: curacion + universo PIT + holdout sellado + informe de calidad
+qa data verify        # M1: verifica SHA256 de los 1204+ ficheros (falla si algo cambia)
 ```
 
-CLI (typer): `qa data sync | qa data verify | qa research run --hypothesis H1 |
-qa stats report | qa forward run | qa report daily`. En M0 los comandos existen
-como stubs y devuelven "no implementado".
+CLI (typer): `qa data sync | qa data curate | qa data verify | qa research run
+--hypothesis H1 | qa stats report | qa forward run | qa report daily`. Los
+comandos de research/stats/forward/report siguen siendo stubs hasta M2-M5.
 
 ## Hitos
 

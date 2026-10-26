@@ -1,0 +1,2 @@
+{"path":"data/raw/funding/BTCUSDT.parquet","sha256":"4cba9cc57fceda5853c00b0c2b2442118663b148ab4db00f1f588a7fa8d13020","bytes":145092,"rows":7808,"retrieved_at_utc":"2026-10-26T19:42:07+00:00","source":"https://fapi.binance.com/fapi/v1/fundingRate","params":{"symbol":"BTCUSDT"}}
+{"path":"data/raw/funding/ETHUSDT.parquet","sha256":"9a744ab2ce467447235d5d6023be4eb7543381372dfa3161436e5379535c6864","bytes":142566,"rows":7574,"retrieved_at_utc":"2026-10-26T19:42:08+00:00","source":"https://fapi.binance.com/fapi/v1/fundingRate","params":{"symbol":"ETHUSDT"}}

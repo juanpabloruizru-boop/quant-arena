@@ -1,0 +1,11 @@
+{
+  "api_requests": 1,
+  "elapsed_s": 0.3,
+  "finished_utc": "2026-10-26T19:44:05+00:00",
+  "freeze_end_ms": 1792972799999,
+  "freeze_end_utc": "2026-10-25T23:59:59.999000+00:00",
+  "funding": "ok+crosscheck",
+  "last_used_weight_1m": 0,
+  "phases_requested": "funding",
+  "started_utc": "2026-10-26T19:44:05+00:00"
+}

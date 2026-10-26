@@ -38,15 +38,62 @@ def _todo(milestone: str) -> None:
 
 
 @data_app.command("sync")
-def data_sync() -> None:
-    """Descarga datos crudos inmutables + manifiestos SHA256."""
-    _todo("M1")
+def data_sync(
+    phases: Annotated[
+        str,
+        typer.Option("--phases", help="meta,monthly,pool,daily,futures,funding o 'all'"),
+    ] = "all",
+) -> None:
+    """Descarga datos crudos inmutables (resumible) + manifiestos SHA256. M1."""
+    import json as _json
+
+    from qa.data.paths import get_root
+    from qa.data.sync import run_sync
+
+    log = run_sync(get_root(), phases)
+    typer.echo(_json.dumps(log, indent=2, default=str))
+
+
+@data_app.command("curate")
+def data_curate() -> None:
+    """Curacion + universo PIT + holdout sellado + informe de calidad. M1."""
+    import json as _json
+
+    from qa.data.curate import run_curate
+    from qa.data.paths import get_root, reports_dir
+    from qa.data.pit import run_pit
+    from qa.data.quality import render_quality_md, run_quality
+
+    root = get_root()
+    meta = run_curate(root)
+    typer.echo(f"curate: {len(meta['files'])} ficheros, dups={meta['duplicates_removed']}")
+    pit_meta = run_pit(root)
+    typer.echo(f"pit: {_json.dumps(pit_meta, indent=2)}")
+    result = run_quality(root)
+    md = render_quality_md(result)
+    (reports_dir(root) / "M1_data_quality.md").write_text(md, encoding="utf-8")
+    typer.echo(f"quality: fallos de manifiesto={len(result['manifest_failures'])}")
 
 
 @data_app.command("verify")
 def data_verify() -> None:
-    """Verifica manifiestos; falla si cualquier fichero cambia."""
-    _todo("M1")
+    """Verifica manifiestos SHA256; falla (exit 1) si cualquier fichero cambia."""
+    from qa.data.manifest import Manifest
+    from qa.data.paths import get_root
+
+    root = get_root()
+    failures: list[str] = []
+    total = 0
+    for name in ("meta", "spot_monthly", "spot_daily", "futures_daily", "funding", "curated"):
+        m = Manifest(root, name)
+        total += len(m)
+        failures.extend(m.verify())
+    if failures:
+        for f in failures[:50]:
+            typer.echo(f"FAIL {f}")
+        typer.echo(f"{len(failures)} fallo(s) de {total} ficheros")
+        raise typer.Exit(code=1)
+    typer.echo(f"OK: {total} ficheros verificados (SHA256)")
 
 
 @research_app.command("run")

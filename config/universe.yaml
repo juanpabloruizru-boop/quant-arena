@@ -25,6 +25,22 @@ pit_universe:
     fiat_and_stables_bases: [USDC, FDUSD, TUSD, BUSD, DAI, USDP, EUR]
   include_delisted: true       # usar dumps de data.binance.vision (FTTUSDT/LUNA verificados)
 
+# Regla de higiene de datos (congelada en M1, ANTES de cualquier computo de
+# estrategia). Motivacion: artefactos de redenominacion/token-swap documentados
+# en reports/M1_data_quality.md (LUNAUSDT 2022-05-31 log-ret +12.1;
+# VENUSDT 2018-10-19 -9.8; SUNUSDT 2021-06-18 -6.7; COCOSUSDT 2021-01-23 +7.2).
+# Umbral GENERICO, no afinado contra resultados: |log-ret| > 5 (~150x).
+data_hygiene:
+  redenomination_guard_abs_log_return: 5.0
+  policy_h2: >
+    Symbol-weeks con |log-ret semanal| > 5 quedan excluidas de la formacion del
+    ranking y de la cartera; ese slot mantiene caja esa semana. Toda exclusion
+    queda auditada (simbolo, semana, valor) en el informe de M3.
+  policy_h1_h3: >
+    BTC/ETH no tienen redenominaciones conocidas; el guard se aplica igualmente
+    por uniformidad y cualquier activacion se registra.
+  status: "PRE-datos de estrategia (M1 solo audito calidad); cambio post-M3 = nueva version"
+
 # Sesgos que NO se pueden eliminar (documentar siempre en informes):
 known_biases:
   - "Sesgo de supervivencia residual: solo conocemos lo que Binance listo; monedas muertas que nunca cotizaron ahi no existen para nosotros."

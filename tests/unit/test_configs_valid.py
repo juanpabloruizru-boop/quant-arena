@@ -88,3 +88,5 @@ def test_universe_is_point_in_time() -> None:
     assert u["pit_universe"]["include_delisted"] is True
     assert u["quote_asset"] == "USDT"
     assert len(u["known_biases"]) >= 3
+    # regla de higiene (M1, pre-datos de estrategia): guard de redenominacion
+    assert u["data_hygiene"]["redenomination_guard_abs_log_return"] == 5.0

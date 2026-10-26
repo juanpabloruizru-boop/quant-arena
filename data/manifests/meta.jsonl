@@ -1,0 +1,2 @@
+{"path":"data/raw/meta/exchangeinfo_spot.json.gz","sha256":"106e83ee3514e0dac095355ca6356e6aab831004ade232535ba7a9bf7653b0a9","bytes":395926,"rows":3736,"retrieved_at_utc":"2026-10-26T19:48:04+00:00","source":"https://api.binance.com/api/v3/exchangeInfo","params":{}}
+{"path":"data/raw/meta/exchangeinfo_fapi.json.gz","sha256":"164af2b85ccdb50996626e1142ab596e66ab1dd95ce75b7c1afdee9a23cf44a3","bytes":39811,"rows":936,"retrieved_at_utc":"2026-10-26T19:48:04+00:00","source":"https://fapi.binance.com/fapi/v1/exchangeInfo","params":{}}
