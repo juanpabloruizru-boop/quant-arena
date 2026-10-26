@@ -12,6 +12,13 @@
           "height": 973269,
           "timestamp_utc": "2026-10-26T18:26:10+00:00"
         }
+      ],
+      "bitcoin_attestations_full": [
+        {
+          "height": 973269,
+          "hash": "000000000000000000005b5f966bcb5c2b1cb4eace7c8516490ac3f290813c0c",
+          "block_time_utc": "2026-10-26T18:26:10+00:00"
+        }
       ]
     },
     "v1.1": {
@@ -24,6 +31,13 @@
           "hash": "00000000000000000001c13d6b030b54f2869a197d6fc0fe6ba5f60879657865",
           "height": 973272,
           "timestamp_utc": "2026-10-26T18:47:47+00:00"
+        }
+      ],
+      "bitcoin_attestations_full": [
+        {
+          "height": 973272,
+          "hash": "00000000000000000001c13d6b030b54f2869a197d6fc0fe6ba5f60879657865",
+          "block_time_utc": "2026-10-26T18:47:47+00:00"
         }
       ]
     },
@@ -38,6 +52,13 @@
           "height": 973277,
           "timestamp_utc": "2026-10-26T19:20:35+00:00"
         }
+      ],
+      "bitcoin_attestations_full": [
+        {
+          "height": 973277,
+          "hash": "00000000000000000001a1cfe133e5db46428185b9ebf6d1dcb96b70e1e452e5",
+          "block_time_utc": "2026-10-26T19:20:35+00:00"
+        }
       ]
     },
     "v1.3": {
@@ -46,7 +67,15 @@
         "Calendar https://alice.btc.calendar.opentimestamps.org: Pending confirmation in Bitcoin blockchain",
         "Calendar https://btc.calendar.catallaxy.com: Pending confirmation in Bitcoin blockchain"
       ],
-      "bitcoin_attestations": []
+      "bitcoin_attestations": [],
+      "bitcoin_attestations_full": [
+        {
+          "height": 973290,
+          "hash": "00000000000000000000bc496f8c5ba389238703ac8a37e9d4dd8599bda84c6a",
+          "block_time_utc": "2026-10-26T21:04:43+00:00"
+        }
+      ]
     }
-  }
+  },
+  "updated_at_utc": "2026-10-26T21:30:39+00:00"
 }
