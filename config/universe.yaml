@@ -1,0 +1,47 @@
+# Universo point-in-time (PIT). Ver ADR-002.
+# Reglas normativas para la reconstruccion del universo en M1/M3.
+
+quote_asset: USDT
+venue: binance_spot
+
+# Activos fijos para H1 y H3 (fuera del ranking PIT)
+fixed_assets:
+  H1: [BTCUSDT, ETHUSDT]
+  H3_spot_perp: [BTCUSDT, ETHUSDT]
+
+# Universo transversal para H2: top-N por volumen en dollars, reconstruido mes a mes
+pit_universe:
+  sizes: [10, 20]              # N del grid de H2 (ver hypotheses.yaml)
+  ranking_metric: quote_volume_usdt_trailing_30d_mean_daily
+  rebalance: monthly           # el ranking se recalcula el primer dia de cada mes UTC
+  point_in_time: true          # solo datos estrictamente anteriores al instante de ranking
+  min_listing_age_days: 60     # evita pumps de recien listados
+  exclude_at_rank_time:
+    status_not_trading: true   # BREAK/HALT en exchangeInfo historico si estuviera disponible
+  exclusions:
+    quote_assets: [USDC, FDUSD, TUSD, BUSD, DAI, USDP, AEUR, EUR, GBP, XUSD, USD1]
+    wrapped_or_duplicates: [WBTC, WBETH, WBNB, BTCB, PAXG]   # PAXG es commodity tokenizado
+    leveraged_tokens_suffix: [UP, DOWN, BULL, BEAR]
+    fiat_and_stables_bases: [USDC, FDUSD, TUSD, BUSD, DAI, USDP, EUR]
+  include_delisted: true       # usar dumps de data.binance.vision (FTTUSDT/LUNA verificados)
+
+# Sesgos que NO se pueden eliminar (documentar siempre en informes):
+known_biases:
+  - "Sesgo de supervivencia residual: solo conocemos lo que Binance listo; monedas muertas que nunca cotizaron ahi no existen para nosotros."
+  - "exchangeInfo actual no devuelve velas de simbolos BREAK; la historia depende de los dumps diarios de data.binance.vision."
+  - "El ranking por volumen usa el propio venue: sesgo de seleccion pro-Binance."
+
+# Fuentes de datos (verificadas en vivo 2026-10-26, ver docs/evidence/binance_probes.json):
+sources:
+  spot_api: https://api.binance.com/api/v3/klines          # ms; limit max efectivo 1000
+  spot_dumps: https://s3-ap-northeast-1.amazonaws.com/data.binance.vision  # XML S3; zips diarios + .CHECKSUM
+  um_futures_api: https://fapi.binance.com/fapi/v1/klines  # ms
+  um_funding_api: https://fapi.binance.com/fapi/v1/fundingRate  # ms; paginar por startTime
+  um_funding_monthly_dumps: data/futures/um/monthly/fundingRate/
+history_verified:
+  spot_btcusdt_1d_first: "2017-08-17"
+  spot_btcusdt_4h_first: "2017-08-17"
+  um_btcusdt_1d_api_first: "2019-09-08"
+  um_btcusdt_1d_daily_dumps_first: "2019-12-31"
+  um_btcusdt_funding_api_first_record: "2019-09-10T08:00Z"
+  um_metrics_first: "2020-09-01"

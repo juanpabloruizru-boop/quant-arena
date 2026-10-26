@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quant-arena"
+version = "0.1.0"
+description = "QUANT-ARENA v2 - laboratorio reproducible de investigacion de reglas de baja frecuencia en cripto (sin dinero real)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "QUANT-ARENA v2" }]
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "pyarrow>=15.0",
+    "duckdb>=1.0",
+    "pydantic>=2.5",
+    "typer>=0.12",
+    "pyyaml>=6.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.100",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+qa = "qa.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qa"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src", "scripts", "tests"]
+mypy_path = "src"
+explicit_package_bases = true
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

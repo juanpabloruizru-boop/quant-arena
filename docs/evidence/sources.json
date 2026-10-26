@@ -1,0 +1,405 @@
+{
+  "checked_at_utc": "2026-10-26T14:29:58+00:00",
+  "sources": [
+    {
+      "id": "S01",
+      "expected_fail": false,
+      "declared_title": "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting, and Non-Normality",
+      "declared_first_author": "Bailey",
+      "declared_year": 2014,
+      "note": "DSR: corrige el Sharpe por número de ensayos, asimetría y curtosis.",
+      "resolver": "crossref-doi",
+      "api_url": "https://api.crossref.org/works/10.3905/jpm.2014.40.5.094",
+      "http_status": 200,
+      "doi": "10.3905/jpm.2014.40.5.094",
+      "resolved_title": "The Deflated Sharpe Ratio:\n                    <i>Correcting for Selection Bias, Backtest</i>\n                    <i>Overfitting, and Non-Normality</i>",
+      "resolved_authors": [
+        "David H. Bailey",
+        "Marcos López de Prado"
+      ],
+      "resolved_container": [
+        "The Journal of Portfolio Management"
+      ],
+      "resolved_year": 2014,
+      "publisher_url": "https://doi.org/10.3905/jpm.2014.40.5.094",
+      "title_match": true,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S02",
+      "expected_fail": false,
+      "declared_title": "The Probability of Backtest Overfitting",
+      "declared_first_author": "Bailey",
+      "declared_year": 2014,
+      "note": "PBO vía CSCV. Publicada en Journal of Computational Finance (SSRN 2014).",
+      "resolver": "crossref-doi",
+      "api_url": "https://api.crossref.org/works/10.2139/ssrn.2326253",
+      "http_status": 200,
+      "doi": "10.2139/ssrn.2326253",
+      "resolved_title": "The Probability of Backtest Overfitting",
+      "resolved_authors": [
+        "David H. Bailey",
+        "Jonathan Borwein",
+        "Marcos López de Prado",
+        "Qiji Jim Zhu"
+      ],
+      "resolved_container": [],
+      "resolved_year": 2013,
+      "publisher_url": "https://doi.org/10.2139/ssrn.2326253",
+      "title_match": true,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S03",
+      "expected_fail": false,
+      "declared_title": "A Reality Check for Data Snooping",
+      "declared_first_author": "White",
+      "declared_year": 2000,
+      "note": "Bootstrap de Reality Check para la mejor de N reglas.",
+      "resolver": "crossref-doi",
+      "api_url": "https://api.crossref.org/works/10.1111/1468-0262.00152",
+      "http_status": 200,
+      "doi": "10.1111/1468-0262.00152",
+      "resolved_title": "A Reality Check for Data Snooping",
+      "resolved_authors": [
+        "Halbert White"
+      ],
+      "resolved_container": [
+        "Econometrica"
+      ],
+      "resolved_year": 2000,
+      "publisher_url": "https://doi.org/10.1111/1468-0262.00152",
+      "title_match": true,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S04",
+      "expected_fail": false,
+      "declared_title": "A Test for Superior Predictive Ability",
+      "declared_first_author": "Hansen",
+      "declared_year": 2005,
+      "note": "SPA test: mejora del Reality Check de White.",
+      "resolver": "crossref-doi",
+      "api_url": "https://api.crossref.org/works/10.1198/073500105000000063",
+      "http_status": 200,
+      "doi": "10.1198/073500105000000063",
+      "resolved_title": "A Test for Superior Predictive Ability",
+      "resolved_authors": [
+        "Peter Reinhard Hansen"
+      ],
+      "resolved_container": [
+        "Journal of Business &amp; Economic Statistics"
+      ],
+      "resolved_year": 2005,
+      "publisher_url": "https://doi.org/10.1198/073500105000000063",
+      "title_match": true,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S05",
+      "expected_fail": false,
+      "declared_title": "...and the Cross-Section of Expected Returns",
+      "declared_first_author": "Harvey",
+      "declared_year": 2016,
+      "note": "Multiplicidad de pruebas en finanzas; umbral t>3.",
+      "resolver": "crossref-doi",
+      "api_url": "https://api.crossref.org/works/10.1093/rfs/hhv059",
+      "http_status": 200,
+      "doi": "10.1093/rfs/hhv059",
+      "resolved_title": "… and the Cross-Section of Expected Returns",
+      "resolved_authors": [
+        "Campbell R. Harvey",
+        "Yan Liu",
+        "Heqing Zhu"
+      ],
+      "resolved_container": [
+        "Review of Financial Studies"
+      ],
+      "resolved_year": 2016,
+      "publisher_url": "https://doi.org/10.1093/rfs/hhv059",
+      "title_match": true,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S06",
+      "expected_fail": false,
+      "declared_title": "The 10 Reasons Most Machine Learning Funds Fail",
+      "declared_first_author": "Lopez de Prado",
+      "declared_year": 2018,
+      "note": "Incluye CPCV (combinatorial purged cross-validation) y purging/embargo.",
+      "resolver": "crossref-search",
+      "api_url": "https://api.crossref.org/works?query.bibliographic=The%20Ten%20Reasons%20Most%20Machine%20Learning%20Funds%20Fail%20Lopez%20de%20Prado&rows=5&select=DOI,title,author,container-title,published,URL",
+      "http_status": 200,
+      "doi": "10.2139/ssrn.3104816",
+      "resolved_title": "The 10 Reasons Most Machine Learning Funds Fail",
+      "resolved_authors": [
+        "Marcos Lopez de Prado"
+      ],
+      "resolved_container": [
+        "SSRN Electronic Journal"
+      ],
+      "resolved_year": 2018,
+      "publisher_url": "https://doi.org/10.2139/ssrn.3104816",
+      "title_ratio": 1.0,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S07",
+      "expected_fail": true,
+      "declared_title": "Advances in Financial Machine Learning",
+      "declared_first_author": "Lopez de Prado",
+      "declared_year": 2018,
+      "note": "Libro (Wiley): cap. 7 (CV purgado con embargo), cap. 8 (CPCV), cap. 14 (PBO). Sin DOI Crossref; verificacion por pagina del editor.",
+      "resolver": "url",
+      "api_url": "https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086",
+      "verified": false,
+      "error": "<HTTPError 403: 'Forbidden'>"
+    },
+    {
+      "id": "S08",
+      "expected_fail": false,
+      "declared_title": "Time Series Momentum",
+      "declared_first_author": "Moskowitz",
+      "declared_year": 2012,
+      "note": "Fundamento de tendencia temporal (base de H1).",
+      "resolver": "crossref-search",
+      "api_url": "https://api.crossref.org/works?query.bibliographic=Time%20Series%20Momentum%20Moskowitz%20Ooi%20Pedersen&rows=5&select=DOI,title,author,container-title,published,URL",
+      "http_status": 200,
+      "doi": "10.2139/ssrn.2089463",
+      "resolved_title": "Time Series Momentum",
+      "resolved_authors": [
+        "Tobias Moskowitz",
+        "Yao Hua Ooi",
+        "Lasse Heje Pedersen"
+      ],
+      "resolved_container": [
+        "SSRN Electronic Journal"
+      ],
+      "resolved_year": 2011,
+      "publisher_url": "https://doi.org/10.2139/ssrn.2089463",
+      "title_ratio": 1.0,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S09",
+      "expected_fail": false,
+      "declared_title": "Common Risk Factors in Cryptocurrency",
+      "declared_first_author": "Liu",
+      "declared_year": 2022,
+      "note": "Factores mercado/tamano/momentum en cripto. Titulo exacto verificado via Crossref (la referencia heredada 'Common Cryptocurrency Risk Factors' era el titulo del working paper NBER).",
+      "resolver": "crossref-search",
+      "api_url": "https://api.crossref.org/works?query.bibliographic=Common%20Risk%20Factors%20in%20Cryptocurrency%20Liu%20Tsyvinski%20Wu&rows=5&select=DOI,title,author,container-title,published,URL&query.container-title=The%20Journal%20of%20Finance",
+      "http_status": 200,
+      "doi": "10.1111/jofi.13119",
+      "resolved_title": "Common Risk Factors in Cryptocurrency",
+      "resolved_authors": [
+        "YUKUN LIU",
+        "ALEH TSYVINSKI",
+        "XI WU"
+      ],
+      "resolved_container": [
+        "The Journal of Finance"
+      ],
+      "resolved_year": 2022,
+      "publisher_url": "https://doi.org/10.1111/jofi.13119",
+      "title_ratio": 1.0,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S10",
+      "expected_fail": false,
+      "declared_title": "A Trend Factor for the Cross Section of Cryptocurrency Returns",
+      "declared_first_author": "Fieberg",
+      "declared_year": 2025,
+      "note": "Factor de tendencia transversal en cripto (JFQA). Sustituye a una referencia heredada no verificable (Kolodziejczyk et al., RQFA): no localizable en Crossref, se descarta por politica de no citar de memoria.",
+      "resolver": "crossref-search",
+      "api_url": "https://api.crossref.org/works?query.bibliographic=A%20Trend%20Factor%20for%20the%20Cross%20Section%20of%20Cryptocurrency%20Returns%20Fieberg&rows=5&select=DOI,title,author,container-title,published,URL&query.container-title=Journal%20of%20Financial%20and%20Quantitative%20Analysis",
+      "http_status": 200,
+      "doi": "10.1017/s0022109024000747",
+      "resolved_title": "A Trend Factor for the Cross Section of Cryptocurrency Returns",
+      "resolved_authors": [
+        "Christian Fieberg",
+        "Gerrit Liedtke",
+        "Thorsten Poddig",
+        "Thomas Walker",
+        "Adam Zaremba"
+      ],
+      "resolved_container": [
+        "Journal of Financial and Quantitative Analysis"
+      ],
+      "resolved_year": 2025,
+      "publisher_url": "https://doi.org/10.1017/s0022109024000747",
+      "title_ratio": 1.0,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S11",
+      "expected_fail": false,
+      "declared_title": "Dynamic time series momentum of cryptocurrencies",
+      "declared_first_author": "Borgards",
+      "declared_year": 2021,
+      "note": "TSMOM dinámico en cripto; heterogeneidad por capitalización.",
+      "resolver": "crossref-search",
+      "api_url": "https://api.crossref.org/works?query.bibliographic=Dynamic%20time%20series%20momentum%20of%20cryptocurrencies%20Borgards&rows=5&select=DOI,title,author,container-title,published,URL",
+      "http_status": 200,
+      "doi": "10.1016/j.najef.2021.101428",
+      "resolved_title": "Dynamic time series momentum of cryptocurrencies",
+      "resolved_authors": [
+        "Oliver Borgards"
+      ],
+      "resolved_container": [
+        "The North American Journal of Economics and Finance"
+      ],
+      "resolved_year": 2021,
+      "publisher_url": "https://doi.org/10.1016/j.najef.2021.101428",
+      "title_ratio": 1.0,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S12",
+      "expected_fail": false,
+      "declared_title": "Volatility-Managed Portfolios",
+      "declared_first_author": "Moreira",
+      "declared_year": 2017,
+      "note": "Escalado por volatilidad realizada (base del vol targeting de H1).",
+      "resolver": "crossref-doi",
+      "api_url": "https://api.crossref.org/works/10.1111/jofi.12513",
+      "http_status": 200,
+      "doi": "10.1111/jofi.12513",
+      "resolved_title": "Volatility‐Managed Portfolios",
+      "resolved_authors": [
+        "ALAN MOREIRA",
+        "TYLER MUIR"
+      ],
+      "resolved_container": [
+        "The Journal of Finance"
+      ],
+      "resolved_year": 2017,
+      "publisher_url": "https://doi.org/10.1111/jofi.12513",
+      "title_match": true,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S13",
+      "expected_fail": false,
+      "declared_title": "Carry",
+      "declared_first_author": "Koijen",
+      "declared_year": 2018,
+      "note": "Marco general de carry entre clases de activos.",
+      "resolver": "crossref-search",
+      "api_url": "https://api.crossref.org/works?query.bibliographic=Carry%20Koijen%20Moskowitz%20Pedersen%20Vrugt&rows=5&select=DOI,title,author,container-title,published,URL&query.container-title=Journal%20of%20Financial%20Economics",
+      "http_status": 200,
+      "doi": "10.1016/j.jfineco.2017.11.002",
+      "resolved_title": "Carry",
+      "resolved_authors": [
+        "Ralph S.J. Koijen",
+        "Tobias J. Moskowitz",
+        "Lasse Heje Pedersen",
+        "Evert B. Vrugt"
+      ],
+      "resolved_container": [
+        "Journal of Financial Economics"
+      ],
+      "resolved_year": 2018,
+      "publisher_url": "https://doi.org/10.1016/j.jfineco.2017.11.002",
+      "title_ratio": 1.0,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S14",
+      "expected_fail": false,
+      "declared_title": "Fundamentals of Perpetual Futures",
+      "declared_first_author": "",
+      "declared_year": 2022,
+      "note": "Teoría/empiria de perpetuals y funding.",
+      "resolver": "arxiv",
+      "api_url": "https://export.arxiv.org/api/query?id_list=2212.06888",
+      "http_status": 200,
+      "resolved_title": "Fundamentals of Perpetual Futures",
+      "resolved_authors": [
+        "Songrun He",
+        "Asaf Manela",
+        "Omri Ross",
+        "Victor von Wachter"
+      ],
+      "resolved_year": "2022",
+      "publisher_url": "https://arxiv.org/abs/2212.06888",
+      "title_match": true,
+      "verified": true
+    },
+    {
+      "id": "S15",
+      "expected_fail": false,
+      "declared_title": "Crypto Carry",
+      "declared_first_author": "",
+      "declared_year": 2023,
+      "note": "Buscar paper específico de carry en cripto (funding/basis).",
+      "resolver": "crossref-search",
+      "api_url": "https://api.crossref.org/works?query.bibliographic=Crypto%20Carry&rows=5&select=DOI,title,author,container-title,published,URL",
+      "http_status": 200,
+      "doi": "10.2139/ssrn.3774118",
+      "resolved_title": "Crypto Carry",
+      "resolved_authors": [
+        "Friedrich-Carl Franz",
+        "Maik Schmeling"
+      ],
+      "resolved_container": [],
+      "resolved_year": 2021,
+      "publisher_url": "https://doi.org/10.2139/ssrn.3774118",
+      "title_ratio": 1.0,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    },
+    {
+      "id": "S16",
+      "expected_fail": false,
+      "declared_title": "Does Academic Research Destroy Stock Return Predictability?",
+      "declared_first_author": "McLean",
+      "declared_year": 2016,
+      "note": "Decaimiento post-publicación de señales; aplicable por analogía a cripto.",
+      "resolver": "crossref-doi",
+      "api_url": "https://api.crossref.org/works/10.1111/jofi.12365",
+      "http_status": 200,
+      "doi": "10.1111/jofi.12365",
+      "resolved_title": "Does Academic Research Destroy Stock Return Predictability?",
+      "resolved_authors": [
+        "R. DAVID MCLEAN",
+        "JEFFREY PONTIFF"
+      ],
+      "resolved_container": [
+        "The Journal of Finance"
+      ],
+      "resolved_year": 2016,
+      "publisher_url": "https://doi.org/10.1111/jofi.12365",
+      "title_match": true,
+      "author_match": true,
+      "year_match": true,
+      "verified": true
+    }
+  ]
+}

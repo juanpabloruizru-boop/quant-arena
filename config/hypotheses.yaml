@@ -1,0 +1,104 @@
+# Rejilla pre-registrada de hipotesis (v1.0). Espejo legible por maquina de
+# docs/PREREGISTRO.md. NORMA: el texto de PREREGISTRO.md manda; si hay divergencia,
+# bug. Cambiar esta rejilla tras ver resultados = nueva version del preregistro
+# y n_trials += celdas nuevas. Prohibido anadir/quitar celdas en M3.
+
+version: "1.0"
+registered_at_utc: "2026-10-26"
+max_families: 3
+
+holdout:
+  rule: "Ultimos 365 dias del dataset curado en la fecha de congelacion de datos (M1). Se evaluan UNA sola vez al final de M3 con reglas congeladas."
+  sealed: true
+
+benchmarks: [buy_hold, buy_hold_vol_target, cash]
+
+accounting:
+  trials_table: ledger/trials.duckdb
+  n_trials_rule: >
+    n_trials para DSR/Reality-Check = numero de filas DISTINCTAS de configuraciones
+    de estrategia ejecutadas y registradas en `trials` (incluidas fallidas/diagnostico),
+    con suelo igual al tamano de la rejilla pre-registrada. Nunca un numero manual.
+  # Celdas de rejilla x activos evaluados por separado (cada ejecucion = 1 trial):
+  #   H1: 12 celdas x {BTCUSDT, ETHUSDT} = 24 trials
+  #   H2:  6 celdas x 1 universo          =  6 trials
+  #   H3:  4 celdas x {BTCUSDT, ETHUSDT} =  8 trials
+  preregistered_cells: { H1: 24, H2: 6, H3: 8, total: 38 }
+  grid_cells_raw: { H1: 12, H2: 6, H3: 4 }
+
+success_criteria:
+  # Criterio por defecto (ajustado por potencia en M0; ver PREREGISTRO seccion 8)
+  dsr_min: 0.95                 # con n_trials real de la tabla trials
+  pbo_max: 0.20                 # CSCV sobre la rejilla de la familia
+  cost_stress_multiplier: 2.0   # neto positivo tambien con costes x2
+  min_fraction_folds_positive: 0.60   # CPCV purgado con embargo
+  multiple_testing: "Reality Check/SPA sobre todas las celdas de la familia vs benchmark"
+  validation_scheme:
+    cpcv: { n_splits: 10, n_test_splits: 2 }   # C(10,2) = 45 trayectorias de test
+    purge: "eliminar del train las muestras cuya ventana de formacion solape el test"
+    embargo_days: { H1: 20, H2: 14, H3: 7 }    # buffer tras el purge (ver PREREGISTRO s6)
+    block_bootstrap: { type: stationary, expected_block_days: 20, n_resamples: 10000 }
+    hac: "Newey-West con lag = ventana de formacion de la senal"
+
+hypotheses:
+  H1:
+    family: tendencia_temporal_voltarget
+    statement: >
+      En BTC y ETH, una regla long/flat de tendencia (cierre > SMA(n), o retorno de L
+      dias > 0) con posicion escalada por volatilidad objetivo reduce el max drawdown
+      frente a buy&hold manteniendo Sharpe >= buy&hold. NO se espera mas retorno
+      absoluto. Criterio primario: reduccion de maxDD (IC 95% pareado excluye 0).
+      Sharpe >= B&H se evalua como no-inferioridad direccional con reporte honesto
+      de potencia (MDE ~ ver power_analysis).
+    assets: [BTCUSDT, ETHUSDT]
+    timeframe: 1d
+    signals:
+      sma: "close[t] > SMA(n)[t]  -> long en t+1"
+      ret: "sum(log returns, L days)[t] > 0 -> long en t+1"
+    position_sizing: "min(1, sigma_obj / sigma_realized_20d) ; flat => 0"
+    grid:
+      signal_variant: [sma, ret]        # 2 variantes (decision de interpretacion: ver ADR/PREREGISTRO)
+      window: [50, 100, 200]            # n para sma, L para ret
+      sigma_obj_annual: [0.15, 0.25]
+    cells: 12                            # 2 x 3 x 2 (rejilla disjunta, no producto cruzado)
+    evaluated_assets: [BTCUSDT, ETHUSDT] # cada (celda, activo) = 1 trial independiente
+    primary_metric: max_drawdown_reduction_vs_bh
+    secondary_metrics: [sharpe_ann_net_vs_bh, sortino, calmar, expectancy_R]
+    note_no_lookahead: "senales calculadas en cierre de t, ejecutadas en t+1 con slippage"
+
+  H2:
+    family: momentum_transversal_semanal
+    statement: >
+      En el universo PIT top-N, ir long del tercil superior por retorno acumulado de
+      L semanas (saltando la ultima semana) y rebalancear semanalmente bate al
+      universo equiponderado en Sharpe neto de costes.
+    universe: pit_top_n                   # ver config/universe.yaml
+    rebalance: weekly
+    formation_return: "suma de retornos semanales de las L semanas anteriores, EXCLUYENDO la ultima semana"
+    portfolio: "long tercil superior, equiponderado, sin cortos"
+    grid:
+      L_weeks: [4, 12, 26]
+      N: [10, 20]
+    cells: 6
+    primary_metric: sharpe_ann_net_vs_universe_equal_weight
+    benchmark: [universe_equal_weight, cash]
+    data_start_expected: "2019-01 (profundidad de altcoins liquidas; verificar en M1)"
+
+  H3:
+    family: carry_spot_perp_delta_neutral
+    statement: >
+      La posicion delta-neutral long spot / short perp en BTC y ETH rinde neto
+      positivo tras comisiones y funding real cuando la media movil del funding
+      anualizado supera el umbral; se compara contra caja (USDT).
+    assets: [BTCUSDT, ETHUSDT]
+    signal: "mean(funding_rate, window_days) * annualizacion > umbral  -> entrar en t+1; salir cuando cae por debajo"
+    annualization: "funding por intervalo x intervalos por ano (intervalo real del simbolo, verificado 8h BTCUSDT)"
+    position: "1x spot long + 1x perp short, mismo nocional, sin apalancamiento neto"
+    grid:
+      window_days: [7, 30]
+      threshold_annual: [0.05, 0.10]
+    cells: 4
+    evaluated_assets: [BTCUSDT, ETHUSDT] # cada (celda, activo) = 1 trial independiente
+    primary_metric: mean_daily_net_carry_t_stat_HAC
+    benchmark: [cash]
+    risks_pregregistered: [basis_blowup, funding_regime_change, ejecucion_asincrona_piernas]

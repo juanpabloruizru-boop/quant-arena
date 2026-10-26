@@ -1,0 +1,57 @@
+# Modelo de costes. Ver ADR-003.
+# Campos con `status: VERIFICADO` llevan URL + fecha de comprobacion en vivo.
+# Campos con `status: ASUNCION` son decisiones de disenno conservadoras pre-registradas.
+# Regla: ante la duda, el coste manda (nunca se relaja tras ver resultados).
+
+verified_at_utc: "2026-10-26T14:02:00+00:00"
+evidence_file: docs/evidence/binance_probes.json
+
+spot:
+  maker_fee: 0.001            # 0.100% Regular User
+  taker_fee: 0.001            # 0.100% Regular User
+  status: VERIFICADO
+  source: "https://www.binance.com/en/fee/schedule (consultado 2026-10-26)"
+  bnb_discount_25pct_exists: true   # NO se asume en el backtest (conservador)
+  min_notional_usdt:
+    BTCUSDT: 5.0
+    ETHUSDT: 5.0
+    PEPEUSDT: 1.0
+    default: 5.0
+  min_notional_status: VERIFICADO   # /api/v3/exchangeInfo filters NOTIONAL, 2026-10-26
+
+perp_usdm:
+  maker_fee: 0.0002           # 0.0200% Regular User
+  taker_fee: 0.0005           # 0.0500% Regular User
+  status: VERIFICADO
+  source: "https://www.binance.com/en/fee/futureFee (consultado 2026-10-26)"
+  promo_note: "Existe promo '0 maker / hasta -50% taker' en perps U-margined durante periodo promocional; NO se asume."
+  btcusdt:
+    min_qty_btc: 0.001        # LOT_SIZE minQty, verificado 2026-10-26 (/fapi/v1/exchangeInfo)
+    min_notional_usdt: 50.0   # MIN_NOTIONAL, verificado 2026-10-26
+    funding_interval_hours: 8 # verificado 2026-10-26 (spacing fundingRate + premiumIndex)
+  funding: REAL               # en backtests se usa funding historico real, nunca modelado
+
+slippage:
+  status: ASUNCION            # tramos por participacion sobre volumen quote diario; se refina en M2 con evidencia y se documenta
+  model: participation_tiers_bps
+  tiers:
+    - { max_participation: 0.0001, bps: 1.0 }    # orden insignificante vs volumen del dia
+    - { max_participation: 0.001,  bps: 3.0 }
+    - { max_participation: 0.01,   bps: 15.0 }
+    - { max_participation: 0.05,   bps: 60.0 }
+  above_max_participation: REJECT_TRADE           # sin liquidez => la senal no se ejecuta (se registra)
+
+stress:
+  cost_multiplier: 2.0        # estres obligatorio: fees+slippage x2 en todo veredicto
+
+small_capital_reality_check:
+  capital_example_usdt: 100
+  btc_price_ref_usdt: 79739.64        # ticker spot, 2026-10-26 (solo para aritmetica)
+  perp_btc_min_notional_usdt: 50.0
+  note: >
+    Con 100 USDT: una pierna de perp BTC exige >=50 USDT (50% del capital);
+    ida+vuelta spot al 0.1% por lado = 0.2% del nocional. Un objetivo de 1%/mes
+    sobre 100 USDT son 1 USDT, y cada round-trip de 100 USDT cuesta >=0.2 USDT
+    (20% del objetivo mensual por trade). El claim heredado 'comisiones consumen
+    40-75% del objetivo' es PLAUSIBLE pero dependiente de frecuencia: se re-verifica
+    con numeros exactos en M2 (informe de costes).
