@@ -22,11 +22,11 @@
 - Cross-check API vs dump mensual vision (BTCUSDT 2020-01): 93 registros comunes, **0 discrepancias** (sha256 del zip: 7f81b2f3694d1377…)
 
 ## Universo PIT (top-N mensual)
-- Meses: 97 (2017-11-01 00:00:00+00:00 → 2025-11-01 00:00:00+00:00)
+- Meses: 109 (2017-11-01 00:00:00+00:00 → 2026-11-01 00:00:00+00:00)
 - Candidatos por mes: min 2, mediana 40.0
 - Primer mes con >=20 candidatos: 2019-04-01 00:00:00+00:00
 - Primer mes con >=40 candidatos: 2019-07-01 00:00:00+00:00
-- Simbolos distintos que alguna vez estuvieron en top-20: 150
+- Simbolos distintos que alguna vez estuvieron en top-20: 172
 
 ## Pool de ingesta y deslistados
 - Pool (union top-60 mensual + BTC/ETH): 485 simbolos (universo mensual: 689)

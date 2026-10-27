@@ -98,13 +98,37 @@ def build_pit_from_frame(
 
 
 def run_pit(root: Path) -> dict[str, Any]:
+    import os
+
+    from qa.backtest.seal import is_sealed
+
     frames = []
-    for p in (
-        curated_dir(root) / "spot_daily_in_sample.parquet",
-        holdout_sealed_dir(root) / "spot_daily_holdout.parquet",
-    ):
-        if p.exists():
-            frames.append(pd.read_parquet(p, columns=["symbol", "open_time", "quote_volume"]))
+    cols = ["symbol", "open_time", "quote_volume"]
+    p_in = curated_dir(root) / "spot_daily_in_sample.parquet"
+    frames.append(pd.read_parquet(p_in, columns=cols))
+    p_ho_plain = holdout_sealed_dir(root) / "spot_daily_holdout.parquet"
+    if p_ho_plain.exists():
+        frames.append(pd.read_parquet(p_ho_plain, columns=cols))
+    elif is_sealed(root):
+        if os.environ.get("QA_HOLDOUT_UNLOCK") == "1" and os.environ.get("QA_HOLDOUT_KEY"):
+            # reconstruccion legitima del universo (solo volumenes; queda auditada
+            # en ledger/holdout_access.log)
+            from qa.backtest.data_access import load_holdout
+
+            purpose = os.environ.get(
+                "QA_PURPOSE", "reconstruccion universo PIT (volumenes, sin metricas)"
+            )
+            frames.append(load_holdout("spot_daily", root, purpose)[cols])
+        else:
+            existing = curated_dir(root) / "pit_universe.parquet"
+            if existing.exists():
+                import json as _json
+
+                meta_path = root / "data" / "manifests" / "pit_universe_meta.json"
+                if meta_path.exists():
+                    out = _json.loads(meta_path.read_text())
+                    out["note"] = "holdout sellado: se conserva el PIT existente"
+                    return out
     daily = pd.concat(frames, ignore_index=True)
     pit = build_pit_from_frame(daily, adjudications=load_adjudications(root))
     out = curated_dir(root) / "pit_universe.parquet"
