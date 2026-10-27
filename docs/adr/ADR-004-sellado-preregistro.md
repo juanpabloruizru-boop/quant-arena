@@ -96,9 +96,11 @@ es reescribible por su propio dueño: el tag prueba poco frente a un escéptico.
 - Guard de runtime actualizado: sin `QA_HOLDOUT_UNLOCK=1` **y**
   `QA_HOLDOUT_KEY` correcta no hay lectura; cada apertura queda registrada en
   `ledger/holdout_access.log` (sha256 + git SHA + propósito).
-- Separación de dominios: el repo/bundle contiene la clave (en el informe, por
-  instrucción del orquestador) pero NO los blobs cifrados (gitignored); el
-  sandbox contiene los blobs pero NO la clave.
+- Separación de dominios (condición H.5: ningún secreto en el bundle): la
+  clave NO se escribe en el repo ni en el bundle — se entregó una única vez
+  por el canal del mensaje; los blobs cifrados están gitignored; el sandbox no
+  persiste la clave. Pérdida de clave ⇒ regeneración desde la fuente +
+  verificación sha256.
 - Nota de entorno: `gpg` no persiste entre sesiones del sandbox
   (`apt-get install -y gnupg` para re-instalar; los tests de sellado se saltan
   con `skipif` si falta).
