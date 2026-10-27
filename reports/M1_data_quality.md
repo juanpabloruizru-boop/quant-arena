@@ -6,7 +6,7 @@
 - Fallos de manifiestos SHA256: 0
 
 ## Spot diario (in-sample)
-- Simbolos: **427** · filas: 479954 (holdout: 125048)
+- Simbolos: **427** · filas: 479954 (holdout: SELLADO (AES256; sha256 en ledger/holdout_seal.log))
 - Rango: 2017-08-17 00:00:00+00:00 → 2025-10-25 00:00:00+00:00 · tz UTC: True
 - Grupos duplicados residuales: 0 · filas con precios imposibles (close<=0 o high<low): 0
 - Simbolos sin ningun hueco: 415 (detalle completo: `reports/M1_coverage_by_symbol.csv`)
@@ -17,16 +17,16 @@
 - Top 10: [{'symbol': 'LUNAUSDT', 'open_time': '2022-05-31 00:00:00+00:00', 'lr': 12.086162348857615, 'z': 268.50272577228077}, {'symbol': 'SUNUSDT', 'open_time': '2021-06-18 00:00:00+00:00', 'lr': -6.7265344777078475, 'z': -230.63448367093838}, {'symbol': 'LUNAUSDT', 'open_time': '2022-05-12 00:00:00+00:00', 'lr': -8.121276105523199, 'z': -180.3720641617547}, {'symbol': 'VENUSDT', 'open_time': '2018-10-19 00:00:00+00:00', 'lr': -9.815694051585458, 'z': -168.4732871774236}, {'symbol': 'COCOSUSDT', 'open_time': '2021-01-23 00:00:00+00:00', 'lr': 7.166571474531776, 'z': 162.0878181890555}]
 
 ## Funding (perp USDT-M, historico real)
-- **BTCUSDT**: 7808 registros (2019-09-10 08:00:00+00:00 → 2026-10-25 16:00:00+00:00), esperados@8h 7808, faltan 0, huecos>8.5h: 0 (max 8.0h), rate medio 0.000105 [min -0.0030, max 0.0030]
-- **ETHUSDT**: 7574 registros (2019-11-27 08:00:00+00:00 → 2026-10-25 16:00:00+00:00), esperados@8h 7574, faltan 0, huecos>8.5h: 0 (max 8.0h), rate medio 0.000125 [min -0.0036, max 0.0037]
+- **BTCUSDT**: 6713 registros (2019-09-10 08:00:00+00:00 → 2025-10-25 16:00:00.001000+00:00), esperados@8h 6713, faltan 0, huecos>8.5h: 0 (max 8.0h), rate medio 0.000117 [min -0.0030, max 0.0030]
+- **ETHUSDT**: 6479 registros (2019-11-27 08:00:00+00:00 → 2025-10-25 16:00:00.001000+00:00), esperados@8h 6479, faltan 0, huecos>8.5h: 0 (max 8.0h), rate medio 0.000142 [min -0.0036, max 0.0037]
 - Cross-check API vs dump mensual vision (BTCUSDT 2020-01): 93 registros comunes, **0 discrepancias** (sha256 del zip: 7f81b2f3694d1377…)
 
 ## Universo PIT (top-N mensual)
-- Meses: 109 (2017-11-01 00:00:00+00:00 → 2026-11-01 00:00:00+00:00)
+- Meses: 97 (2017-11-01 00:00:00+00:00 → 2025-11-01 00:00:00+00:00)
 - Candidatos por mes: min 2, mediana 40.0
 - Primer mes con >=20 candidatos: 2019-04-01 00:00:00+00:00
 - Primer mes con >=40 candidatos: 2019-07-01 00:00:00+00:00
-- Simbolos distintos que alguna vez estuvieron en top-20: 172
+- Simbolos distintos que alguna vez estuvieron en top-20: 150
 
 ## Pool de ingesta y deslistados
 - Pool (union top-60 mensual + BTC/ETH): 485 simbolos (universo mensual: 689)

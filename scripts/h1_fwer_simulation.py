@@ -173,7 +173,7 @@ def main() -> None:
                     )
                 d_p, _ = permutation_delta_stats(perms, bh[i], COST)
                 p_perm[i] = permutation_pvalue(d_vm[i], d_p)
-            comp_pass[:, ci, ai] = (p_perm < THRESH) & (d_vm < 0) & (sub_ok.sum(axis=1) >= 2)
+            comp_pass[:, ci, ai] = (p_perm <= THRESH) & (d_vm < 0) & (sub_ok.sum(axis=1) >= 2)
 
     # Reality Check de White sobre las 24 candidatas
     d_mat = np.stack(

@@ -59,7 +59,16 @@ LEV_SUFFIXES = ("UP", "DOWN", "BULL", "BEAR")
 
 
 def compute_freeze_end(now_utc: datetime | None = None) -> datetime:
-    """Ultimo dia UTC completo (hoy-1) a las 23:59:59.999."""
+    """Ultimo dia UTC completo (hoy-1) a las 23:59:59.999.
+
+    Override: QA_FREEZE_END=YYYY-MM-DD fija el freeze (ruta de recuperacion
+    documentada del holdout sellado: reproducir el MISMO dataset)."""
+    import os
+
+    env = os.environ.get("QA_FREEZE_END")
+    if env:
+        d = datetime.strptime(env, "%Y-%m-%d").replace(tzinfo=UTC).date()
+        return datetime.combine(d, datetime.max.time(), tzinfo=UTC).replace(microsecond=999_000)
     now = now_utc or datetime.now(UTC)
     last_full_day = now.astimezone(UTC).date() - timedelta(days=1)
     return datetime.combine(last_full_day, datetime.max.time(), tzinfo=UTC).replace(

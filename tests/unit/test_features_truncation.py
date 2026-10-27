@@ -76,6 +76,32 @@ def test_realized_vol_constant_returns() -> None:
     assert np.isclose(v[-1], 0.0, atol=1e-12)
 
 
+@settings(max_examples=10, deadline=None)
+@given(
+    n=st.integers(min_value=40, max_value=90),
+    window=st.integers(min_value=3, max_value=15),
+    data=st.data(),
+)
+def test_funding_ma_truncation_invariance(n: int, window: int, data: st.DataObject) -> None:
+    """funding_ma_annualized tambien cumple f(x[:t+1])[t] == f(x)[t]."""
+    from qa.features.indicators import funding_ma_annualized
+
+    vals = np.asarray(
+        data.draw(
+            st.lists(
+                st.floats(min_value=-0.001, max_value=0.001, allow_nan=False, allow_infinity=False),
+                min_size=n,
+                max_size=n,
+            )
+        )
+    )
+    idx = pd.date_range("2024-01-01", periods=n, freq="D", tz="UTC")
+    full = funding_ma_annualized(pd.Series(vals, index=idx), window)
+    for t in range(window - 1, n):
+        partial = funding_ma_annualized(pd.Series(vals[: t + 1], index=idx[: t + 1]), window)
+        assert np.isclose(partial.iloc[t], full.iloc[t], rtol=1e-10, atol=1e-12)
+
+
 def test_funding_helpers() -> None:
     from qa.features.indicators import daily_funding_from_events, funding_ma_annualized
 

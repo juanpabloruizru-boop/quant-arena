@@ -229,6 +229,13 @@ def _gen_returns(
         return _f64(rng.normal(mu_d, sig_d, size=(n_sims, n_steps)))
     if dgp == "ar1_drift":
         return _ar1_drift_returns(rng, n_sims, n_steps, s_mu, sig_d)
+    if dgp == "ms_vol":
+        p_stay = 0.99
+        sig_low = 0.35 / math.sqrt(DAYS_PER_YEAR)
+        sig_high = 1.00 / math.sqrt(DAYS_PER_YEAR)
+        state = _markov_states(rng, n_sims, n_steps, p_stay)
+        sig_path = np.where(state, sig_high, sig_low)
+        return _f64(rng.normal(mu_d, sig_path))
     if dgp == "ms_vol_jump":
         p_stay = 0.99
         sig_low = 0.35 / math.sqrt(DAYS_PER_YEAR)

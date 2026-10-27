@@ -37,13 +37,15 @@ clean:
 	rm -rf $(VENV) .mypy_cache .ruff_cache .pytest_cache
 	find . -type d -name __pycache__ -not -path "./.venv/*" -exec rm -rf {} +
 
-# Re-aplica identidad y firma (el sandbox no persiste .git/config entre sesiones)
+# Re-aplica identidad y firma (el sandbox no persiste .git/config entre sesiones).
+# WSROOT se calcula en tiempo de ejecucion (portable, sin rutas literales).
+WSROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
 git-config:
 	git config user.name "QUANT-ARENA v2"
 	git config user.email "quant-arena@localhost"
 	git config gpg.format ssh
-	git config user.signingkey $(HOME)/.ssh/qa_prereg_ed25519
-	git config gpg.ssh.allowedSignersFile $(HOME)/.ssh/allowed_signers
+	git config user.signingkey $(WSROOT)/.ssh/qa_prereg_ed25519
+	git config gpg.ssh.allowedSignersFile $(WSROOT)/.ssh/allowed_signers
 
 # Reintenta upgrade+verify de los anclajes OpenTimestamps pendientes (checklist M1)
 ots-check:

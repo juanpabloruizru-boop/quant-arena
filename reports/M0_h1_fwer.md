@@ -1,6 +1,6 @@
 # FWER del pipeline H1 bajo el nulo (condicion 4, gate M1)
 
-- Generado: 2026-10-26T20:41:18+00:00 | mundos: 200 | esquema: block20
+- Generado: 2026-10-27T17:18:12+00:00 | mundos: 200 | esquema: block20
 - 24 candidatas (12 celdas x BTC/ETH), GBM correlacionado rho=0.8, sin habilidad
 - **P(alguna candidata pasa la regla compuesta)**: 0.285 (SE binomial ~0.0154)
 - **P(RC p<0.05)**: 0.005

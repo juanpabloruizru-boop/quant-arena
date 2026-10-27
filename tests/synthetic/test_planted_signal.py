@@ -97,3 +97,42 @@ def test_planted_signal_recovery() -> None:
     p = permutation_pvalue(d_obs, d_perm)
     assert p <= 0.025, f"senal sembrada no detectada: p={p:.4f}, d_obs={d_obs:.4f}"
     assert d_obs < 0
+
+
+def test_planted_signal_phi09_puntual_ajustado() -> None:
+    """Condicion D del gate M2: phi=0.9 (memoria corta), IC 0.05, L=12000.
+
+    n efectivo ~ L*(1-phi)/(1+phi) ~ 630 -> se(ic) ~ 1/sqrt(630) ~ 0.04:
+    la recuperacion puntual se exige con tolerancia calibrada (0.08 ~ 2 se),
+    mas ajustada en terminos estadisticos que la del test phi=0.995, y el IC
+    verdadero debe caer dentro del IC bootstrap por bloques.
+    """
+    rng = np.random.default_rng(SEED + 77)
+    sig_d = 0.60 / math.sqrt(365.0)
+    n_obs = 12_000
+    phi = 0.9
+    z = np.empty(n_obs + 1)
+    z[0] = rng.normal()
+    innov = rng.normal(size=n_obs)
+    for t in range(1, n_obs + 1):
+        z[t] = phi * z[t - 1] + math.sqrt(1.0 - phi * phi) * innov[t - 1]
+    noise = rng.normal(0.0, sig_d, size=n_obs + 1)
+    ic_true = 0.05
+    r = ic_true * sig_d * z[:-1] + noise[1:]
+    sig, fwd = z[:-1], r
+
+    ic_point = float(np.corrcoef(sig, fwd)[0, 1])
+    assert abs(ic_point - ic_true) < 0.08, f"ic puntual {ic_point:.4f} fuera de +-0.08"
+
+    # IC bootstrap por bloques (bloque 20 d)
+    rng_b = np.random.default_rng(SEED + 78)
+    n = sig.size
+    block = 20
+    ics = []
+    for _ in range(400):
+        starts = rng_b.integers(0, n, size=int(np.ceil(n / block)))
+        chunks = [(starts[i : i + 1] + np.arange(block)) for i in range(starts.size)]
+        idx = np.concatenate(chunks)[:n] % n
+        ics.append(float(np.corrcoef(sig[idx], fwd[idx])[0, 1]))
+    lo, hi = np.quantile(ics, [0.025, 0.975])
+    assert lo <= ic_true <= hi, f"IC verdadero {ic_true} fuera de [{lo:.4f},{hi:.4f}]"

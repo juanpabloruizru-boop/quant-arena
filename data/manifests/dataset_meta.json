@@ -20,21 +20,6 @@
       "bytes": 24820296,
       "rows": 479954,
       "sha256": "b7d888173ea01975bfd086ff9561bfa035a961b831a6491da299475138404946"
-    },
-    "holdout_sealed/funding_holdout.parquet": {
-      "bytes": 49809,
-      "rows": 2190,
-      "sha256": "ffd2de9cbfb1b56eb5df91f2cd7c0a347f9022ff6ab84facc00ca36ddfc70086"
-    },
-    "holdout_sealed/futures_daily_holdout.parquet": {
-      "bytes": 64154,
-      "rows": 730,
-      "sha256": "7fcc06265f5d799c40880f5f5173ba05f38b1ee26293fabaa915c9dda4e82e06"
-    },
-    "holdout_sealed/spot_daily_holdout.parquet": {
-      "bytes": 7023144,
-      "rows": 125048,
-      "sha256": "8c8218ba5da477154aef145a140d8af05bf197146196c0140e81c03ae8782951"
     }
   },
   "holdout_days": 365,

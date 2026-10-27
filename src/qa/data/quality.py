@@ -67,12 +67,20 @@ def run_quality(root: Path) -> dict[str, Any]:
     con = duckdb.connect()
     meta = json.loads((manifests_dir(root) / "dataset_meta.json").read_text())
     pool_audit = json.loads((manifests_dir(root) / "ingest_pool.json").read_text())
+    from qa.backtest.seal import is_sealed
+
+    sealed = is_sealed(root)
     spot_in = pd.read_parquet(curated_dir(root) / "spot_daily_in_sample.parquet")
     spot_ho_path = holdout_sealed_dir(root) / "spot_daily_holdout.parquet"
-    spot_ho = pd.read_parquet(spot_ho_path) if spot_ho_path.exists() else spot_in.iloc[:0]
+    if sealed:
+        spot_ho = spot_in.iloc[:0]  # holdout cifrado: no se lee en QA (por diseno)
+        fund_ho = spot_in.iloc[:0]
+    else:
+        spot_ho = pd.read_parquet(spot_ho_path) if spot_ho_path.exists() else spot_in.iloc[:0]
     fut_in = pd.read_parquet(curated_dir(root) / "futures_daily_in_sample.parquet")
     fund_in = pd.read_parquet(curated_dir(root) / "funding_in_sample.parquet")
-    fund_ho = pd.read_parquet(holdout_sealed_dir(root) / "funding_holdout.parquet")
+    if not sealed:
+        fund_ho = pd.read_parquet(holdout_sealed_dir(root) / "funding_holdout.parquet")
     pit = pd.read_parquet(curated_dir(root) / "pit_universe.parquet")
 
     con.register("spot_in", spot_in)
@@ -165,7 +173,9 @@ def run_quality(root: Path) -> dict[str, Any]:
         "spot": {
             "symbols_in_sample": int(spot_in["symbol"].nunique()),
             "rows_in_sample": int(len(spot_in)),
-            "rows_holdout": int(len(spot_ho)),
+            "rows_holdout": "SELLADO (AES256; sha256 en ledger/holdout_seal.log)"
+            if sealed
+            else int(len(spot_ho)),
             "duplicate_symbol_day_groups": dup_groups,
             "bad_price_rows": bad_prices,
             "tz_all_utc": bool(spot_in["open_time"].dt.tz is not None),

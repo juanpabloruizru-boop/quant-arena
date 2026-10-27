@@ -36,10 +36,28 @@ def _write_split(
     meta: dict[str, Any],
     man: Manifest,
 ) -> None:
-    for tag, part in (
-        ("in_sample", df[df[time_col] < holdout_start]),
-        ("holdout", df[df[time_col] >= holdout_start]),
-    ):
+    from qa.backtest.seal import is_sealed
+
+    parts: list[tuple[str, pd.DataFrame]] = [("in_sample", df[df[time_col] < holdout_start])]
+    if not is_sealed(root):
+        parts.append(("holdout", df[df[time_col] >= holdout_start]))
+    elif (df[time_col] >= holdout_start).any():
+        # sellado: el holdout cifrado es la unica copia; verificar que el
+        # plaintext reproducible coincide con el sha del sellado
+        import hashlib as _hl
+
+        marker = json.loads((holdout_sealed_dir(root) / "SEALED.json").read_text())
+        fname = f"{name}_holdout.parquet"
+        tmp = curated_dir(root) / f"_regen_{fname}"
+        df[df[time_col] >= holdout_start].to_parquet(tmp, index=False, engine="pyarrow")
+        sha = _hl.sha256(tmp.read_bytes()).hexdigest()
+        tmp.unlink()
+        if sha != marker["files"][fname]["sha256_plaintext"]:
+            raise RuntimeError(
+                f"REGENERACION NO COINCIDE con el holdout sellado ({fname}): "
+                "los datos de la fuente cambiaron; investigar antes de continuar"
+            )
+    for tag, part in parts:
         # v1.3/M2: el holdout vive FUERA de data/ por defecto (guard de runtime
         # en qa.backtest.data_access; solo QA_HOLDOUT_UNLOCK=1 lo abre, con log)
         base = holdout_sealed_dir(root) if tag == "holdout" else curated_dir(root)
