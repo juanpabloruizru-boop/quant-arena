@@ -126,7 +126,8 @@ def run_pit(root: Path) -> dict[str, Any]:
 
                 meta_path = root / "data" / "manifests" / "pit_universe_meta.json"
                 if meta_path.exists():
-                    out = _json.loads(meta_path.read_text())
+                    loaded = _json.loads(meta_path.read_text())
+                    out: dict[str, Any] = dict(loaded)
                     out["note"] = "holdout sellado: se conserva el PIT existente"
                     return out
     daily = pd.concat(frames, ignore_index=True)

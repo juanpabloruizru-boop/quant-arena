@@ -1,11 +1,11 @@
 {
-  "checked_at_utc": "2026-10-26T14:03:57+00:00",
+  "checked_at_utc": "2026-10-27T17:32:10+00:00",
   "facts": {
-    "spot_server_time_utc": "2026-10-26T14:03:58.309000+00:00",
+    "spot_server_time_utc": "2026-10-27T17:32:10.874000+00:00",
     "spot_server_time_digits": 13,
     "spot_kline_openTime_digits": 13,
     "spot_kline_openTime_unit": "ms",
-    "spot_kline_first_row_utc": "2026-10-25T00:00:00+00:00",
+    "spot_kline_first_row_utc": "2026-10-26T00:00:00+00:00",
     "spot_klines_limit_1500_rows": 1000,
     "spot_klines_limit_1501_rows": 1000,
     "spot_klines_limit_cap_note": "limit>1000 no produce error: el API devuelve como mucho 1000 filas (verificado empiricamente)",
@@ -58,29 +58,29 @@
     "spot_symbols_total": 3736,
     "spot_symbols_trading": 1383,
     "spot_symbols_break": 2353,
-    "btcusdt_price_ref": "79606.52000000",
-    "ethusdt_price_ref": "2298.47000000",
+    "btcusdt_price_ref": "80772.00000000",
+    "ethusdt_price_ref": "2353.78000000",
     "fapi_kline_openTime_digits": 13,
     "fapi_kline_openTime_unit": "ms",
-    "fapi_kline_first_row_utc": "2026-10-25T00:00:00+00:00",
+    "fapi_kline_first_row_utc": "2026-10-26T00:00:00+00:00",
     "fapi_btcusdt_earliest_candle_utc": "2019-09-08T00:00:00+00:00",
     "fapi_funding_time_digits": 13,
     "fapi_funding_time_unit": "ms",
     "fapi_funding_gaps_ms": [
-      28799997,
-      28800000
+      28800000,
+      28800001
     ],
     "fapi_funding_interval_h": [
       8.0
     ],
     "fapi_funding_last_rates": [
-      "0.00003939",
-      "0.00003431",
-      "0.00000960"
+      "0.00006005",
+      "0.00008027",
+      "0.00001713"
     ],
-    "fapi_btcusdt_earliest_funding_utc": "2026-10-26T08:00:00+00:00",
-    "fapi_last_funding_rate": "0.00007975",
-    "fapi_next_funding_time_utc": "2026-10-26T16:00:00+00:00",
+    "fapi_btcusdt_earliest_funding_utc": "2026-10-27T16:00:00.002000+00:00",
+    "fapi_last_funding_rate": "0.00010000",
+    "fapi_next_funding_time_utc": "2026-10-28T00:00:00+00:00",
     "fapi_btcusdt_entries": [
       {
         "contractType": "PERPETUAL",
@@ -89,8 +89,8 @@
         "onboardDate_utc": "2019-09-08T17:55:00+00:00",
         "filters": {
           "LOT_SIZE": {
-            "minQty": "0.001",
-            "stepSize": "0.001"
+            "stepSize": "0.001",
+            "minQty": "0.001"
           },
           "MIN_NOTIONAL": {
             "notional": "50"
@@ -184,48 +184,48 @@
       "name": "spot_ping",
       "url": "https://api.binance.com/api/v3/ping",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "59",
-      "x_mbx_used_weight": "59",
+      "x_mbx_used_weight_1m": "1",
+      "x_mbx_used_weight": "1",
       "body_excerpt": "{}"
     },
     {
       "name": "spot_time",
       "url": "https://api.binance.com/api/v3/time",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "13",
-      "x_mbx_used_weight": "13",
-      "body_excerpt": "{\"serverTime\": 1793023438309}"
+      "x_mbx_used_weight_1m": "1",
+      "x_mbx_used_weight": "1",
+      "body_excerpt": "{\"serverTime\": 1793122330874}"
     },
     {
       "name": "spot_klines_btcusdt_1d",
       "url": "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=2",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "50",
-      "x_mbx_used_weight": "50",
-      "body_excerpt": "[[1792886400000, \"80888.15000000\", \"81033.69000000\", \"79845.86000000\", \"80154.09000000\", \"6252.92495000\", 1792972799999, \"503775597.23538840\", 1390796, \"3006.88281000\", \"242282165.17905640\", \"0\"], [1792972800000, \"80154.09000000\", \"80575.45000000\", \"79368.67000000\", \"79617.68000000\", \"8762.46010000\", 1793059199999, \"701043910.96492770\", 2107416, \"4687.81541000\", \"375165605.65972960\", \"0\"]]"
+      "x_mbx_used_weight_1m": "2",
+      "x_mbx_used_weight": "2",
+      "body_excerpt": "[[1792972800000, \"80154.09000000\", \"80844.70000000\", \"79368.67000000\", \"80150.56000000\", \"15371.34784000\", 1793059199999, \"1230994078.85983930\", 3292323, \"8739.51300000\", \"700074257.44426230\", \"0\"], [1793059200000, \"80150.56000000\", \"80836.01000000\", \"79506.00000000\", \"80772.01000000\", \"10094.33564000\", 1793145599999, \"808819247.13696100\", 1895564, \"5964.07862000\", \"478077518.24409370\", \"0\"]]"
     },
     {
       "name": "spot_klines_limit_1500",
       "url": "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1500",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "63",
-      "x_mbx_used_weight": "63",
-      "body_excerpt": "[[1706659200000, \"42941.10000000\", \"43745.11000000\", \"42276.84000000\", \"42580.00000000\", \"39871.13688000\", 1706745599999, \"1711665577.05308240\", 1499559, \"20289.94825000\", \"871009715.17022070\", \"0\"], [1706745600000, \"42580.00000000\", \"43285.13000000\", \"41884.28000000\", \"43082.94000000\", \"35231.04664000\", 1706831999999, \"1497121440.64400210\", 1392269, \"18134.84304000\", \"770635549.48421270\", \"0\"], [1706832000000, \"43082.95000000\", \"43488.00000000\", \"42546.79000000\", \"43200.00000000\", \"29672.14418000\", 1706918399999, \"1277919437.29056120\", 1086342, \"15645.57110000\", \"673834785.74779100\", \"0\"], [1706918400000, \"43199.99000000\", \"43380.01000000\", \"42880.00000000\", \"43011.09000000\", \"12033.40998000\", 1707004799999, \"518775350.03360090\", 609962, \"5691.78572000\", \"245377398.51059570\", \"0\"], [1707004800000, \"43011.10000000\", \"43119.04000000\", \"42222.00000000\", \"42582.88000000\", \"17066.89404000\", 1707091199999, \"730999557.70836820\", 931235, \"8427.12671000\", \"360928641.05977220\", \"0\"], [1707091200000, \"42582.88000000\", \"43569.76000000\", \"42258.10000000\", \"42708.70000000\", \"29467.75905000\", 1707177599999, \"1262620640.54071730\", 1317397, \"14984.06962000\", \"642077579.58272680\", \"0\"], [1707177600000, \"42708.70000000\", \"43399.98000000\", \"42574.00000000\", \"43098.95000000\", \"24675.85433000\", 1707263999999, \"1061049582.60027670\", 1120760, \"12810.98205000\", \"550866463.74091940\", \"0\"], [1707264000000, \"43098.96000000\", \"44396.50000000\", \"42788.00000000\", \"44349.60000000\", \"34392.59915000\", 170735"
+      "x_mbx_used_weight_1m": "3",
+      "x_mbx_used_weight": "3",
+      "body_excerpt": "[[1706745600000, \"42580.00000000\", \"43285.13000000\", \"41884.28000000\", \"43082.94000000\", \"35231.04664000\", 1706831999999, \"1497121440.64400210\", 1392269, \"18134.84304000\", \"770635549.48421270\", \"0\"], [1706832000000, \"43082.95000000\", \"43488.00000000\", \"42546.79000000\", \"43200.00000000\", \"29672.14418000\", 1706918399999, \"1277919437.29056120\", 1086342, \"15645.57110000\", \"673834785.74779100\", \"0\"], [1706918400000, \"43199.99000000\", \"43380.01000000\", \"42880.00000000\", \"43011.09000000\", \"12033.40998000\", 1707004799999, \"518775350.03360090\", 609962, \"5691.78572000\", \"245377398.51059570\", \"0\"], [1707004800000, \"43011.10000000\", \"43119.04000000\", \"42222.00000000\", \"42582.88000000\", \"17066.89404000\", 1707091199999, \"730999557.70836820\", 931235, \"8427.12671000\", \"360928641.05977220\", \"0\"], [1707091200000, \"42582.88000000\", \"43569.76000000\", \"42258.10000000\", \"42708.70000000\", \"29467.75905000\", 1707177599999, \"1262620640.54071730\", 1317397, \"14984.06962000\", \"642077579.58272680\", \"0\"], [1707177600000, \"42708.70000000\", \"43399.98000000\", \"42574.00000000\", \"43098.95000000\", \"24675.85433000\", 1707263999999, \"1061049582.60027670\", 1120760, \"12810.98205000\", \"550866463.74091940\", \"0\"], [1707264000000, \"43098.96000000\", \"44396.50000000\", \"42788.00000000\", \"44349.60000000\", \"34392.59915000\", 1707350399999, \"1496013692.38292190\", 1378809, \"17755.87738000\", \"772721372.44438850\", \"0\"], [1707350400000, \"44349.60000000\", \"45614.30000000\", \"44331.10000000\", \"45288.65000000\", \"45439.62231000\", 170743"
     },
     {
       "name": "spot_klines_limit_1501_expect_error",
       "url": "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1501",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "61",
-      "x_mbx_used_weight": "61",
-      "body_excerpt": "[[1706659200000, \"42941.10000000\", \"43745.11000000\", \"42276.84000000\", \"42580.00000000\", \"39871.13688000\", 1706745599999, \"1711665577.05308240\", 1499559, \"20289.94825000\", \"871009715.17022070\", \"0\"], [1706745600000, \"42580.00000000\", \"43285.13000000\", \"41884.28000000\", \"43082.94000000\", \"35231.04664000\", 1706831999999, \"1497121440.64400210\", 1392269, \"18134.84304000\", \"770635549.48421270\", \"0\"], [1706832000000, \"43082.95000000\", \"43488.00000000\", \"42546.79000000\", \"43200.00000000\", \"29672.14418000\", 1706918399999, \"1277919437.29056120\", 1086342, \"15645.57110000\", \"673834785.74779100\", \"0\"], [1706918400000, \"43199.99000000\", \"43380.01000000\", \"42880.00000000\", \"43011.09000000\", \"12033.40998000\", 1707004799999, \"518775350.03360090\", 609962, \"5691.78572000\", \"245377398.51059570\", \"0\"], [1707004800000, \"43011.10000000\", \"43119.04000000\", \"42222.00000000\", \"42582.88000000\", \"17066.89404000\", 1707091199999, \"730999557.70836820\", 931235, \"8427.12671000\", \"360928641.05977220\", \"0\"], [1707091200000, \"42582.88000000\", \"43569.76000000\", \"42258.10000000\", \"42708.70000000\", \"29467.75905000\", 1707177599999, \"1262620640.54071730\", 1317397, \"14984.06962000\", \"642077579.58272680\", \"0\"], [1707177600000, \"42708.70000000\", \"43399.98000000\", \"42574.00000000\", \"43098.95000000\", \"24675.85433000\", 1707263999999, \"1061049582.60027670\", 1120760, \"12810.98205000\", \"550866463.74091940\", \"0\"], [1707264000000, \"43098.96000000\", \"44396.50000000\", \"42788.00000000\", \"44349.60000000\", \"34392.59915000\", 170735"
+      "x_mbx_used_weight_1m": "4",
+      "x_mbx_used_weight": "4",
+      "body_excerpt": "[[1706745600000, \"42580.00000000\", \"43285.13000000\", \"41884.28000000\", \"43082.94000000\", \"35231.04664000\", 1706831999999, \"1497121440.64400210\", 1392269, \"18134.84304000\", \"770635549.48421270\", \"0\"], [1706832000000, \"43082.95000000\", \"43488.00000000\", \"42546.79000000\", \"43200.00000000\", \"29672.14418000\", 1706918399999, \"1277919437.29056120\", 1086342, \"15645.57110000\", \"673834785.74779100\", \"0\"], [1706918400000, \"43199.99000000\", \"43380.01000000\", \"42880.00000000\", \"43011.09000000\", \"12033.40998000\", 1707004799999, \"518775350.03360090\", 609962, \"5691.78572000\", \"245377398.51059570\", \"0\"], [1707004800000, \"43011.10000000\", \"43119.04000000\", \"42222.00000000\", \"42582.88000000\", \"17066.89404000\", 1707091199999, \"730999557.70836820\", 931235, \"8427.12671000\", \"360928641.05977220\", \"0\"], [1707091200000, \"42582.88000000\", \"43569.76000000\", \"42258.10000000\", \"42708.70000000\", \"29467.75905000\", 1707177599999, \"1262620640.54071730\", 1317397, \"14984.06962000\", \"642077579.58272680\", \"0\"], [1707177600000, \"42708.70000000\", \"43399.98000000\", \"42574.00000000\", \"43098.95000000\", \"24675.85433000\", 1707263999999, \"1061049582.60027670\", 1120760, \"12810.98205000\", \"550866463.74091940\", \"0\"], [1707264000000, \"43098.96000000\", \"44396.50000000\", \"42788.00000000\", \"44349.60000000\", \"34392.59915000\", 1707350399999, \"1496013692.38292190\", 1378809, \"17755.87738000\", \"772721372.44438850\", \"0\"], [1707350400000, \"44349.60000000\", \"45614.30000000\", \"44331.10000000\", \"45288.65000000\", \"45439.62231000\", 170743"
     },
     {
       "name": "spot_klines_earliest",
       "url": "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&startTime=0&limit=1",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "42",
-      "x_mbx_used_weight": "42",
+      "x_mbx_used_weight_1m": "2",
+      "x_mbx_used_weight": "2",
       "body_excerpt": "[[1502928000000, \"4261.48000000\", \"4485.39000000\", \"4200.74000000\", \"4285.08000000\", \"795.15037700\", 1503014399999, \"3454770.05073206\", 3427, \"616.24854100\", \"2678216.40060401\", \"0\"]]"
     },
     {
@@ -234,39 +234,39 @@
       "http_status": 200,
       "x_mbx_used_weight_1m": "20",
       "x_mbx_used_weight": "20",
-      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793023440186, \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 6000}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 100}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"DAY\", \"intervalNum\": 1, \"limit\": 200000}, {\"rateLimitType\": \"RAW_REQUESTS\", \"interval\": \"MINUTE\", \"intervalNum\": 5, \"limit\": 300000}], \"exchangeFilters\": [], \"symbols\": [{\"symbol\": \"BTCUSDT\", \"status\": \"TRADING\", \"baseAsset\": \"BTC\", \"baseAssetPrecision\": 8, \"quoteAsset\": \"USDT\", \"quotePrecision\": 8, \"quoteAssetPrecision\": 8, \"baseCommissionPrecision\": 8, \"quoteCommissionPrecision\": 8, \"orderTypes\": [\"LIMIT\", \"LIMIT_MAKER\", \"MARKET\", \"STOP_LOSS\", \"STOP_LOSS_LIMIT\", \"TAKE_PROFIT\", \"TAKE_PROFIT_LIMIT\"], \"icebergAllowed\": true, \"ocoAllowed\": true, \"otoAllowed\": true, \"opoAllowed\": true, \"quoteOrderQtyMarketAllowed\": true, \"allowTrailingStop\": true, \"cancelReplaceAllowed\": true, \"amendAllowed\": true, \"pegInstructionsAllowed\": true, \"isSpotTradingAllowed\": true, \"isMarginTradingAllowed\": true, \"filters\": [{\"filterType\": \"PRICE_FILTER\", \"minPrice\": \"0.01000000\", \"maxPrice\": \"1000000.00000000\", \"tickSize\": \"0.01000000\"}, {\"filterType\": \"LOT_SIZE\", \"minQty\": \"0.00001000\", \"maxQty\": \"9000.00000000\", \"stepSize\": \"0.00001000\"}, {\"filterType\": \"ICEBERG_PARTS\", \"limit\": 100}, {\"filterType\": \"MARKET_LOT_SIZE\", \"minQty\": \"0.00000000\", \"maxQty\": \"116.32002820\", \"stepSize\": \"0.00000000\"}, {\"filterType\": \"TRAILING_DELT"
+      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793122332708, \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 6000}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 100}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"DAY\", \"intervalNum\": 1, \"limit\": 200000}, {\"rateLimitType\": \"RAW_REQUESTS\", \"interval\": \"MINUTE\", \"intervalNum\": 5, \"limit\": 300000}], \"exchangeFilters\": [], \"symbols\": [{\"symbol\": \"BTCUSDT\", \"status\": \"TRADING\", \"baseAsset\": \"BTC\", \"baseAssetPrecision\": 8, \"quoteAsset\": \"USDT\", \"quotePrecision\": 8, \"quoteAssetPrecision\": 8, \"baseCommissionPrecision\": 8, \"quoteCommissionPrecision\": 8, \"orderTypes\": [\"LIMIT\", \"LIMIT_MAKER\", \"MARKET\", \"STOP_LOSS\", \"STOP_LOSS_LIMIT\", \"TAKE_PROFIT\", \"TAKE_PROFIT_LIMIT\"], \"icebergAllowed\": true, \"ocoAllowed\": true, \"otoAllowed\": true, \"opoAllowed\": true, \"quoteOrderQtyMarketAllowed\": true, \"allowTrailingStop\": true, \"cancelReplaceAllowed\": true, \"amendAllowed\": true, \"pegInstructionsAllowed\": true, \"isSpotTradingAllowed\": true, \"isMarginTradingAllowed\": true, \"filters\": [{\"filterType\": \"PRICE_FILTER\", \"minPrice\": \"0.01000000\", \"maxPrice\": \"1000000.00000000\", \"tickSize\": \"0.01000000\"}, {\"filterType\": \"LOT_SIZE\", \"minQty\": \"0.00001000\", \"maxQty\": \"9000.00000000\", \"stepSize\": \"0.00001000\"}, {\"filterType\": \"ICEBERG_PARTS\", \"limit\": 100}, {\"filterType\": \"MARKET_LOT_SIZE\", \"minQty\": \"0.00000000\", \"maxQty\": \"134.69232845\", \"stepSize\": \"0.00000000\"}, {\"filterType\": \"TRAILING_DELT"
     },
     {
       "name": "spot_exchangeinfo_ethusdt",
       "url": "https://api.binance.com/api/v3/exchangeInfo?symbol=ETHUSDT",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "20",
-      "x_mbx_used_weight": "20",
-      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793023440548, \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 6000}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 100}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"DAY\", \"intervalNum\": 1, \"limit\": 200000}, {\"rateLimitType\": \"RAW_REQUESTS\", \"interval\": \"MINUTE\", \"intervalNum\": 5, \"limit\": 300000}], \"exchangeFilters\": [], \"symbols\": [{\"symbol\": \"ETHUSDT\", \"status\": \"TRADING\", \"baseAsset\": \"ETH\", \"baseAssetPrecision\": 8, \"quoteAsset\": \"USDT\", \"quotePrecision\": 8, \"quoteAssetPrecision\": 8, \"baseCommissionPrecision\": 8, \"quoteCommissionPrecision\": 8, \"orderTypes\": [\"LIMIT\", \"LIMIT_MAKER\", \"MARKET\", \"STOP_LOSS\", \"STOP_LOSS_LIMIT\", \"TAKE_PROFIT\", \"TAKE_PROFIT_LIMIT\"], \"icebergAllowed\": true, \"ocoAllowed\": true, \"otoAllowed\": true, \"opoAllowed\": true, \"quoteOrderQtyMarketAllowed\": true, \"allowTrailingStop\": true, \"cancelReplaceAllowed\": true, \"amendAllowed\": true, \"pegInstructionsAllowed\": true, \"isSpotTradingAllowed\": true, \"isMarginTradingAllowed\": true, \"filters\": [{\"filterType\": \"PRICE_FILTER\", \"minPrice\": \"0.01000000\", \"maxPrice\": \"1000000.00000000\", \"tickSize\": \"0.01000000\"}, {\"filterType\": \"LOT_SIZE\", \"minQty\": \"0.00010000\", \"maxQty\": \"9000.00000000\", \"stepSize\": \"0.00010000\"}, {\"filterType\": \"ICEBERG_PARTS\", \"limit\": 100}, {\"filterType\": \"MARKET_LOT_SIZE\", \"minQty\": \"0.00000000\", \"maxQty\": \"3399.70480125\", \"stepSize\": \"0.00000000\"}, {\"filterType\": \"TRAILING_DEL"
+      "x_mbx_used_weight_1m": "22",
+      "x_mbx_used_weight": "22",
+      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793122333066, \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 6000}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 100}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"DAY\", \"intervalNum\": 1, \"limit\": 200000}, {\"rateLimitType\": \"RAW_REQUESTS\", \"interval\": \"MINUTE\", \"intervalNum\": 5, \"limit\": 300000}], \"exchangeFilters\": [], \"symbols\": [{\"symbol\": \"ETHUSDT\", \"status\": \"TRADING\", \"baseAsset\": \"ETH\", \"baseAssetPrecision\": 8, \"quoteAsset\": \"USDT\", \"quotePrecision\": 8, \"quoteAssetPrecision\": 8, \"baseCommissionPrecision\": 8, \"quoteCommissionPrecision\": 8, \"orderTypes\": [\"LIMIT\", \"LIMIT_MAKER\", \"MARKET\", \"STOP_LOSS\", \"STOP_LOSS_LIMIT\", \"TAKE_PROFIT\", \"TAKE_PROFIT_LIMIT\"], \"icebergAllowed\": true, \"ocoAllowed\": true, \"otoAllowed\": true, \"opoAllowed\": true, \"quoteOrderQtyMarketAllowed\": true, \"allowTrailingStop\": true, \"cancelReplaceAllowed\": true, \"amendAllowed\": true, \"pegInstructionsAllowed\": true, \"isSpotTradingAllowed\": true, \"isMarginTradingAllowed\": true, \"filters\": [{\"filterType\": \"PRICE_FILTER\", \"minPrice\": \"0.01000000\", \"maxPrice\": \"1000000.00000000\", \"tickSize\": \"0.01000000\"}, {\"filterType\": \"LOT_SIZE\", \"minQty\": \"0.00010000\", \"maxQty\": \"9000.00000000\", \"stepSize\": \"0.00010000\"}, {\"filterType\": \"ICEBERG_PARTS\", \"limit\": 100}, {\"filterType\": \"MARKET_LOT_SIZE\", \"minQty\": \"0.00000000\", \"maxQty\": \"3288.97756652\", \"stepSize\": \"0.00000000\"}, {\"filterType\": \"TRAILING_DEL"
     },
     {
       "name": "spot_exchangeinfo_pepeusdt",
       "url": "https://api.binance.com/api/v3/exchangeInfo?symbol=PEPEUSDT",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "20",
-      "x_mbx_used_weight": "20",
-      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793023440909, \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 6000}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 100}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"DAY\", \"intervalNum\": 1, \"limit\": 200000}, {\"rateLimitType\": \"RAW_REQUESTS\", \"interval\": \"MINUTE\", \"intervalNum\": 5, \"limit\": 300000}], \"exchangeFilters\": [], \"symbols\": [{\"symbol\": \"PEPEUSDT\", \"status\": \"TRADING\", \"baseAsset\": \"PEPE\", \"baseAssetPrecision\": 2, \"quoteAsset\": \"USDT\", \"quotePrecision\": 8, \"quoteAssetPrecision\": 8, \"baseCommissionPrecision\": 2, \"quoteCommissionPrecision\": 8, \"orderTypes\": [\"LIMIT\", \"LIMIT_MAKER\", \"MARKET\", \"STOP_LOSS\", \"STOP_LOSS_LIMIT\", \"TAKE_PROFIT\", \"TAKE_PROFIT_LIMIT\"], \"icebergAllowed\": true, \"ocoAllowed\": true, \"otoAllowed\": true, \"opoAllowed\": true, \"quoteOrderQtyMarketAllowed\": true, \"allowTrailingStop\": true, \"cancelReplaceAllowed\": true, \"amendAllowed\": true, \"pegInstructionsAllowed\": true, \"isSpotTradingAllowed\": true, \"isMarginTradingAllowed\": true, \"filters\": [{\"filterType\": \"PRICE_FILTER\", \"minPrice\": \"0.00000001\", \"maxPrice\": \"0.10000000\", \"tickSize\": \"0.00000001\"}, {\"filterType\": \"LOT_SIZE\", \"minQty\": \"1.00\", \"maxQty\": \"92233720368.00\", \"stepSize\": \"1.00\"}, {\"filterType\": \"ICEBERG_PARTS\", \"limit\": 100}, {\"filterType\": \"MARKET_LOT_SIZE\", \"minQty\": \"0.00\", \"maxQty\": \"92233720368.00\", \"stepSize\": \"0.00\"}, {\"filterType\": \"TRAILING_DELTA\", \"minTrailingAboveDelt"
+      "x_mbx_used_weight_1m": "21",
+      "x_mbx_used_weight": "21",
+      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793122333430, \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 6000}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 100}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"DAY\", \"intervalNum\": 1, \"limit\": 200000}, {\"rateLimitType\": \"RAW_REQUESTS\", \"interval\": \"MINUTE\", \"intervalNum\": 5, \"limit\": 300000}], \"exchangeFilters\": [], \"symbols\": [{\"symbol\": \"PEPEUSDT\", \"status\": \"TRADING\", \"baseAsset\": \"PEPE\", \"baseAssetPrecision\": 2, \"quoteAsset\": \"USDT\", \"quotePrecision\": 8, \"quoteAssetPrecision\": 8, \"baseCommissionPrecision\": 2, \"quoteCommissionPrecision\": 8, \"orderTypes\": [\"LIMIT\", \"LIMIT_MAKER\", \"MARKET\", \"STOP_LOSS\", \"STOP_LOSS_LIMIT\", \"TAKE_PROFIT\", \"TAKE_PROFIT_LIMIT\"], \"icebergAllowed\": true, \"ocoAllowed\": true, \"otoAllowed\": true, \"opoAllowed\": true, \"quoteOrderQtyMarketAllowed\": true, \"allowTrailingStop\": true, \"cancelReplaceAllowed\": true, \"amendAllowed\": true, \"pegInstructionsAllowed\": true, \"isSpotTradingAllowed\": true, \"isMarginTradingAllowed\": true, \"filters\": [{\"filterType\": \"PRICE_FILTER\", \"minPrice\": \"0.00000001\", \"maxPrice\": \"0.10000000\", \"tickSize\": \"0.00000001\"}, {\"filterType\": \"LOT_SIZE\", \"minQty\": \"1.00\", \"maxQty\": \"92233720368.00\", \"stepSize\": \"1.00\"}, {\"filterType\": \"ICEBERG_PARTS\", \"limit\": 100}, {\"filterType\": \"MARKET_LOT_SIZE\", \"minQty\": \"0.00\", \"maxQty\": \"92233720368.00\", \"stepSize\": \"0.00\"}, {\"filterType\": \"TRAILING_DELTA\", \"minTrailingAboveDelt"
     },
     {
       "name": "spot_exchangeinfo_all_count",
       "url": "https://api.binance.com/api/v3/exchangeInfo",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "20",
-      "x_mbx_used_weight": "20",
-      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793023441272, \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 6000}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 100}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"DAY\", \"intervalNum\": 1, \"limit\": 200000}, {\"rateLimitType\": \"RAW_REQUESTS\", \"interval\": \"MINUTE\", \"intervalNum\": 5, \"limit\": 300000}], \"exchangeFilters\": [], \"symbols\": [{\"symbol\": \"ETHBTC\", \"status\": \"TRADING\", \"baseAsset\": \"ETH\", \"baseAssetPrecision\": 8, \"quoteAsset\": \"BTC\", \"quotePrecision\": 8, \"quoteAssetPrecision\": 8, \"baseCommissionPrecision\": 8, \"quoteCommissionPrecision\": 8, \"orderTypes\": [\"LIMIT\", \"LIMIT_MAKER\", \"MARKET\", \"STOP_LOSS\", \"STOP_LOSS_LIMIT\", \"TAKE_PROFIT\", \"TAKE_PROFIT_LIMIT\"], \"icebergAllowed\": true, \"ocoAllowed\": true, \"otoAllowed\": true, \"opoAllowed\": true, \"quoteOrderQtyMarketAllowed\": true, \"allowTrailingStop\": true, \"cancelReplaceAllowed\": true, \"amendAllowed\": true, \"pegInstructionsAllowed\": true, \"isSpotTradingAllowed\": true, \"isMarginTradingAllowed\": true, \"filters\": [{\"filterType\": \"PRICE_FILTER\", \"minPrice\": \"0.00001000\", \"maxPrice\": \"922327.00000000\", \"tickSize\": \"0.00001000\"}, {\"filterType\": \"LOT_SIZE\", \"minQty\": \"0.00010000\", \"maxQty\": \"100000.00000000\", \"stepSize\": \"0.00010000\"}, {\"filterType\": \"ICEBERG_PARTS\", \"limit\": 100}, {\"filterType\": \"MARKET_LOT_SIZE\", \"minQty\": \"0.00000000\", \"maxQty\": \"1319.40530208\", \"stepSize\": \"0.00000000\"}, {\"filterType\": \"TRAILING_DELT"
+      "x_mbx_used_weight_1m": "42",
+      "x_mbx_used_weight": "42",
+      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793122333789, \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 6000}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 100}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"DAY\", \"intervalNum\": 1, \"limit\": 200000}, {\"rateLimitType\": \"RAW_REQUESTS\", \"interval\": \"MINUTE\", \"intervalNum\": 5, \"limit\": 300000}], \"exchangeFilters\": [], \"symbols\": [{\"symbol\": \"ETHBTC\", \"status\": \"TRADING\", \"baseAsset\": \"ETH\", \"baseAssetPrecision\": 8, \"quoteAsset\": \"BTC\", \"quotePrecision\": 8, \"quoteAssetPrecision\": 8, \"baseCommissionPrecision\": 8, \"quoteCommissionPrecision\": 8, \"orderTypes\": [\"LIMIT\", \"LIMIT_MAKER\", \"MARKET\", \"STOP_LOSS\", \"STOP_LOSS_LIMIT\", \"TAKE_PROFIT\", \"TAKE_PROFIT_LIMIT\"], \"icebergAllowed\": true, \"ocoAllowed\": true, \"otoAllowed\": true, \"opoAllowed\": true, \"quoteOrderQtyMarketAllowed\": true, \"allowTrailingStop\": true, \"cancelReplaceAllowed\": true, \"amendAllowed\": true, \"pegInstructionsAllowed\": true, \"isSpotTradingAllowed\": true, \"isMarginTradingAllowed\": true, \"filters\": [{\"filterType\": \"PRICE_FILTER\", \"minPrice\": \"0.00001000\", \"maxPrice\": \"922327.00000000\", \"tickSize\": \"0.00001000\"}, {\"filterType\": \"LOT_SIZE\", \"minQty\": \"0.00010000\", \"maxQty\": \"100000.00000000\", \"stepSize\": \"0.00010000\"}, {\"filterType\": \"ICEBERG_PARTS\", \"limit\": 100}, {\"filterType\": \"MARKET_LOT_SIZE\", \"minQty\": \"0.00000000\", \"maxQty\": \"1273.73841464\", \"stepSize\": \"0.00000000\"}, {\"filterType\": \"TRAILING_DELT"
     },
     {
       "name": "spot_price_btcusdt",
       "url": "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "2",
-      "x_mbx_used_weight": "2",
-      "body_excerpt": "{\"symbol\": \"BTCUSDT\", \"price\": \"79606.52000000\"}"
+      "x_mbx_used_weight_1m": "6",
+      "x_mbx_used_weight": "6",
+      "body_excerpt": "{\"symbol\": \"BTCUSDT\", \"price\": \"80772.00000000\"}"
     },
     {
       "name": "spot_price_ethusdt",
@@ -274,7 +274,7 @@
       "http_status": 200,
       "x_mbx_used_weight_1m": "2",
       "x_mbx_used_weight": "2",
-      "body_excerpt": "{\"symbol\": \"ETHUSDT\", \"price\": \"2298.47000000\"}"
+      "body_excerpt": "{\"symbol\": \"ETHUSDT\", \"price\": \"2353.78000000\"}"
     },
     {
       "name": "fapi_ping",
@@ -290,7 +290,7 @@
       "http_status": 200,
       "x_mbx_used_weight_1m": "1",
       "x_mbx_used_weight": null,
-      "body_excerpt": "[[1792886400000, \"80843.70\", \"80999.90\", \"79809.20\", \"80114.30\", \"68809.674\", 1792972799999, \"5538510170.00730\", 1572814, \"33218.308\", \"2674303331.38100\", \"0\"], [1792972800000, \"80114.30\", \"80548.80\", \"79321.80\", \"79584.20\", \"78013.105\", 1793059199999, \"6235414510.40470\", 2095280, \"40033.744\", \"3200199667.15450\", \"0\"]]"
+      "body_excerpt": "[[1792972800000, \"80114.30\", \"80819.40\", \"79321.80\", \"80115.90\", \"131321.137\", 1793059199999, \"10510536859.40560\", 3522593, \"66872.894\", \"5352499633.86360\", \"0\"], [1793059200000, \"80116.00\", \"80807.20\", \"79468.30\", \"80736.70\", \"75583.367\", 1793145599999, \"6055291445.26260\", 1923768, \"37597.371\", \"3012878332.57870\", \"0\"]]"
     },
     {
       "name": "fapi_klines_earliest",
@@ -306,7 +306,7 @@
       "http_status": 200,
       "x_mbx_used_weight_1m": null,
       "x_mbx_used_weight": null,
-      "body_excerpt": "[{\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792800000003, \"fundingRate\": \"0.00003939\", \"markPrice\": \"81160.00000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792828800000, \"fundingRate\": \"0.00003431\", \"markPrice\": \"80696.80000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792857600000, \"fundingRate\": \"0.00000960\", \"markPrice\": \"79769.24157971\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792886400000, \"fundingRate\": \"0.00009409\", \"markPrice\": \"80846.75728261\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792915200000, \"fundingRate\": \"0.00006005\", \"markPrice\": \"80644.90000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792944000000, \"fundingRate\": \"0.00008027\", \"markPrice\": \"80602.67843478\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792972800000, \"fundingRate\": \"0.00001713\", \"markPrice\": \"80114.40000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1793001600000, \"fundingRate\": \"0.00007945\", \"markPrice\": \"80002.00000000\", \"rateType\": \"Regular\"}]"
+      "body_excerpt": "[{\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792915200000, \"fundingRate\": \"0.00006005\", \"markPrice\": \"80644.90000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792944000000, \"fundingRate\": \"0.00008027\", \"markPrice\": \"80602.67843478\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1792972800000, \"fundingRate\": \"0.00001713\", \"markPrice\": \"80114.40000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1793001600000, \"fundingRate\": \"0.00007945\", \"markPrice\": \"80002.00000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1793030400000, \"fundingRate\": \"0.00010000\", \"markPrice\": \"80398.40000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1793059200001, \"fundingRate\": \"0.00010000\", \"markPrice\": \"80116.00000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1793088000001, \"fundingRate\": \"0.00008696\", \"markPrice\": \"79770.00000000\", \"rateType\": \"Regular\"}, {\"symbol\": \"BTCUSDT\", \"fundingTime\": 1793116800002, \"fundingRate\": \"0.00010000\", \"markPrice\": \"80533.34005797\", \"rateType\": \"Regular\"}]"
     },
     {
       "name": "fapi_fundingrate_earliest",
@@ -314,7 +314,7 @@
       "http_status": 200,
       "x_mbx_used_weight_1m": null,
       "x_mbx_used_weight": null,
-      "body_excerpt": "[{\"symbol\": \"BTCUSDT\", \"fundingTime\": 1793001600000, \"fundingRate\": \"0.00007945\", \"markPrice\": \"80002.00000000\", \"rateType\": \"Regular\"}]"
+      "body_excerpt": "[{\"symbol\": \"BTCUSDT\", \"fundingTime\": 1793116800002, \"fundingRate\": \"0.00010000\", \"markPrice\": \"80533.34005797\", \"rateType\": \"Regular\"}]"
     },
     {
       "name": "fapi_premiumindex",
@@ -322,15 +322,15 @@
       "http_status": 200,
       "x_mbx_used_weight_1m": "1",
       "x_mbx_used_weight": null,
-      "body_excerpt": "{\"symbol\": \"BTCUSDT\", \"markPrice\": \"79570.91613043\", \"indexPrice\": \"79624.09847826\", \"estimatedSettlePrice\": \"79716.08303056\", \"lastFundingRate\": \"0.00007975\", \"interestRate\": \"0.00010000\", \"nextFundingTime\": 1793030400000, \"time\": 1793023447000}"
+      "body_excerpt": "{\"symbol\": \"BTCUSDT\", \"markPrice\": \"80737.50561594\", \"indexPrice\": \"80767.06652174\", \"estimatedSettlePrice\": \"80678.08328961\", \"lastFundingRate\": \"0.00010000\", \"interestRate\": \"0.00010000\", \"nextFundingTime\": 1793145600000, \"time\": 1793122337000}"
     },
     {
       "name": "fapi_exchangeinfo_btcusdt",
       "url": "https://fapi.binance.com/fapi/v1/exchangeInfo?symbol=BTCUSDT",
       "http_status": 200,
-      "x_mbx_used_weight_1m": "2",
+      "x_mbx_used_weight_1m": "1",
       "x_mbx_used_weight": null,
-      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793019013452, \"futuresType\": \"U_MARGINED\", \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 2400}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 1200}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 300}], \"exchangeFilters\": [], \"assets\": [{\"asset\": \"USDT\", \"marginAvailable\": true, \"autoAssetExchange\": \"-10000\"}, {\"asset\": \"BTC\", \"marginAvailable\": true, \"autoAssetExchange\": \"-0.10000000\"}, {\"asset\": \"BNB\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"ETH\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"USDC\", \"marginAvailable\": true, \"autoAssetExchange\": \"-10000\"}, {\"asset\": \"FDUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"BNFCR\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}, {\"asset\": \"BFUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"LDUSDT\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"RWUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"USD1\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}, {\"asset\": \"U\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}], \"symbols\": [{\"symbol\": \"BTCUSDT\", \"pair\": \"BTCUSDT\", \"contractType\": \"PERPETUAL\", \"deliveryDate\": 4133404800000, \"onboardDate\": 1567965300000, \"status\": \"TRADING\", \"maintMarginPercent\": \"2.5000\", \"requiredMarginPercent\": \"5.0000\", \"baseAss"
+      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793072475506, \"futuresType\": \"U_MARGINED\", \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 2400}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 1200}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 300}], \"exchangeFilters\": [], \"assets\": [{\"asset\": \"USDT\", \"marginAvailable\": true, \"autoAssetExchange\": \"-10000\"}, {\"asset\": \"BTC\", \"marginAvailable\": true, \"autoAssetExchange\": \"-0.10000000\"}, {\"asset\": \"BNB\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"ETH\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"USDC\", \"marginAvailable\": true, \"autoAssetExchange\": \"-10000\"}, {\"asset\": \"FDUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"BNFCR\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}, {\"asset\": \"BFUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"LDUSDT\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"RWUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"USD1\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}, {\"asset\": \"U\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}], \"symbols\": [{\"symbol\": \"BTCUSDT\", \"pair\": \"BTCUSDT\", \"contractType\": \"PERPETUAL\", \"deliveryDate\": 4133404800000, \"onboardDate\": 1567965300000, \"status\": \"TRADING\", \"maintMarginPercent\": \"2.5000\", \"requiredMarginPercent\": \"5.0000\", \"baseAss"
     },
     {
       "name": "vision_spot_daily_btcusdt_1d_first",
@@ -441,7 +441,7 @@
       "http_status": 200,
       "x_mbx_used_weight_1m": "1",
       "x_mbx_used_weight": null,
-      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793019013449, \"futuresType\": \"U_MARGINED\", \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 2400}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 1200}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 300}], \"exchangeFilters\": [], \"assets\": [{\"asset\": \"USDT\", \"marginAvailable\": true, \"autoAssetExchange\": \"-10000\"}, {\"asset\": \"BTC\", \"marginAvailable\": true, \"autoAssetExchange\": \"-0.10000000\"}, {\"asset\": \"BNB\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"ETH\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"USDC\", \"marginAvailable\": true, \"autoAssetExchange\": \"-10000\"}, {\"asset\": \"FDUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"BNFCR\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}, {\"asset\": \"BFUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"LDUSDT\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"RWUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"USD1\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}, {\"asset\": \"U\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}], \"symbols\": [{\"symbol\": \"BTCUSDT\", \"pair\": \"BTCUSDT\", \"contractType\": \"PERPETUAL\", \"deliveryDate\": 4133404800000, \"onboardDate\": 1567965300000, \"status\": \"TRADING\", \"maintMarginPercent\": \"2.5000\", \"requiredMarginPercent\": \"5.0000\", \"baseAss"
+      "body_excerpt": "{\"timezone\": \"UTC\", \"serverTime\": 1793072475511, \"futuresType\": \"U_MARGINED\", \"rateLimits\": [{\"rateLimitType\": \"REQUEST_WEIGHT\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 2400}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 1200}, {\"rateLimitType\": \"ORDERS\", \"interval\": \"SECOND\", \"intervalNum\": 10, \"limit\": 300}], \"exchangeFilters\": [], \"assets\": [{\"asset\": \"USDT\", \"marginAvailable\": true, \"autoAssetExchange\": \"-10000\"}, {\"asset\": \"BTC\", \"marginAvailable\": true, \"autoAssetExchange\": \"-0.10000000\"}, {\"asset\": \"BNB\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"ETH\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"USDC\", \"marginAvailable\": true, \"autoAssetExchange\": \"-10000\"}, {\"asset\": \"FDUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"BNFCR\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}, {\"asset\": \"BFUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"LDUSDT\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"RWUSD\", \"marginAvailable\": true, \"autoAssetExchange\": \"0\"}, {\"asset\": \"USD1\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}, {\"asset\": \"U\", \"marginAvailable\": true, \"autoAssetExchange\": \"-5000\"}], \"symbols\": [{\"symbol\": \"BTCUSDT\", \"pair\": \"BTCUSDT\", \"contractType\": \"PERPETUAL\", \"deliveryDate\": 4133404800000, \"onboardDate\": 1567965300000, \"status\": \"TRADING\", \"maintMarginPercent\": \"2.5000\", \"requiredMarginPercent\": \"5.0000\", \"baseAss"
     },
     {
       "name": "vision_um_daily_datasets",
