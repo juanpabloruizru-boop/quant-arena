@@ -4,6 +4,7 @@
 # Regla: ante la duda, el coste manda (nunca se relaja tras ver resultados).
 
 verified_at_utc: "2026-10-26T14:02:00+00:00"
+reverified_at_utc: "2026-10-27T17:35:00+00:00"   # gate M2 condicion G: fees/minimos/intervalos SIN cambios; 33 sondas 0 fallos
 evidence_file: docs/evidence/binance_probes.json
 
 spot:

@@ -124,3 +124,17 @@ Identidad interna engine↔close-ratio exacta (<1e-9). Fuente: `https://api.krak
 - **Borrar el crash de LUNA habría sido trampa:** el −99.97 % de mayo 2022 fue real (mismo token); la trampa de datos está en el +178.000 % del 31 (cuando el par se re-asignó al token nuevo). La tabla de adjudicación distingue uno de otro con el anuncio oficial delante, sin mirar nunca el P&L.
 
 ## Solicitud: GATE APROBADO M2
+
+
+---
+
+## Corrección (M2b, 2026-10-27)
+
+La Desviación 1 de este informe atribuía la ventana corta de validación B&H a
+que "Kraken ignora `since` y no pagina más allá de 720 velas". **Es
+incorrecto**: la causa real es que los pares **XBTUSDT/ETHUSDT de Kraken
+nacieron el 2024-11-06** (verificado en vivo el 2026-10-27: primera vela de
+ambos pares). Las 721 velas devueltas son la historia completa del par. La
+validación de período completo contra segunda fuente independiente se cubrió
+en M2b condición F con Coinbase Exchange (BTC-USD/ETH-USD, 2 992 días,
+2017-08-17→2025-10-25): ver `docs/evidence/second_source_validation.json`.

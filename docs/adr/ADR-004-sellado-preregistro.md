@@ -80,3 +80,25 @@ es reescribible por su propio dueño: el tag prueba poco frente a un escéptico.
    (p. ej. GitHub) con credenciales; instrucciones exactas en el informe M0b.
    Se realizó un push de prueba a un remoto-bare local para validar que ramas
    y tags viajan limpios.
+
+
+## Addendum 2 (M2b, 2026-10-27) — holdout cifrado (condición E del gate M2)
+
+- `holdout_sealed/*.parquet` cifrados con **gpg simétrico AES256**; clave
+  aleatoria de 32 bytes (64 hex) generada con `secrets.token_hex(32)`.
+- La clave se mostró **UNA sola vez** (informe M2b) y **no se persistió en
+  ningún fichero del sandbox**. Huella pública de la clave
+  (`sha256(key)[:16] = ff356c4e2dbd2448`) en `SEALED.json` para validar la
+  clave aportada sin revelarla.
+- `sha256` de cada plaintext en `ledger/holdout_seal.log` (append-only) —
+  permite verificar integridad al descifrar y regenerar desde Binance si la
+  clave se pierde (`QA_FREEZE_END=2026-10-25 qa data sync && qa data curate`).
+- Guard de runtime actualizado: sin `QA_HOLDOUT_UNLOCK=1` **y**
+  `QA_HOLDOUT_KEY` correcta no hay lectura; cada apertura queda registrada en
+  `ledger/holdout_access.log` (sha256 + git SHA + propósito).
+- Separación de dominios: el repo/bundle contiene la clave (en el informe, por
+  instrucción del orquestador) pero NO los blobs cifrados (gitignored); el
+  sandbox contiene los blobs pero NO la clave.
+- Nota de entorno: `gpg` no persiste entre sesiones del sandbox
+  (`apt-get install -y gnupg` para re-instalar; los tests de sellado se saltan
+  con `skipif` si falta).
