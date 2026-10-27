@@ -127,9 +127,9 @@ def run_pit(root: Path) -> dict[str, Any]:
                 meta_path = root / "data" / "manifests" / "pit_universe_meta.json"
                 if meta_path.exists():
                     loaded = _json.loads(meta_path.read_text())
-                    out: dict[str, Any] = dict(loaded)
-                    out["note"] = "holdout sellado: se conserva el PIT existente"
-                    return out
+                    cached: dict[str, Any] = dict(loaded)
+                    cached["note"] = "holdout sellado: se conserva el PIT existente"
+                    return cached
     daily = pd.concat(frames, ignore_index=True)
     pit = build_pit_from_frame(daily, adjudications=load_adjudications(root))
     out = curated_dir(root) / "pit_universe.parquet"
