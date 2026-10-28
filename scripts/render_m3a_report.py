@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (generador de informe: lineas largas de tablas markdown)
 """Renderiza reports/M3a_REPORT.md desde M3a_results.json + selected_cells.
 
 Uso: python scripts/render_m3a_report.py --sha <freeze_sha>

@@ -1,0 +1,10 @@
+QUANT-ARENA v2 — congelacion M3a (seleccion de celdas + resultados in-sample)
+Fecha (UTC): 2026-10-28T14:28:40Z
+Freeze commit: f834bfdfc5f7263890608200a45176ef36f60224
+Protocolo: PRERREGISTRO v1.4 s7.7 (mediana CPCV, una celda por familia y activo) y s7.9 (M3a).
+Seleccion: H1 sma50_s25 (BTC y ETH); H2 L26_N10; H3 w30_t5 (BTC y ETH).
+Veredictos in-sample: H1 INCONTRASTABLE; H2 INCONTRASTABLE; H3 PASA_IS (BTC y ETH).
+El holdout NO fue tocado (ledger/holdout_access.log = 2 entradas, sha256 baseline 4d0f3442a4aad307...).
+
+SHA256 (reports/M3a_selected_cells.json) = f79355a0b19ac5eb1cd8510e060c48c6517f43a3ae3d2aa34ff7df4adceb8297
+SHA256 (reports/M3a_results.json)        = 4476c23b1cad1b51e51f7194edfb6845f44d3d827b00631b7811e5a63dc8db80
