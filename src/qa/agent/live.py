@@ -114,6 +114,44 @@ def fetch_extra_daily(symbols: list[str], limit: int = 400) -> dict[str, pd.Data
     return out
 
 
+def fetch_extra_multi(
+    symbols: list[str],
+    intervals: list[str] | None = None,
+    limits: dict[str, int] | None = None,
+) -> dict[str, dict[str, pd.DataFrame]]:
+    """Multi-intervalo (4h/1w) para simbolos extra (p. ej. miembros PIT fuera de watchlist).
+
+    Devuelve {simbolo: {intervalo: DataFrame}}.
+    """
+    if limits is None:
+        limits = {"4h": 180, "1w": 110}
+    if intervals is None:
+        intervals = ["4h", "1w"]
+    out: dict[str, dict[str, pd.DataFrame]] = {}
+    with BinancePublicClient() as c:
+        for sym in symbols:
+            out[sym] = {}
+            for interval in intervals:
+                limit = limits.get(interval, 180)
+                now_ms = int(datetime.now(UTC).timestamp() * 1000)
+                rows = fetch_klines_paged(
+                    c,
+                    SPOT_BASE,
+                    "/api/v3/klines",
+                    sym,
+                    interval,
+                    start_ms=now_ms - _span_ms(interval, limit),
+                    end_ms=now_ms,
+                    limit=limit,
+                    max_pages=1,
+                )
+                df = klines_frame(rows, sym, interval) if rows else pd.DataFrame()
+                if not df.empty and len(df) > limit:
+                    df = df.tail(limit).reset_index(drop=True)
+                out[sym][interval] = _drop_forming(df, interval)
+    return out
+
+
 def last_price(live: dict[str, Any], symbol: str) -> float | None:
     kl = live.get("klines", {}).get(symbol, {}).get("1h")
     if kl is None or kl.empty:

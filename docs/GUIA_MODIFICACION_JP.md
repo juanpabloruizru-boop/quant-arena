@@ -26,6 +26,20 @@ Comprobación rápida: `.venv/bin/qa --help` debe listar los comandos
 
 ---
 
+## 0b. Acceso rápido en Windows (doble clic) — M5c
+
+Para máxima comodidad en Windows, se incluyen dos scripts `.bat` en la raíz
+del proyecto. Solo tienes que hacer doble clic:
+
+| Script | Qué hace |
+|---|---|
+| **`1_ACTUALIZAR_Y_ABRIR_DASHBOARD.bat`** | Activa el `.venv`, ejecuta `qa agent run` (descarga datos vivos, regenera dashboard) y abre automáticamente `reports\dashboard\index.html` en tu navegador predeterminado. Úsalo cada mañana como rutina diaria. |
+| **`2_CONSOLA_QUANT_ARENA.bat`** | Abre una ventana de consola (`cmd`) ya situada en la carpeta del proyecto y con el `.venv` activado. Muestra en pantalla el recordatorio de comandos rápidos (`qa capital status`, `qa trade calc`, `qa trade open`, `qa trade close`, `qa trade audit`) para que escribas directamente. |
+
+> **Nota:** En Windows, `qa` se invoca como `qa` (no `.venv/bin/qa`) porque el `.bat` ya activa el entorno. Los ejemplos de esta guía usan la forma Unix (`.venv/bin/qa`); en Windows sustituye por `qa` tras activar el `.venv` (o usa los `.bat`).
+
+---
+
 ## 1. Operación diaria desde cero
 
 ### Paso 1 — Borrar los datos de EJEMPLO

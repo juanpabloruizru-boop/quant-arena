@@ -1,4 +1,5 @@
-"""CLI minima de QUANT-ARENA v2 (typer).
+"""
+CLI minima de QUANT-ARENA v2 (typer).
 
 En M0 todos los comandos son stubs que salen con codigo 3 ("no implementado"):
 el hito M0 es preregistro y diseno, sin codigo de datos. Los comandos se activan
@@ -15,6 +16,9 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+
+# Compatibilidad PyYAML -> ruamel.yaml (pure Python) para Python 3.15+ en Windows sin MSVC
+import qa._yaml_compat  # noqa: F401
 
 app = typer.Typer(help="QUANT-ARENA v2 - laboratorio de investigacion (sin dinero real)")
 data_app = typer.Typer(help="Ingesta y verificacion de datos (M1)")
@@ -249,7 +253,7 @@ def agent_run() -> None:
         verify_capital_chain,
     )
     from qa.agent.geometry import fee_roundtrip, fee_taker_side
-    from qa.agent.live import fetch_extra_daily, fetch_live, last_price
+    from qa.agent.live import fetch_extra_daily, fetch_extra_multi, fetch_live, last_price
     from qa.agent.news import detect_shocks, fetch_news
     from qa.agent.signals import compute_states
     from qa.agent.telemetry import atr, h1_levels, trade_geometry, watchlist_telemetry
@@ -269,9 +273,17 @@ def agent_run() -> None:
     members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
 
     live = fetch_live(sorted(set(watchlist) | {"BTCUSDT", "ETHUSDT"}))
-    extra = fetch_extra_daily([m for m in members if m not in live["klines"]])
-    for sym, df in extra.items():
+    extra_syms = [m for m in members if m not in live["klines"]]
+    extra_1d = fetch_extra_daily(extra_syms)
+    for sym, df in extra_1d.items():
         live["klines"].setdefault(sym, {})["1d"] = df
+    # también 4h/1w para los miembros PIT extra (evita n/d en Panel 3 watchlist)
+    if extra_syms:
+        extra_multi = fetch_extra_multi(extra_syms)
+        for sym, frames in extra_multi.items():
+            for interval, df in frames.items():
+                if not df.empty:
+                    live["klines"].setdefault(sym, {})[interval] = df
     states = compute_states(live, members)
 
     trades = load_trades(root)
@@ -347,7 +359,7 @@ def agent_run() -> None:
     diags = []
     for t in trades:
         if t.get("status") != "open":
-            diags.append({**diagnose(t, None, "", []), "example": t.get("example", False)})
+            diags.append({**diagnose(t, None, "", []), "example": t.get("example", False), "status": "closed"})
             continue
         px = prices_map.get(t["asset"])
         base = t["asset"].replace("USDT", "")
@@ -391,6 +403,7 @@ def agent_run() -> None:
                 f"({tl['dist_sma50_pct']:+}%)"
             )
         d["example"] = t.get("example", False)
+        d["status"] = "open"
         diags.append(d)
 
     # auditoria del historial cerrado (M5b)
@@ -934,8 +947,13 @@ def capital_status() -> None:
     assets = sorted({t["asset"] for t in trades if t.get("status") == "open"})
     try:
         prices = fetch_prices(assets)
-    except Exception:
+    except Exception as e:
         prices = {}
+        if assets:
+            typer.echo(
+                "⚠ No se pudo obtener precios vivos (sin red o error: "
+                f"{e}). PnL flotante = 0."
+            )
     st = compute_status(cap, trades, prices, load_costs(root))
     if st["sin_registros"]:
         typer.echo(

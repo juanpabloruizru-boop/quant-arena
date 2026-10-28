@@ -326,6 +326,11 @@ def _audit_panel(audit: dict[str, Any] | None) -> list[str]:
         "<div class='small'>Contabilidad de TUS operaciones cerradas (neto de comisiones taker "
         "estimadas ida y vuelta: spot 0.20 %, perp 0.10 %). Múltiplo R = PnL neto / riesgo "
         "inicial (|Entrada−SL|). No es un veredicto sobre ninguna estrategia.</div>"
+        "<div class='calcrow' style='margin-bottom:8px'>"
+        "<button id='qa_audit_csv' type='button' style='background:var(--info);border-color:var(--info);color:#000'>"
+        "Exportar CSV</button>"
+        "<span class='small' style='margin-left:10px'>Descarga la tabla de operaciones cerradas como CSV</span>"
+        "</div>"
     )
     rows = (audit or {}).get("rows") or []
     summ = (audit or {}).get("summary") or {}
@@ -414,6 +419,39 @@ def _audit_panel(audit: dict[str, Any] | None) -> list[str]:
                 )
             p.append("</table>")
     p.append("</div>")
+
+    # JS para exportar CSV de la tabla de auditoría
+    p.append("""
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var btn = document.getElementById('qa_audit_csv');
+  if(!btn) return;
+  btn.addEventListener('click', function(){
+    var table = document.querySelector('div.panel:nth-of-type(5) table');
+    if(!table) return;
+    var rows = table.querySelectorAll('tr');
+    var csv = [];
+    rows.forEach(function(row){
+      var cells = row.querySelectorAll('th, td');
+      var rowData = [];
+      cells.forEach(function(cell){
+        var text = cell.innerText.replace(/\\"/g, '""');
+        if(text.indexOf(',') >= 0 || text.indexOf('"') >= 0 || text.indexOf('\\n') >= 0) {
+          text = '"' + text + '"';
+        }
+        rowData.push(text);
+      });
+      csv.push(rowData.join(','));
+    });
+    var blob = new Blob([csv.join('\\n')], {type: 'text/csv;charset=utf-8;'});
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'trade_audit_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
+  });
+});
+</script>
+""")
     return p
 
 
@@ -496,15 +534,17 @@ def render_dashboard(
 
     # 1) Operaciones abiertas del usuario (panel a ancho completo: muchas columnas)
     p.append("<div class='panel full'><h2>1 · Mis operaciones abiertas (registro del usuario)</h2>")
-    if trades_diag:
+    open_trades = [t for t in trades_diag if t.get("status", "open") == "open"]
+    if open_trades:
         p.append(
             "<table><tr><th>Op</th><th>Activo/Tipo/Marco</th><th>PnL</th><th>Dist. SL / TP (tuyos)</th>"
             "<th>Tiempo</th><th>R:R inic. → residual hoy</th><th>Break-even neto</th>"
             "<th>Cota 2×ATR (tu marco)</th><th>SMA50 de tu marco</th>"
             "<th>Contexto de tendencia</th><th>Seguimiento</th></tr>"
         )
-        for t in trades_diag:
+        for t in open_trades:
             ex = " <span class='badge b-info'>EJEMPLO</span>" if t.get("example") else ""
+            forced = " <span class='badge b-warn'>RR FORZADO</span>" if t.get("rr_forzado") else ""
             pnl = t.get("pnl_pct")
             cls = "pos" if (pnl or 0) >= 0 else "neg"
             sl = f"{t.get('dist_sl_pct', '—')}%" if t.get("dist_sl_pct") is not None else "—"
@@ -528,7 +568,7 @@ def render_dashboard(
             rr_i = t.get("rr_inicial_tp_sl", "—")
             rr_a = t.get("rr_actual_tp_sl", "—")
             p.append(
-                f"<tr><td class='num'>{_esc(t['id'])}{ex}</td>"
+                f"<tr><td class='num'>{_esc(t['id'])}{ex}{forced}</td>"
                 f"<td>{_esc(t['asset'])}<br><span class='small'>{_esc(t.get('kind', ''))} · "
                 f"{_esc(t.get('timeframe', ''))}</span></td>"
                 f"<td class='num {cls}'>{pnl if pnl is not None else '—'}%"
