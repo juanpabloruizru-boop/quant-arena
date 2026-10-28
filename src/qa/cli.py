@@ -254,11 +254,12 @@ def agent_run() -> None:
         alerts = [
             f"choque {s['tipo']}: {s['detalle']}" for s in shocks if s["symbol"] == t["asset"]
         ]
+        # solo noticias CON keyword de riesgo disparan REVISAR; la mera mencion
+        # del activo es contexto (ya aparece en el panel de noticias)
         alerts += [
-            f"noticia [{','.join(n.keywords) or n.feed}] {n.title[:90]}"
+            f"noticia de riesgo [{','.join(n.keywords)}] {n.title[:90]}"
             for n in news_items
-            if base in [a.upper() for a in n.assets]
-            or (n.keywords and base in " ".join(n.keywords).upper())
+            if n.keywords and base.upper() in [a.upper() for a in n.assets]
         ]
         d = diagnose(t, px, ctx, alerts[:4])
         d["example"] = t.get("example", False)
@@ -420,9 +421,10 @@ def trade_status() -> None:
             f"choque {s['tipo']}: {s['detalle']}" for s in shocks if s["symbol"] == t["asset"]
         ]
         alerts += [
-            f"noticia: {n.title[:80]}"
+            f"noticia de riesgo [{','.join(n.keywords)}]: {n.title[:80]}"
             for n in news
-            if t["asset"].replace("USDT", "") in [a.upper() for a in n.assets]
+            if n.keywords
+            and t["asset"].replace("USDT", "").upper() in [a.upper() for a in n.assets]
         ]
         d = diagnose(t, px, "(contexto completo en `qa agent run`)", alerts[:3])
         typer.echo(str(d))
