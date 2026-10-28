@@ -1,0 +1,11 @@
+# forward-v1 (motor de fills t+1) — 2026-10-28
+100644 544afe0fc7f8102a2f150c4d5e5252624a098a21 0	.github/workflows/forward.yml
+100644 3d878f98603f53b1a32c098b2a8c1e3f90f239bd 0	config/watchlist.yaml
+100644 c1df351fc7747db19b8e3d977c2eadf7dd0ec226 0	reports/M5_FINAL_REPORT.md
+100644 3b895255456e4f87ee984558cab89120f46db426 0	src/qa/agent/live.py
+100644 fc7b3443689c627660c93ec2d5389bd1a630fac8 0	src/qa/agent/telemetry.py
+100644 030647463a7d4c190aa63326409ff3dfae98ab36 0	src/qa/cli.py
+100644 c1cfae1a62a35a812cff515b6a533bc2cc055a67 0	src/qa/forward/paper.py
+100644 a50dc843878e14892ebdf4441bc3a65835778cb5 0	src/qa/report/dashboard.py
+100644 e301a65de586d95899b78efd314d6a7cbb35356f 0	tests/unit/test_forward_paper.py
+HEAD 64c59fde4b2814d3d17ad5b3c84a93808ce01ddd
