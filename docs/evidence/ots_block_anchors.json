@@ -77,12 +77,27 @@
       ]
     },
     "v1.4": {
-      "verify": [
-        "Stamp enviado a 4 calendarios 2026-10-27T18:0x Z; upgrade+info tras ~12 min: PendingAttestation (normal: el ancla BTC tarda decenas de minutos-horas)"
-      ],
-      "bitcoin_attestations": [],
-      "checklist": "M3-desbloqueo: make ots-check hasta BitcoinBlockHeaderAttestation; commitear .ots + log actualizado (condicion del gate M2b: 'OTS anclado verificado')"
+      "bitcoin_attestations_full": [
+        {
+          "height": 973560,
+          "hash": "00000000000000000001ce57b230c4336f572197bc1975c9308523c9106ab715",
+          "block_time_utc": "2026-10-28T13:39:24+00:00"
+        },
+        {
+          "height": 973564,
+          "hash": "000000000000000000004ef7fc9c1dd366ac922d3e2e09ac5916c14a4df78ded",
+          "block_time_utc": "2026-10-28T14:11:53+00:00"
+        }
+      ]
+    },
+    "m3a-freeze": {
+      "bitcoin_attestations_full": [],
+      "status": "estampado en 4 calendarios; ancla BTC pendiente (horas)"
+    },
+    "m3b-complete": {
+      "bitcoin_attestations_full": [],
+      "status": "estampado en 4 calendarios; ancla BTC pendiente (horas)"
     }
   },
-  "updated_at_utc": "2026-10-28T13:45:30+00:00"
+  "updated_at_utc": "2026-10-28T14:55:52+00:00"
 }
