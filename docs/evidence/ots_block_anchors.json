@@ -75,7 +75,14 @@
           "block_time_utc": "2026-10-26T21:04:43+00:00"
         }
       ]
+    },
+    "v1.4": {
+      "verify": [
+        "Stamp enviado a 4 calendarios 2026-10-27T18:0x Z; upgrade+info tras ~12 min: PendingAttestation (normal: el ancla BTC tarda decenas de minutos-horas)"
+      ],
+      "bitcoin_attestations": [],
+      "checklist": "M3-desbloqueo: make ots-check hasta BitcoinBlockHeaderAttestation; commitear .ots + log actualizado (condicion del gate M2b: 'OTS anclado verificado')"
     }
   },
-  "updated_at_utc": "2026-10-26T21:30:39+00:00"
+  "updated_at_utc": "2026-10-28T13:45:30+00:00"
 }
