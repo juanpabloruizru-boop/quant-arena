@@ -1,0 +1,11 @@
+QUANT-ARENA v2 — hashes normativos del preregistro v1.4
+Fecha (UTC): 2026-10-28T13:31:00Z
+Motivo: añadidos 1-5 del gate M2b (solo texto, pre-datos): validacion multi-mundo
+de t*, DSR con n_trials familiar y sd estimada del ledger + nota FWER de programa,
+seleccion por mediana CPCV (una celda por familia y activo), protocolo M3 en dos
+puertas (M3a/M3b), pre-declaracion H1 INCONTRASTABLE. Rejilla/sizing/umbrales sin cambios.
+
+SHA256 (docs/PREREGISTRO.md v1.4)     = 37eeb8444a97ee746b3774fe8c60ce8dd757e8e0475b0ef2987433f83a13e7a4
+SHA256 (config/hypotheses.yaml v1.4)  = 28cbc2bc2dec0ca92bb7f804f7c8c322ef5bb562ce60493d94bbd507b81a3124
+SHA256 (config/universe.yaml)         = 3425b098c933ae91cca48dafe52fafbf50b0c251f1cd59bc54052087e19caae5
+SHA256 (config/adjudications.csv)     = ca1876cd09e5b05e11aa253769197fe37422feaf7325c7a06d9ede035dd2edf5
