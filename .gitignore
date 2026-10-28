@@ -28,3 +28,6 @@ ledger/*.duckdb.wal
 
 # estado mutable del motor forward (la evidencia es la cadena forward.jsonl)
 ledger/forward_state.json
+
+# backups de reset-examples (artefacto transitorio; los libros reales SI se versionan)
+ledger/backup/

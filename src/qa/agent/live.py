@@ -119,3 +119,23 @@ def last_price(live: dict[str, Any], symbol: str) -> float | None:
     if kl is None or kl.empty:
         return None
     return float(kl["close"].iloc[-1])
+
+
+def fetch_prices(symbols: list[str]) -> dict[str, float]:
+    """Último precio spot por símbolo (ticker/price): solo lectura, tolerante a fallos.
+
+    Se usa para la contabilidad del usuario (M5b) sin descargar velas completas.
+    """
+    out: dict[str, float] = {}
+    syms = sorted(set(symbols))
+    if not syms:
+        return out
+    with BinancePublicClient() as c:
+        for s in syms:
+            try:
+                r = c.get_json(SPOT_BASE, "/api/v3/ticker/price", {"symbol": s})
+                if r and "price" in r:
+                    out[s] = float(r["price"])
+            except Exception:
+                continue
+    return out

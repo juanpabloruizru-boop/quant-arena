@@ -111,3 +111,53 @@ consejo personalizado.
   v1.5 (proceso científico), no mediante re-etiquetado del dashboard.
 - Los entregables de investigación siguen sellados e intactos
   (`m3a-freeze`, `m3b-complete`, prereg v1.0-v1.4).
+
+---
+
+## Addendum B (M5b, 2026-10-28): contabilidad del usuario y filtro geométrico R:R
+
+**Ratificado por directiva del orquestador/JP (M5b, 2026-10-28)**, se añaden las
+siguientes herramientas, todas dentro del régimen descriptivo de este ADR
+(contabilidad del usuario y hechos matemáticos observables de precios/niveles):
+
+1. **Libro de capital** (`ledger/user_capital.jsonl`, `qa capital
+   set/add/status/reset-examples`): contabilidad append-only con cadena de
+   hashes de los aportes/retiros del usuario, ecuación patrimonial (equity
+   vivo = aportado + PnL realizado neto + PnL flotante bruto) y portfolio
+   heat (pérdida sobre capital aportado si todos los SL saltaran a la vez;
+   SL en zona de ganancia/break-even aporta $0; sin SL no es computable y se
+   lista aparte). El equity vivo sustituye a `capital_ref_usd` como base de
+   la columna *Escala teórica* (etiqueta "escala teórica/informativo"
+   obligatoria, igual que en la decisión Q2 original).
+2. **Filtro de asimetría R:R ≥ min_rr** (regla de disciplina del PROPIO
+   usuario; `min_rr_ratio: 2.0` en `config/watchlist.yaml`): (a) sobre los
+   niveles de sus trades, R:R Neto = (|TP−Entry|−fees)/(|Entry−SL|+fees), con
+   `ALERTA DE DISCIPLINA` y bloqueo en `qa trade open` salvo
+   `--force-low-rr` (queda marcado `rr_forzado` en el libro, auditable);
+   (b) sobre la geometría observable SMA50/ATR14 del precio (H1 y watchlist
+   4H/1D/1W): Risk = max(Close−SMA50, 1×ATR14) + comisión i/v; Reward =
+   3×ATR14 − extensión desde SMA50. Etiquetas descriptivas CUMPLE/NO CUMPLE
+   (Asimetría X.Xx); si NO CUMPLE, la escala teórica de H1 se muestra
+   bloqueada ($0). Las comisiones salen de `costs.yaml` (VERIFICADO):
+   spot 0.20 % i/v, perp 0.10 % i/v.
+3. **Calculadora aritmética de riesgo** (`qa trade calc` + panel inline sin
+   recursos externos): riesgo $, tamaño equivalente (USD/unidades), break-even
+   neto taker y TP que satisface R:R 2.0x/3.0x de los niveles del usuario,
+   para 0.5/1.0/2.0 % del equity. Etiquetada "informativo, no es sizing
+   recomendado": replica la excepción de escala aritmética ya ratificada.
+4. **Trade Audit** (`qa trade audit` + panel): métricas contables del
+   historial CERRADO del usuario (win rate, profit factor, esperanza $/R,
+   R:R medio realizado, mejor/peor, maxDD realizado, desglose por tag) y
+   soporte `--tag`/`--note`/`--ts` en open/close.
+
+**El guard de lenguaje y `test_dashboard_language_guard` NO se relajan**:
+durante el desarrollo de M5b el guard detectó y obligó a corregir un
+imperativo ("Cierra con …") en el panel de auditoría — evidencia de que el
+test sigue mordiendo. Sigue sin exigirse v1.5: nada de esto genera órdenes,
+sugiere niveles propios del sistema ni evalúa hipótesis nuevas; el filtro
+R:R es el umbral de disciplina que JP se configura a sí mismo, aplicado a
+su propia contabilidad y a geometría estándar del precio.
+
+`reset-examples` reescribe las cadenas SOLO para eliminar registros
+`example: true`, con backup previo en `ledger/backup/` (gitignored) y
+re-verificación posterior; los registros reales nunca se tocan.

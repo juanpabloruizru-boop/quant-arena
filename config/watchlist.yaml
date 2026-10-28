@@ -10,7 +10,20 @@ watchlist: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT]
 # Solo se usa para mostrar escala aritmetica (exposicion_regla x capital_ref),
 # etiquetada "Escala teorica sobre capital de referencia". No es sizing
 # recomendado ni consejo: la regla de tamanno es la de la celda congelada.
+# M5b: si existe ledger/user_capital.jsonl con registros, la columna de escala
+# teorica usa automaticamente el PATRIMONIO VIVO del usuario en su lugar.
 capital_ref_usd: 1000
+
+# Filtro de calidad geometrica R:R (M5b) — disciplina configurada por JP.
+# Aritmetica descriptiva sobre SMA50/ATR14 del precio (hechos observables);
+# NO es una senal ni una hipotesis evaluada (ADR-008 addendum B).
+# Las comisiones ida y vuelta se derivan de config/costs.yaml (VERIFICADO):
+# spot 2 x 0.100% = 0.20%; perp 2 x 0.050% = 0.10%.
+filtro_rr:
+  min_rr_ratio: 2.0          # R:R neto minimo exigido por la disciplina de JP
+  reward_atr_mult: 3.0       # Reward_dist = 3.0 x ATR14 - extension desde SMA50
+  risk_atr_mult_min: 1.0     # Risk_dist  = max(Close-SMA50, 1.0 x ATR14) + fees
+  risk_pcts: [0.5, 1.0, 2.0] # filas de la calculadora de riesgo por operacion
 
 noticias:
   feeds:

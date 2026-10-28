@@ -11,6 +11,7 @@ ejecuciones en el ledger correspondiente antes de devolver resultados.
 from __future__ import annotations
 
 from datetime import UTC
+from pathlib import Path
 from typing import Annotated, Any
 
 import typer
@@ -23,6 +24,7 @@ forward_app = typer.Typer(help="Forward-test en paper (M4)")
 report_app = typer.Typer(help="Boletin informativo (M5)")
 agent_app = typer.Typer(help="Agente operativo M4/M5 (estados + tracker + vigilancia)")
 trade_app = typer.Typer(help="Registro de operaciones del USUARIO (el agente no abre nada)")
+capital_app = typer.Typer(help="Contabilidad de capital del USUARIO (M5b, libro append-only)")
 
 app.add_typer(data_app, name="data")
 app.add_typer(research_app, name="research")
@@ -31,6 +33,7 @@ app.add_typer(forward_app, name="forward")
 app.add_typer(report_app, name="report")
 app.add_typer(agent_app, name="agent")
 app.add_typer(trade_app, name="trade")
+app.add_typer(capital_app, name="capital")
 
 NOT_IMPLEMENTED_EXIT = 3
 
@@ -230,16 +233,26 @@ def report_daily() -> None:
 
 @agent_app.command("run")
 def agent_run() -> None:
-    """One-shot: ingesta viva -> estados + tracker + vigilancia -> dashboard."""
+    """One-shot: ingesta viva -> estados + contabilidad + tracker + vigilancia -> dashboard."""
     import json as _json
 
     import pandas as _pd
     import yaml as _yaml
 
+    from qa.agent.audit import run_audit
+    from qa.agent.capital import (
+        compute_status,
+        load_capital,
+        load_costs,
+        load_rr_config,
+        net_contributed,
+        verify_capital_chain,
+    )
+    from qa.agent.geometry import fee_roundtrip, fee_taker_side
     from qa.agent.live import fetch_extra_daily, fetch_live, last_price
     from qa.agent.news import detect_shocks, fetch_news
     from qa.agent.signals import compute_states
-    from qa.agent.telemetry import h1_levels, trade_geometry, watchlist_telemetry
+    from qa.agent.telemetry import atr, h1_levels, trade_geometry, watchlist_telemetry
     from qa.agent.tracker import diagnose, load_trades, verify_chain
     from qa.data.paths import get_root, reports_dir
     from qa.data.pit import membership_at
@@ -248,6 +261,10 @@ def agent_run() -> None:
     root = get_root()
     cfg = _yaml.safe_load((root / "config" / "watchlist.yaml").read_text(encoding="utf-8"))
     watchlist = list(cfg["watchlist"])
+    costs = load_costs(root)
+    rr_cfg = load_rr_config(root)
+    min_rr = rr_cfg["min_rr"]
+    fee_rt_spot = fee_roundtrip("spot", costs)
     pit = _pd.read_parquet(root / "data" / "curated" / "pit_universe.parquet")
     members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
 
@@ -261,6 +278,10 @@ def agent_run() -> None:
     ok, n_lines, msg = verify_chain(root)
     if not ok:
         typer.echo(f"CADENA DE OPERACIONES ROTA: {msg}")
+        raise typer.Exit(code=1)
+    okc, n_cap, msgc = verify_capital_chain(root)
+    if not okc:
+        typer.echo(f"CADENA DE CAPITAL ROTA: {msgc}")
         raise typer.Exit(code=1)
 
     bases = sorted(
@@ -276,25 +297,59 @@ def agent_run() -> None:
     )
     shocks = detect_shocks(live["klines"], live["premium"], cfg.get("choques", {}))
 
-    # telemetria descriptiva (ADR-008 ratificado: hechos matematicos del precio, no senales)
-    tele = watchlist_telemetry(dict(live["klines"]))
-    capital_ref = float(cfg.get("capital_ref_usd", 0.0))
+    # telemetria descriptiva + geometria R:R del filtro de disciplina (M5b)
+    tele = watchlist_telemetry(
+        dict(live["klines"]),
+        fee_rt=fee_rt_spot,
+        min_rr=min_rr,
+        reward_mult=rr_cfg["reward_mult"],
+        risk_mult=rr_cfg["risk_mult"],
+    )
+
+    # precios vivos por activo (para PnL flotante / heat) reutilizando las velas
+    prices_map: dict[str, float] = {}
+    for t in trades:
+        if t.get("status") == "open" and t["asset"] not in prices_map:
+            px = last_price(live, t["asset"])
+            if px is None:
+                d1 = live["klines"].get(t["asset"], {}).get("1d")
+                px = float(d1["close"].iloc[-1]) if d1 is not None and not d1.empty else None
+            if px is not None:
+                prices_map[t["asset"]] = px
+
+    # contabilidad de capital del usuario (M5b): equity vivo = base de la escala teorica
+    cap_records = load_capital(root)
+    capital_status = compute_status(cap_records, trades, prices_map, costs)
+    capital_cfg_ref = float(cfg.get("capital_ref_usd", 0.0))
+    if cap_records and capital_status["patrimonio_total"] > 0:
+        capital_base = capital_status["patrimonio_total"]
+        capital_origen = "patrimonio vivo (tu contabilidad M5b)"
+    else:
+        capital_base = capital_cfg_ref
+        capital_origen = "config capital_ref_usd"
+
     h1_lv: dict[str, Any] = {}
     for asset in ("BTCUSDT", "ETHUSDT"):
         st = states["cells"].get(f"H1_{asset}")
         d1 = live["klines"].get(asset, {}).get("1d")
         if st and d1 is not None and not d1.empty:
-            h1_lv[asset] = h1_levels(d1, float(st["posicion_regla"]), capital_ref)
+            h1_lv[asset] = h1_levels(
+                d1,
+                float(st["posicion_regla"]),
+                capital_base,
+                fee_rt_spot=fee_rt_spot,
+                min_rr=min_rr,
+                reward_mult=rr_cfg["reward_mult"],
+                risk_mult=rr_cfg["risk_mult"],
+                capital_base_origen=capital_origen,
+            )
 
     diags = []
     for t in trades:
         if t.get("status") != "open":
             diags.append({**diagnose(t, None, "", []), "example": t.get("example", False)})
             continue
-        px = last_price(live, t["asset"])
-        if px is None:
-            d1 = live["klines"].get(t["asset"], {}).get("1d")
-            px = float(d1["close"].iloc[-1]) if d1 is not None and not d1.empty else None
+        px = prices_map.get(t["asset"])
         base = t["asset"].replace("USDT", "")
         st = states["cells"].get(f"H1_{t['asset']}")
         if st:
@@ -315,10 +370,20 @@ def agent_run() -> None:
             if n.keywords and base.upper() in [a.upper() for a in n.assets]
         ]
         d = diagnose(t, px, ctx, alerts[:4])
-        d.update(trade_geometry(t, px))
         tf_key = {"1w": "1w", "1s": "1w", "4h": "4h"}.get(
             (t.get("timeframe") or "1d").lower(), "1d"
         )
+        frame = live["klines"].get(t["asset"], {}).get(tf_key)
+        atr_marco = atr(frame) if frame is not None and not frame.empty else None
+        d.update(
+            trade_geometry(
+                t,
+                px,
+                atr_marco=atr_marco if atr_marco == atr_marco else None,
+                fee_taker_lado=fee_taker_side(str(t.get("kind", "spot")), costs),
+            )
+        )
+        d["timeframe"] = t.get("timeframe")
         tl = tele.get(t["asset"], {}).get(tf_key) or {}
         if tl.get("disponible"):
             d["sma50_marco_txt"] = (
@@ -327,6 +392,10 @@ def agent_run() -> None:
             )
         d["example"] = t.get("example", False)
         diags.append(d)
+
+    # auditoria del historial cerrado (M5b)
+    aportado = net_contributed(cap_records) if cap_records else None
+    audit_out = run_audit(trades, costs, aportado)
 
     spark = {}
     for sym in ("BTCUSDT", "ETHUSDT"):
@@ -373,6 +442,14 @@ def agent_run() -> None:
             ]
         },
     }
+    calc_cfg = {
+        "equity_usd": capital_base,
+        "equity_origen": capital_origen,
+        "min_rr": min_rr,
+        "fee_taker_spot": fee_taker_side("spot", costs),
+        "fee_taker_perp": fee_taker_side("future_long", costs),
+        "risk_pcts": list(rr_cfg["risk_pcts"]),
+    }
     html_out = render_dashboard(
         states,
         diags,
@@ -383,13 +460,36 @@ def agent_run() -> None:
         meta,
         telemetry=tele,
         h1_levels=h1_lv,
-        capital_ref=capital_ref,
+        capital_ref=capital_cfg_ref,
+        capital=capital_status,
+        audit=audit_out,
+        calc=calc_cfg,
     )
     outdir = reports_dir(root) / "dashboard"
     outdir.mkdir(parents=True, exist_ok=True)
     (outdir / "index.html").write_text(html_out, encoding="utf-8")
     typer.echo(f"dashboard -> {outdir / 'index.html'}")
     typer.echo(f"operaciones: {len(trades)} (cadena: {n_lines} lineas, {msg})")
+    typer.echo(f"capital: {n_cap} movimientos (cadena: {msgc})")
+    if not capital_status["sin_registros"]:
+        typer.echo(
+            "patrimonio: aportado "
+            f"{capital_status['capital_aportado_neto']:,.2f} + realizado "
+            f"{capital_status['pnl_realizado_usd']:+,.2f} + flotante "
+            f"{capital_status['pnl_flotante_usd']:+,.2f} = "
+            f"{capital_status['patrimonio_total']:,.2f} USD · heat "
+            f"{capital_status['portfolio_heat_usd']:,.2f} USD "
+            f"({capital_status['portfolio_heat_pct_patrimonio']}%)"
+        )
+    summ = audit_out["summary"]
+    if summ.get("total_cerradas"):
+        typer.echo(
+            f"trade audit: {summ['total_cerradas']} cerradas · win rate "
+            f"{summ['win_rate_pct']}% · neto {summ['pnl_neto_usd']:+,.2f} USD · PF "
+            f"{summ['profit_factor']}"
+        )
+    rr_resumen = {a: (lv.get("rr_filtro") or {}).get("label", "n/d") for a, lv in h1_lv.items()}
+    typer.echo(f"filtro R:R (H1 diario): {_json.dumps(rr_resumen, ensure_ascii=False)}")
     typer.echo(f"choques: {len(shocks)} | noticias relevantes: {len(news_items)}")
     typer.echo(
         "estados: "
@@ -413,14 +513,65 @@ def trade_open(
     sl: Annotated[float, typer.Option("--sl")] = 0.0,
     tp: Annotated[float, typer.Option("--tp")] = 0.0,
     note: Annotated[str, typer.Option("--note")] = "",
+    tag: Annotated[str, typer.Option("--tag", help="etiqueta de tu diario (M5b)")] = "",
+    ts: Annotated[
+        str, typer.Option("--ts", help="fecha UTC declarada del registro (ISO; defecto: ahora)")
+    ] = "",
     example: Annotated[bool, typer.Option("--example")] = False,
+    force_low_rr: Annotated[
+        bool,
+        typer.Option(
+            "--force-low-rr",
+            help="registra aunque el R:R neto incumpla tu minimo (queda marcado rr_forzado)",
+        ),
+    ] = False,
 ) -> None:
-    """Registra una operacion ABIERTA POR TI (el agente nunca abre nada)."""
+    """Registra una operacion ABIERTA POR TI (el agente nunca abre nada).
+
+    M5b: aplica tu filtro de disciplina R:R Neto >= min_rr_ratio
+    (config/watchlist.yaml). Si la configuracion incumple, el registro se
+    BLOQUEA salvo --force-low-rr (quedara marcado en el libro, auditable).
+    """
+    from qa.agent.capital import load_costs, load_rr_config
+    from qa.agent.geometry import check_rr_discipline
     from qa.agent.tracker import open_trade
     from qa.data.paths import get_root
 
+    root = get_root()
+    costs = load_costs(root)
+    min_rr = load_rr_config(root)["min_rr"]
+
+    rr_neto: float | None = None
+    if entry > 0 and sl > 0 and tp > 0:
+        disc = check_rr_discipline(entry, sl, tp, kind, costs, min_rr)
+        rr_neto = disc["rr_neto"]
+        if disc["cumple"] is False:
+            typer.echo(f"⚠ {disc['aviso']}")
+            if not force_low_rr:
+                typer.echo(
+                    "registro BLOQUEADO por tu filtro de disciplina (no se ha escrito nada). "
+                    "Si aun asi quieres anotarla: repite con --force-low-rr "
+                    "(quedara marcada rr_forzado=true en el libro)."
+                )
+                raise typer.Exit(code=2)
+            typer.echo("--force-low-rr presente: se registra marcada como rr_forzado=true.")
+        else:
+            typer.echo(f"✓ {disc['aviso']}")
+        long_side = kind != "future_short"
+        orden_ok = (sl < entry < tp) if long_side else (tp < entry < sl)
+        if not orden_ok:
+            typer.echo(
+                "AVISO: niveles inhabituales para la direccion indicada "
+                "(esperado SL<entrada<TP en largos / TP<entrada<SL en cortos). ¿Errata?"
+            )
+    elif entry > 0 and (sl <= 0 or tp <= 0):
+        typer.echo(
+            "AVISO: sin SL y/o TP: el filtro R:R >= "
+            f"{min_rr:.1f}x no es evaluable en esta operacion (se registra sin filtro)."
+        )
+
     rec = open_trade(
-        get_root(),
+        root,
         asset,
         kind,
         timeframe,
@@ -430,10 +581,16 @@ def trade_open(
         tp or None,
         note,
         example,
+        tag=tag,
+        ts_utc=ts or None,
+        rr_neto_inicial=rr_neto,
+        rr_forzado=bool(force_low_rr and rr_neto is not None),
     )
     typer.echo(
         f"registrada: id={rec['id']} {asset} {kind} entrada={entry} tam=${size_usd} "
-        f"SL={sl or '—'} TP={tp or '—'}{' [EJEMPLO]' if example else ''}"
+        f"SL={sl or '—'} TP={tp or '—'}"
+        f"{f' R:R neto={rr_neto:.2f}x' if rr_neto is not None else ''}"
+        f"{f' tag={tag}' if tag else ''}{' [EJEMPLO]' if example else ''}"
     )
 
 
@@ -442,12 +599,14 @@ def trade_close(
     id: Annotated[str, typer.Option("--id")],
     exit: Annotated[float, typer.Option("--exit")],
     note: Annotated[str, typer.Option("--note")] = "",
+    tag: Annotated[str, typer.Option("--tag", help="etiqueta de tu diario (M5b)")] = "",
+    ts: Annotated[str, typer.Option("--ts", help="fecha UTC declarada del cierre (ISO)")] = "",
 ) -> None:
     """Registra el cierre de una operacion."""
     from qa.agent.tracker import close_trade
     from qa.data.paths import get_root
 
-    close_trade(get_root(), id, exit, note)
+    close_trade(get_root(), id, exit, note, tag=tag, ts_utc=ts or None)
     typer.echo(f"cerrada {id} a {exit}")
 
 
@@ -463,16 +622,216 @@ def trade_list() -> None:
         typer.echo(_json.dumps(t, default=str))
 
 
+def _resolve_equity(root: Path, equity_cli: float) -> tuple[float, str]:
+    """Base patrimonial: --equity > equity vivo (libro de capital) > capital_ref_usd."""
+    import yaml as _yaml
+
+    from qa.agent.capital import compute_status, load_capital, load_costs
+
+    if equity_cli > 0:
+        return equity_cli, "--equity (override CLI)"
+    cap = load_capital(root)
+    if cap:
+        from qa.agent.live import fetch_prices
+        from qa.agent.tracker import load_trades
+
+        trades = load_trades(root)
+        assets = sorted({t["asset"] for t in trades if t.get("status") == "open"})
+        try:
+            prices = fetch_prices(assets)
+        except Exception:
+            prices = {}
+        st = compute_status(cap, trades, prices, load_costs(root))
+        if st["patrimonio_total"] > 0:
+            return st["patrimonio_total"], "patrimonio vivo (tu contabilidad M5b)"
+        return st["patrimonio_total"], "patrimonio vivo <= 0 (revisa tu contabilidad)"
+    cfg = _yaml.safe_load((root / "config" / "watchlist.yaml").read_text(encoding="utf-8"))
+    return float(cfg.get("capital_ref_usd", 0.0)), "config capital_ref_usd"
+
+
+@trade_app.command("calc")
+def trade_calc(
+    entry: Annotated[float, typer.Option("--entry", help="precio de entrada de TU configuracion")],
+    sl: Annotated[float, typer.Option("--sl", help="TU stop loss")],
+    tp: Annotated[float, typer.Option("--tp", help="TU take profit (0 = sin TP)")] = 0.0,
+    kind: Annotated[str, typer.Option("--kind", help="spot|future_long|future_short")] = "spot",
+    risk_pct: Annotated[
+        float, typer.Option("--risk-pct", help="riesgo % unico (0 = filas 0.5/1.0/2.0)")
+    ] = 0.0,
+    equity: Annotated[
+        float, typer.Option("--equity", help="patrimonio base (0 = auto: equity vivo o config)")
+    ] = 0.0,
+) -> None:
+    """Calculadora ARITMETICA de escala y riesgo (hechos matematicos, no consejo).
+
+    Para cada % de riesgo sobre el patrimonio: riesgo $, tamano de posicion
+    equivalente (USD y unidades) y % del patrimonio. Ademas: precio de
+    break-even neto (taker ida y vuelta), TP que satisface R:R = 2.0x y 3.0x,
+    R:R Neto de tu configuracion y estado de tu filtro de disciplina.
+    """
+    from qa.agent.capital import load_costs, load_rr_config
+    from qa.agent.geometry import trade_calc as calc_geom
+    from qa.data.paths import get_root
+
+    root = get_root()
+    costs = load_costs(root)
+    rr_cfg = load_rr_config(root)
+    equity_base, origen = _resolve_equity(root, equity)
+    pcts = (risk_pct,) if risk_pct > 0 else rr_cfg["risk_pcts"]
+    res = calc_geom(
+        entry,
+        sl,
+        tp,
+        kind,
+        costs,
+        rr_cfg["min_rr"],
+        equity_base,
+        risk_pcts=tuple(pcts),
+    )
+    typer.echo("═══ CALCULADORA ARITMÉTICA DE RIESGO (informativo, no es sizing recomendado) ═══")
+    typer.echo(
+        f"configuración: {kind} entrada {entry} · SL {sl}"
+        f"{f' · TP {tp}' if tp > 0 else ' · sin TP'} · patrimonio base "
+        f"{equity_base:,.2f} USD ({origen})"
+    )
+    fee_lado = costs["spot"]["taker_fee"] if kind == "spot" else costs["perp_usdm"]["taker_fee"]
+    typer.echo(
+        f"comisiones: taker ida y vuelta {2 * float(fee_lado) * 100:.3f}% (costs.yaml VERIFICADO)"
+    )
+    typer.echo("")
+    typer.echo(
+        f"{'Riesgo %':>9} | {'Riesgo $':>10} | {'Tamaño $':>12} | {'Unidades':>12} | "
+        f"{'% patrim.':>9}"
+    )
+    for f in res["filas_riesgo"]:
+        typer.echo(
+            f"{f['risk_pct']:>8.1f}% | {f['risk_usd']:>10,.2f} | {f['size_usd']:>12,.2f} | "
+            f"{f['unidades']:>12.6f} | {f['size_pct_equity']:>8.1f}%"
+        )
+    typer.echo("")
+    typer.echo(f"Precio Break-Even Neto (taker i/v): {res['breakeven_neto']:,.2f}")
+    if res["tp_min_2r"] is None or res["tp_min_3r"] is None:
+        typer.echo(
+            "AVISO: SL igual a la entrada (riesgo indefinido): los TP mínimos y el tamaño "
+            "de posición no son computables."
+        )
+    else:
+        typer.echo(
+            f"TP que satisface R:R = 2.0x: {res['tp_min_2r']:,.2f}   ·   "
+            f"R:R = 3.0x: {res['tp_min_3r']:,.2f}   (aritmética de tu regla)"
+        )
+    if res["rr_neto"] is not None:
+        typer.echo(
+            f"R:R Neto de tu configuración: {res['rr_neto']:.2f}x (mínimo {res['min_rr']:.1f}x)"
+        )
+        if res["cumple_filtro"]:
+            typer.echo(
+                f"✓ FILTRO R:R >= {res['min_rr']:.1f}: CUMPLE (Asimetría {res['rr_neto']:.2f}x)"
+            )
+        else:
+            typer.echo(f"⚠ {res['aviso_filtro']}")
+            typer.echo(
+                f"✗ FILTRO R:R >= {res['min_rr']:.1f}: NO CUMPLE (Asimetría "
+                f"{res['rr_neto']:.2f}x < {res['min_rr']:.1f})"
+            )
+            raise typer.Exit(code=2)
+    else:
+        typer.echo(
+            "sin TP (o SL = entrada): el filtro R:R no es evaluable; se muestran los TP "
+            "que satisfarían 2.0x/3.0x con tu SL."
+        )
+
+
+@trade_app.command("audit")
+def trade_audit(
+    as_json: Annotated[bool, typer.Option("--json", help="vuelca el resultado en JSON")] = False,
+) -> None:
+    """Trade Audit completo del historial CERRADO (métricas contables, M5b)."""
+    import json as _json
+
+    from qa.agent.audit import run_audit
+    from qa.agent.capital import load_capital, load_costs, net_contributed
+    from qa.agent.tracker import load_trades
+    from qa.data.paths import get_root
+
+    root = get_root()
+    costs = load_costs(root)
+    cap = load_capital(root)
+    aportado = net_contributed(cap) if cap else None
+    out = run_audit(load_trades(root), costs, aportado)
+    if as_json:
+        typer.echo(_json.dumps(out, indent=2, default=str))
+        return
+    rows, summ = out["rows"], out["summary"]
+    typer.echo("═══ TRADE AUDIT — HISTORIAL DE OPERACIONES CERRADAS (contabilidad del usuario) ═══")
+    if not rows:
+        typer.echo("sin operaciones cerradas registradas.")
+        return
+    typer.echo(
+        f"{'cierre':<11}{'activo':<10}{'tipo/marco':<16}{'dur.':<8}{'entrada':>10}"
+        f"{'salida':>10}{'tamaño$':>9}{'RR ini':>7}{'PnL neto$':>11}{'PnL%':>8}{'R':>7}  tag"
+    )
+    for r in rows:
+        ex = " [EJEMPLO]" if r.get("example") else ""
+        typer.echo(
+            f"{str(r['closed_at'])[:10]:<11}{str(r['asset']):<10}"
+            f"{str(r['kind']) + '/' + str(r['timeframe']):<16}{str(r['duracion']):<8}"
+            f"{r['entry']:>10,.2f}{r['exit']:>10,.2f}{r['size_usd']:>9,.0f}"
+            f"{(str(r['rr_inicial_bruto']) + 'x') if r['rr_inicial_bruto'] is not None else '—':>7}"
+            f"{r['pnl_neto_usd']:>+11,.2f}{r['pnl_pct']:>+8.2f}"
+            f"{(str(r['r_multiplo']) + 'R') if r['r_multiplo'] is not None else 'sinSL':>7}"
+            f"  {r.get('tag') or '—'}{ex}"
+        )
+    typer.echo("")
+    typer.echo("─── MÉTRICAS GLOBALES DE AUDITORÍA ───")
+    typer.echo(f"operaciones cerradas:      {summ['total_cerradas']}")
+    typer.echo(f"win rate:                  {summ['win_rate_pct']}%")
+    typer.echo(
+        f"ganancia/pérdida neta:     {summ['pnl_neto_usd']:+,.2f} USD"
+        f" · {summ['pnl_neto_pct_aportado']}% s/ capital aportado"
+        f" · {summ['pnl_neto_pct_rotacion']}% s/ rotación"
+    )
+    typer.echo(f"profit factor:             {summ['profit_factor']}")
+    typer.echo(
+        f"esperanza por operación:   {summ['esperanza_usd_por_trade']:+,.2f} USD"
+        f" · {summ['esperanza_R_por_trade']} R"
+    )
+    typer.echo(f"R:R medio realizado:       {summ['rr_medio_realizado_R']} R")
+    for key, lbl in (("mejor_peor_usd", "USD"), ("mejor_peor_R", "R")):
+        d = summ.get(key) or {}
+        mej, peo = d.get("mejor") or {}, d.get("peor") or {}
+        if mej:
+            typer.echo(
+                f"mejor/peor operación ({lbl}): {mej.get('asset')} {mej.get('valor')} · "
+                f"{peo.get('asset')} {peo.get('valor')}"
+            )
+    typer.echo(
+        f"max drawdown realizado:    {summ['max_drawdown_realizado_usd']:,.2f} USD "
+        "(sobre PnL acumulado)"
+    )
+    typer.echo(f"operaciones sin SL:        {summ['trades_sin_sl']} (R no computable)")
+    typer.echo("")
+    typer.echo("─── DESGLOSE POR TAG ───")
+    for tag, d in sorted((summ.get("por_tag") or {}).items()):
+        typer.echo(
+            f"{tag:<22} ops {d['trades']:>3} · win rate {d['win_rate_pct']:>5}% · "
+            f"neto {d['pnl_neto_usd']:>+10,.2f} USD · R medio {d['R_medio']}"
+        )
+
+
 @trade_app.command("status")
 def trade_status() -> None:
     """Diagnostico descriptivo de las operaciones abiertas (precios vivos)."""
+    from qa.agent.capital import load_costs
+    from qa.agent.geometry import fee_taker_side
     from qa.agent.live import fetch_live, last_price
     from qa.agent.news import detect_shocks, fetch_news
-    from qa.agent.telemetry import trade_geometry
+    from qa.agent.telemetry import atr, trade_geometry
     from qa.agent.tracker import diagnose, load_trades
     from qa.data.paths import get_root
 
     root = get_root()
+    costs = load_costs(root)
     trades = [t for t in load_trades(root) if t.get("status") == "open"]
     if not trades:
         typer.echo("sin operaciones abiertas")
@@ -494,8 +853,177 @@ def trade_status() -> None:
             and t["asset"].replace("USDT", "").upper() in [a.upper() for a in n.assets]
         ]
         d = diagnose(t, px, "(contexto completo en `qa agent run`)", alerts[:3])
-        d.update(trade_geometry(t, px))
+        tf_key = {"1w": "1w", "1s": "1w", "4h": "4h"}.get(
+            (t.get("timeframe") or "1d").lower(), "1d"
+        )
+        frame = live["klines"].get(t["asset"], {}).get(tf_key)
+        atr_marco = atr(frame) if frame is not None and not frame.empty else None
+        d.update(
+            trade_geometry(
+                t,
+                px,
+                atr_marco=atr_marco if atr_marco == atr_marco else None,
+                fee_taker_lado=fee_taker_side(str(t.get("kind", "spot")), costs),
+            )
+        )
         typer.echo(str(d))
+
+
+# ------------------------- capital (M5b) -------------------------
+@capital_app.command("set")
+def capital_set(
+    amount: Annotated[float, typer.Option("--amount", help="capital inicial en USD")],
+    note: Annotated[str, typer.Option("--note")] = "Capital inicial",
+    ts: Annotated[str, typer.Option("--ts", help="fecha UTC declarada (ISO; defecto: ahora)")] = "",
+    example: Annotated[
+        bool, typer.Option("--example", help="marca el registro como EJEMPLO")
+    ] = False,
+) -> None:
+    """Fija el capital inicial de tu libro contable (ledger/user_capital.jsonl)."""
+    from qa.agent.capital import set_capital
+    from qa.data.paths import get_root
+
+    rec = set_capital(get_root(), amount, note, ts_utc=ts or None, example=example)
+    typer.echo(
+        f"capital inicial registrado: {amount:,.2f} USD ({rec['ts_utc']})"
+        f"{' [EJEMPLO]' if example else ''}"
+    )
+
+
+@capital_app.command("add")
+def capital_add(
+    amount: Annotated[float, typer.Option("--amount", help="aporte (negativo = retiro)")],
+    note: Annotated[str, typer.Option("--note")] = "",
+    ts: Annotated[str, typer.Option("--ts", help="fecha UTC declarada (ISO; defecto: ahora)")] = "",
+    example: Annotated[
+        bool, typer.Option("--example", help="marca el registro como EJEMPLO")
+    ] = False,
+) -> None:
+    """Registra un aporte adicional (o retiro si el importe es negativo)."""
+    from qa.agent.capital import add_capital
+    from qa.data.paths import get_root
+
+    rec = add_capital(get_root(), amount, note, ts_utc=ts or None, example=example)
+    tipo = "aporte" if amount >= 0 else "retiro"
+    typer.echo(
+        f"{tipo} registrado: {amount:+,.2f} USD ({rec['ts_utc']}){' [EJEMPLO]' if example else ''}"
+    )
+
+
+@capital_app.command("status")
+def capital_status() -> None:
+    """Ecuación patrimonial completa: aportado, realizado, flotante, equity y heat."""
+    from qa.agent.capital import (
+        compute_status,
+        load_capital,
+        load_costs,
+        verify_capital_chain,
+    )
+    from qa.agent.live import fetch_prices
+    from qa.agent.tracker import load_trades, verify_chain
+    from qa.data.paths import get_root
+
+    root = get_root()
+    okc, nc, msgc = verify_capital_chain(root)
+    okt, nt, msgt = verify_chain(root)
+    if not (okc and okt):
+        typer.echo(f"CADENA ROTA — capital: {msgc} · operaciones: {msgt}")
+        raise typer.Exit(code=1)
+    cap = load_capital(root)
+    trades = load_trades(root)
+    assets = sorted({t["asset"] for t in trades if t.get("status") == "open"})
+    try:
+        prices = fetch_prices(assets)
+    except Exception:
+        prices = {}
+    st = compute_status(cap, trades, prices, load_costs(root))
+    if st["sin_registros"]:
+        typer.echo(
+            "sin libro de capital: empieza con `qa capital set --amount 1000 --note "
+            '"Capital inicial"`.'
+        )
+        return
+    typer.echo("═══ ECUACIÓN PATRIMONIAL (contabilidad del usuario · M5b) ═══")
+    typer.echo(f"1) Capital Aportado Neto: {st['capital_aportado_neto']:,.2f} USD")
+    typer.echo(f"   {'fecha':<17}{'tipo':<9}{'importe':>12}{'acumulado':>12}  nota")
+    for m in st["movimientos"]:
+        ex = " [EJEMPLO]" if m["example"] else ""
+        typer.echo(
+            f"   {str(m['ts_utc'])[:16]:<17}{m['tipo']:<9}{m['amount']:>+12,.2f}"
+            f"{m['acumulado']:>12,.2f}  {m['note']}{ex}"
+        )
+    typer.echo(
+        f"2) PnL Realizado Acumulado: {st['pnl_realizado_usd']:+,.2f} USD "
+        f"({st['pnl_realizado_pct_aportado']}% s/ aportado) · {st['n_cerradas']} cerradas · "
+        f"comisiones est. {st['comisiones_cerradas_est_usd']:,.2f} USD descontadas"
+    )
+    typer.echo(
+        f"3) PnL Flotante: {st['pnl_flotante_usd']:+,.2f} USD "
+        f"({st['pnl_flotante_pct_aportado']}% s/ aportado) · {st['n_abiertas']} abiertas · "
+        "bruto de comisiones (se descuentan al cerrar)"
+    )
+    if st["sin_precio_vivo"]:
+        typer.echo(f"   ⚠ sin precio vivo para: {', '.join(st['sin_precio_vivo'])}")
+    typer.echo(f"4) PATRIMONIO TOTAL (Equity Vivo): {st['patrimonio_total']:,.2f} USD")
+    typer.echo(
+        f"   = aportado {st['capital_aportado_neto']:,.2f} + realizado "
+        f"{st['pnl_realizado_usd']:+,.2f} + flotante {st['pnl_flotante_usd']:+,.2f}"
+    )
+    typer.echo(
+        f"5) Riesgo en Mesa (Portfolio Heat): {st['portfolio_heat_usd']:,.2f} USD = "
+        f"{st['portfolio_heat_pct_patrimonio']}% del patrimonio "
+        "(si TODOS los SL saltaran hoy a la vez; SL en zona de ganancia/break-even aporta $0)"
+    )
+    for h in st["heat_detalle"]:
+        if h["sin_sl"]:
+            typer.echo(f"   ⚠ {h['id']} ({h['asset']}): SIN SL — riesgo no acotado, no computable")
+        else:
+            typer.echo(f"   {h['id']} ({h['asset']}): riesgo aportado {h['riesgo_usd']:,.2f} USD")
+    typer.echo("")
+    typer.echo(
+        "Este patrimonio vivo se usa automáticamente como base de la columna "
+        "'Escala teórica' de H1 en el dashboard (informativo, no sizing recomendado)."
+    )
+
+
+@capital_app.command("reset-examples")
+def capital_reset_examples(
+    yes: Annotated[
+        bool, typer.Option("--yes", help="no pide confirmación (borra los registros EJEMPLO)")
+    ] = False,
+) -> None:
+    """Borra TODOS los registros marcados EJEMPLO (capital + operaciones) de un golpe.
+
+    Solo toca registros con example=true (los reales jamás se eliminan). Crea
+    copias de seguridad previas en ledger/backup/ y reconstruye las cadenas de
+    hashes de ambos libros.
+    """
+    from qa.agent.capital import reset_examples
+    from qa.data.paths import get_root
+
+    root = get_root()
+    if not yes:
+        typer.confirm(
+            "Se borrarán todos los registros marcados EJEMPLO de user_capital.jsonl y "
+            "user_trades.jsonl (con backup previo en ledger/backup/). ¿Continuar?",
+            abort=True,
+        )
+    out = reset_examples(root)
+    typer.echo(
+        f"reset-ejemplos: capital -{out['capital_removed']} registros · operaciones "
+        f"-{out['trades_removed']} registros"
+    )
+    for b in out["backups"]:
+        typer.echo(f"backup: {b}")
+    for name in ("capital_chain", "trades_chain"):
+        c = out[name]
+        typer.echo(
+            f"cadena {name.replace('_chain', '')}: {'OK' if c['ok'] else 'ROTA'} "
+            f"({c['lineas']} lineas, {c['msg']})"
+        )
+        if not c["ok"]:
+            raise typer.Exit(code=1)
+    typer.echo("Listo: puedes empezar desde cero con tu dinero real (qa capital set --amount …).")
 
 
 if __name__ == "__main__":

@@ -15,18 +15,14 @@ Almacen: ledger/user_trades.jsonl append-only con cadena de hashes.
 
 from __future__ import annotations
 
-import hashlib
-import json
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from qa.agent.chain import append_chained, read_records, verify_chain_file
+
 KINDS = ("spot", "future_long", "future_short")
-
-
-def _sha(line: str) -> str:
-    return hashlib.sha256(line.encode("utf-8")).hexdigest()
 
 
 def _log_path(root: Path) -> Path:
@@ -34,33 +30,14 @@ def _log_path(root: Path) -> Path:
 
 
 def _append(root: Path, record: dict[str, Any]) -> dict[str, Any]:
-    p = _log_path(root)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    prev = ""
-    if p.exists():
-        lines = [ln for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()]
-        if lines:
-            prev = _sha(lines[-1])
-    record = dict(record)
-    record["prev_hash"] = prev
-    line = json.dumps(record, sort_keys=True, default=str)
-    with p.open("a", encoding="utf-8") as f:
-        f.write(line + "\n")
-    return record
+    return append_chained(_log_path(root), record)
 
 
 def verify_chain(root: Path) -> tuple[bool, int, str]:
-    p = _log_path(root)
-    if not p.exists():
+    ok, n, msg = verify_chain_file(_log_path(root))
+    if not _log_path(root).exists():
         return True, 0, "sin operaciones registradas"
-    lines = [ln for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()]
-    prev = ""
-    for i, ln in enumerate(lines):
-        rec = json.loads(ln)
-        if rec.get("prev_hash", "") != prev:
-            return False, len(lines), f"cadena rota en la linea {i + 1}"
-        prev = _sha(ln)
-    return True, len(lines), "cadena valida"
+    return ok, n, msg
 
 
 def open_trade(
@@ -74,13 +51,22 @@ def open_trade(
     tp: float | None,
     note: str = "",
     example: bool = False,
+    tag: str = "",
+    ts_utc: str | None = None,
+    rr_neto_inicial: float | None = None,
+    rr_forzado: bool = False,
 ) -> dict[str, Any]:
+    """Registra una operación abierta POR EL USUARIO (tag/ts opcionales, M5b).
+
+    `rr_neto_inicial` y `rr_forzado` dejan traza del filtro de disciplina
+    R:R >= min_rr en el momento del registro (auditable a posteriori).
+    """
     if kind not in KINDS:
         raise ValueError(f"kind debe ser uno de {KINDS}")
     rec = {
         "action": "open",
         "id": uuid.uuid4().hex[:8],
-        "ts_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+        "ts_utc": ts_utc or datetime.now(UTC).isoformat(timespec="seconds"),
         "asset": asset.upper(),
         "kind": kind,
         "timeframe": timeframe,
@@ -89,41 +75,51 @@ def open_trade(
         "sl": None if sl is None else float(sl),
         "tp": None if tp is None else float(tp),
         "note": note,
+        "tag": tag,
         "example": example,
+        "rr_neto_inicial": rr_neto_inicial,
+        "rr_forzado": rr_forzado,
     }
     return _append(root, rec)
 
 
-def close_trade(root: Path, trade_id: str, exit_price: float, note: str = "") -> dict[str, Any]:
+def close_trade(
+    root: Path,
+    trade_id: str,
+    exit_price: float,
+    note: str = "",
+    tag: str = "",
+    ts_utc: str | None = None,
+    example: bool = False,
+) -> dict[str, Any]:
     rec = {
         "action": "close",
         "id": trade_id,
-        "ts_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+        "ts_utc": ts_utc or datetime.now(UTC).isoformat(timespec="seconds"),
         "exit_price": float(exit_price),
         "note": note,
+        "tag": tag,
+        "example": example,
     }
     return _append(root, rec)
 
 
 def load_trades(root: Path) -> list[dict[str, Any]]:
     """Replay del log: operaciones abiertas (con exit si cerradas)."""
-    p = _log_path(root)
-    if not p.exists():
-        return []
     opens: dict[str, dict[str, Any]] = {}
-    for ln in p.read_text(encoding="utf-8").splitlines():
-        if not ln.strip():
-            continue
-        rec = json.loads(ln)
+    for rec in read_records(_log_path(root)):
         if rec.get("action") == "open":
             opens[rec["id"]] = rec
         elif rec.get("action") == "close" and rec.get("id") in opens:
-            opens[rec["id"]].update(
-                status="closed",
-                closed_at=rec["ts_utc"],
-                exit_price=rec["exit_price"],
-                close_note=rec.get("note", ""),
-            )
+            updates: dict[str, Any] = {
+                "status": "closed",
+                "closed_at": rec["ts_utc"],
+                "exit_price": rec["exit_price"],
+                "close_note": rec.get("note", ""),
+            }
+            if rec.get("tag"):
+                updates["close_tag"] = rec["tag"]
+            opens[rec["id"]].update(updates)
     for t in opens.values():
         t.setdefault("status", "open")
     return list(opens.values())

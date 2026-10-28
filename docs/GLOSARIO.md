@@ -95,3 +95,39 @@ documentos de M0.
   reduce posición; si se calma, se sube (tope 1×, sin apalancar).
 - **Ledger append-only**: libro de registros que solo sabe añadir filas (con
   cadena de hashes): ni borrar ni editar sin dejar evidencia.
+
+## Términos añadidos en M5b (contabilidad del usuario)
+
+- **Equity Vivo (Patrimonio Total)**: capital aportado + PnL realizado (neto
+  de comisiones) + PnL flotante (bruto) de tus operaciones abiertas a precio
+  de mercado. Es la base automática de la columna *Escala teórica* del
+  dashboard cuando llevas tu libro de capital (`qa capital`).
+- **Portfolio Heat (riesgo en mesa)**: cuánto perderías de tu capital
+  APORTADO si TODOS tus stops saltaran hoy a la vez. Un stop ya en zona de
+  ganancia aporta 0 $. Una posición sin stop no es computable: se lista
+  aparte como "riesgo no acotado".
+- **R:R Neto**: (distancia a tu TP − comisiones) / (distancia a tu SL +
+  comisiones). El R:R "bruto" ignora comisiones; el neto no: con stops
+  cortos la diferencia importa (las comisiones se comen una fracción mayor).
+- **Filtro R:R ≥ 2.0 (tu disciplina)**: regla configurable por ti
+  (`min_rr_ratio` en `config/watchlist.yaml`). En la watchlist mide la
+  geometría observable: riesgo = distancia a la SMA50 (mínimo 1×ATR14) +
+  comisiones; recompensa = 3×ATR14 − lo ya subido desde la SMA50. Precio
+  "extendido" = ya recorrió tanto desde la media que una entrada nueva hoy
+  tendría asimetría peor que tu mínimo.
+- **Break-even neto**: precio exacto donde tu operación queda a cero DESPUÉS
+  de pagar comisiones taker de ida y vuelta. Long: Entry×(1+f)/(1−f).
+- **Cota 2×ATR**: precio actual ∓ 2×ATR(14) del marco de tu operación:
+  referencia estadística de cuánto se mueve ese marco. No es un stop
+  propuesto por el sistema.
+- **Múltiplo R**: PnL neto / riesgo inicial (|Entrada−SL| × tamaño). +2.4R =
+  ganaste 2.4 veces lo que arriesgabas.
+- **Profit Factor**: ganancias netas / pérdidas netas del historial cerrado.
+  >1 = saldo positivo; con pocas operaciones dice muy poco (ver
+  INCONTRASTABLE).
+- **Esperanza por operación**: PnL medio ($ y R) de tu historial cerrado.
+- **Max Drawdown realizado**: peor caída del PnL acumulado de tus
+  operaciones cerradas (en $), ordenadas por fecha de cierre.
+- **Cadena de hashes (libros del usuario)**: `user_trades.jsonl` y
+  `user_capital.jsonl` encadenan cada línea con SHA-256 de la anterior;
+  `qa capital status` las reverifica y falla si alguien editó historia.
