@@ -248,6 +248,42 @@ def _fixture_dashboard_inputs() -> dict[str, Any]:
 
 def test_dashboard_language_guard() -> None:
     fx = _fixture_dashboard_inputs()
+    tele = {
+        "BTCUSDT": {
+            "cambio_24h_pct": -1.2,
+            "4h": {
+                "disponible": True,
+                "precio": 80000.0,
+                "sma50": 79000.0,
+                "dist_sma50_pct": 1.3,
+                "lado_sma50": "por encima",
+                "atr14_pct": 0.8,
+            },
+            "1d": {
+                "disponible": True,
+                "precio": 80000.0,
+                "sma50": 85000.0,
+                "dist_sma50_pct": -5.9,
+                "lado_sma50": "por debajo",
+                "atr14_pct": 2.4,
+            },
+            "1w": {"disponible": False},
+        }
+    }
+    h1_lv = {
+        "BTCUSDT": {
+            "precio": 80000.0,
+            "nivel_sma50": 85000.0,
+            "distancia_a_sma50_pct": -5.9,
+            "atr14_usd": 1900.0,
+            "atr14_pct": 2.4,
+            "banda_inf_c_menos_2atr": 76200.0,
+            "banda_sup_c_mas_3atr": 85700.0,
+            "exposicion_regla": 0.6,
+            "escala_usd_sobre_capital_ref": 600.0,
+            "capital_ref_usd": 1000.0,
+        }
+    }
     html_out = render_dashboard(
         fx["states"],
         fx["trades"],
@@ -256,6 +292,9 @@ def test_dashboard_language_guard() -> None:
         fx["shocks"],
         {"BTCUSDT": [1.0, 2.0, 3.0]},
         fx["meta"],
+        telemetry=tele,
+        h1_levels=h1_lv,
+        capital_ref=1000.0,
     )
     up = html_out.upper()
     for bad in PROHIBIDOS:
@@ -266,3 +305,10 @@ def test_dashboard_language_guard() -> None:
     assert "EJEMPLO" in up
     assert "NO ES ASESORAMIENTO DE INVERSIÓN" in up or "NO ES ASESORAMIENTO" in up
     assert "COSTES ×2" in up or "COSTES X2" in up
+    # paneles de telemetria descriptiva con sus avisos obligatorios
+    assert "TELEMETRÍA DESCRIPTIVA DE PRECIOS" in up
+    assert "NO CONSTITUYE HIPÓTESIS EVALUADA NI SEÑAL DE TRADING" in up
+    assert "ESCALA TEÓRICA" in up
+    assert "NIVELES OBSERVABLES DE H1" in up
+    assert "GLOSARIO PARA JP" in up
+    assert "600.0 USD" in html_out  # escala aritmetica: 60% x 1000 USD

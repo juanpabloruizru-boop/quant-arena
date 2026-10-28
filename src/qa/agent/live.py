@@ -16,7 +16,7 @@ from qa.data.client import FAPI_BASE, SPOT_BASE, BinancePublicClient
 from qa.data.klines import fetch_klines_paged, klines_frame
 from qa.data.timestamps import to_utc_datetime
 
-LIMITS = {"1h": 96, "4h": 180, "1d": 400}
+LIMITS = {"1h": 96, "4h": 180, "1d": 400, "1w": 110}
 
 
 def _drop_forming(df: pd.DataFrame, interval: str) -> pd.DataFrame:
@@ -86,7 +86,7 @@ def fetch_live(watchlist: list[str]) -> dict[str, Any]:
 
 
 def _span_ms(interval: str, limit: int) -> int:
-    step = {"1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000}[interval]
+    step = {"1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000, "1w": 604_800_000}[interval]
     return int(step * limit * 1.05) + step
 
 

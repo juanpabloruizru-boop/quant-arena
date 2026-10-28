@@ -25,3 +25,6 @@ holdout_sealed/
 # Ledgers binarios (integridad por cadena de hashes + snapshots, ver ADR y M4)
 ledger/*.duckdb
 ledger/*.duckdb.wal
+
+# estado mutable del motor forward (la evidencia es la cadena forward.jsonl)
+ledger/forward_state.json

@@ -11,7 +11,7 @@ ejecuciones en el ledger correspondiente antes de devolver resultados.
 from __future__ import annotations
 
 from datetime import UTC
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
@@ -147,9 +147,21 @@ def stats_report() -> None:
 
 
 @forward_app.command("run")
-def forward_run() -> None:
-    """One-shot: estado diario de las 5 celdas congeladas -> ledger/forward.jsonl (hash-chain)."""
+def forward_run(
+    capital: Annotated[
+        float, typer.Option("--capital", help="Capital paper inicial (USDT), solo al crear estado")
+    ] = 10_000.0,
+) -> None:
+    """Forward paper v1 (ADR-007): fills t+1 sobre las 5 celdas congeladas.
+
+    Usa SOLO velas diarias cerradas (fetch_live descarta la vela en formación):
+    la señal se computa con datos <= D-1 y el fill se ejecuta al cierre de
+    D-1 — la misma convención del backtest de investigación. Contabilidad
+    simulada con costes nivel estrés y funding real; cada paso se encadena en
+    ledger/forward.jsonl. Ninguna orden real sale de este proceso.
+    """
     import json as _json
+    from datetime import datetime
 
     import pandas as _pd
 
@@ -157,20 +169,50 @@ def forward_run() -> None:
     from qa.agent.signals import compute_states
     from qa.data.paths import get_root
     from qa.data.pit import membership_at
-    from qa.forward.paper import append_forward_record, verify_forward_chain
+    from qa.forward.paper import (
+        append_record,
+        init_state,
+        load_state,
+        run_step,
+        save_state,
+        verify_forward_chain,
+    )
 
     root = get_root()
+    now = datetime.now(UTC)
     pit = _pd.read_parquet(root / "data" / "curated" / "pit_universe.parquet")
     members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
-    live = fetch_live(sorted(set(["BTCUSDT", "ETHUSDT"]) | set(members)))
+    live = fetch_live(sorted({"BTCUSDT", "ETHUSDT"} | set(members)))
     extra = fetch_extra_daily([m for m in members if m not in live["klines"]])
     for sym, df in extra.items():
         live["klines"].setdefault(sym, {})["1d"] = df
     states = compute_states(live, members)
-    rec = append_forward_record(root, states)
+    cells = states["cells"]
+    h3_active = {
+        a: bool(cells.get(f"H3_{a}", {}).get("senal_activa", False)) for a in ("BTCUSDT", "ETHUSDT")
+    }
+    basket = list(cells.get("H2_L26_N10", {}).get("cesta_teoretica", []) or [])
+    weights = {sym: 1.0 / len(basket) for sym in basket} if basket else {}
+    daily = {sym: frames.get("1d") for sym, frames in live["klines"].items()}
+    funding = live.get("funding", {})
+
+    state = load_state(root)
+    if state is None:
+        state = init_state(capital, now)
+        typer.echo(f"Estado forward-v1 inicializado: {capital:,.0f} USDT paper (4 sleeves x 25 %).")
+    record, equities = run_step(state, cells, weights, daily, funding, now, h3_active)
+    append_record(root, record)
+    save_state(root, state)
+    typer.echo(
+        f"Paso forward-v1: fills={len(record['fills'])} · "
+        f"funding={record['funding_usd']:+.2f} USD · H3 activa={h3_active}"
+    )
+    typer.echo(
+        f"Patrimonios paper (USDT): {_json.dumps(equities)} · TOTAL "
+        f"{record['total_equity_usdt']:,} ({record['total_return_pct']:+.3f} %)"
+    )
     ok, n, msg = verify_forward_chain(root)
-    typer.echo(_json.dumps(rec, indent=2, default=str))
-    typer.echo(f"forward chain: ok={ok} lineas={n} ({msg})")
+    typer.echo(f"Cadena forward: {'OK' if ok else 'ROTO'} · {n} registros ({msg})")
     if not ok:
         raise typer.Exit(code=1)
 
@@ -197,6 +239,7 @@ def agent_run() -> None:
     from qa.agent.live import fetch_extra_daily, fetch_live, last_price
     from qa.agent.news import detect_shocks, fetch_news
     from qa.agent.signals import compute_states
+    from qa.agent.telemetry import h1_levels, trade_geometry, watchlist_telemetry
     from qa.agent.tracker import diagnose, load_trades, verify_chain
     from qa.data.paths import get_root, reports_dir
     from qa.data.pit import membership_at
@@ -233,6 +276,16 @@ def agent_run() -> None:
     )
     shocks = detect_shocks(live["klines"], live["premium"], cfg.get("choques", {}))
 
+    # telemetria descriptiva (ADR-008 ratificado: hechos matematicos del precio, no senales)
+    tele = watchlist_telemetry(dict(live["klines"]))
+    capital_ref = float(cfg.get("capital_ref_usd", 0.0))
+    h1_lv: dict[str, Any] = {}
+    for asset in ("BTCUSDT", "ETHUSDT"):
+        st = states["cells"].get(f"H1_{asset}")
+        d1 = live["klines"].get(asset, {}).get("1d")
+        if st and d1 is not None and not d1.empty:
+            h1_lv[asset] = h1_levels(d1, float(st["posicion_regla"]), capital_ref)
+
     diags = []
     for t in trades:
         if t.get("status") != "open":
@@ -262,6 +315,16 @@ def agent_run() -> None:
             if n.keywords and base.upper() in [a.upper() for a in n.assets]
         ]
         d = diagnose(t, px, ctx, alerts[:4])
+        d.update(trade_geometry(t, px))
+        tf_key = {"1w": "1w", "1s": "1w", "4h": "4h"}.get(
+            (t.get("timeframe") or "1d").lower(), "1d"
+        )
+        tl = tele.get(t["asset"], {}).get(tf_key) or {}
+        if tl.get("disponible"):
+            d["sma50_marco_txt"] = (
+                f"SMA50({tf_key}) {tl['sma50']} — precio {tl['lado_sma50']} "
+                f"({tl['dist_sma50_pct']:+}%)"
+            )
         d["example"] = t.get("example", False)
         diags.append(d)
 
@@ -318,6 +381,9 @@ def agent_run() -> None:
         shocks,
         spark,
         meta,
+        telemetry=tele,
+        h1_levels=h1_lv,
+        capital_ref=capital_ref,
     )
     outdir = reports_dir(root) / "dashboard"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -402,6 +468,7 @@ def trade_status() -> None:
     """Diagnostico descriptivo de las operaciones abiertas (precios vivos)."""
     from qa.agent.live import fetch_live, last_price
     from qa.agent.news import detect_shocks, fetch_news
+    from qa.agent.telemetry import trade_geometry
     from qa.agent.tracker import diagnose, load_trades
     from qa.data.paths import get_root
 
@@ -427,6 +494,7 @@ def trade_status() -> None:
             and t["asset"].replace("USDT", "").upper() in [a.upper() for a in n.assets]
         ]
         d = diagnose(t, px, "(contexto completo en `qa agent run`)", alerts[:3])
+        d.update(trade_geometry(t, px))
         typer.echo(str(d))
 
 

@@ -101,6 +101,9 @@ def render_dashboard(
     shocks: list[dict[str, Any]],
     spark_data: dict[str, list[float]],
     meta: dict[str, Any],
+    telemetry: dict[str, Any] | None = None,
+    h1_levels: dict[str, Any] | None = None,
+    capital_ref: float = 0.0,
 ) -> str:
     now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     p: list[str] = []
@@ -129,6 +132,7 @@ def render_dashboard(
     if trades_diag:
         p.append(
             "<table><tr><th>Op</th><th>Activo/Tipo</th><th>PnL</th><th>Dist. SL / TP (tuyos)</th>"
+            "<th>Tiempo</th><th>RR TP/SL inic.→actual</th><th>SMA50 de tu marco</th>"
             "<th>Contexto de tendencia</th><th>Seguimiento</th></tr>"
         )
         for t in trades_diag:
@@ -143,6 +147,10 @@ def render_dashboard(
                 f"<td class='num {cls}'>{pnl if pnl is not None else '—'}%"
                 f"<br><span class='small'>{t.get('pnl_usd', '—')} USD</span></td>"
                 f"<td class='num'>{sl} / {tp}</td>"
+                f"<td class='small'>{_esc(t.get('tiempo_abierta', '—'))}</td>"
+                f"<td class='num small'>{_esc(t.get('rr_inicial_tp_sl', '—'))} → "
+                f"{_esc(t.get('rr_actual_tp_sl', '—'))}</td>"
+                f"<td class='small'>{_esc(t.get('sma50_marco_txt', '—'))}</td>"
                 f"<td class='small'>{_esc(t.get('contexto_tendencia', '—'))}</td>"
                 f"<td class='small'>{_esc(t.get('estado_seguimiento', '—'))}</td></tr>"
             )
@@ -234,10 +242,83 @@ def render_dashboard(
             f"MA7d {_esc(round((c['funding_ma7_ann'] or 0) * 100, 2))}% · umbral 5% · "
             f"último funding {_esc(round((lf or 0) * 100, 4))}%/8h · próximo {_esc(c.get('next_funding_utc', '—'))}</td></tr>"
         )
-    p.append("</table></div>")
+    p.append("</table>")
+    if h1_levels:
+        p.append(
+            "<div class='small' style='margin-top:10px'><b>Niveles observables de H1 "
+            "(diario) — estadística descriptiva del precio, no hipótesis ni señal:</b></div>"
+        )
+        p.append(
+            "<table><tr><th>Activo</th><th>Precio</th><th>Nivel SMA50 (dist.)</th>"
+            "<th>ATR14</th><th>Rango estadístico [close−2×ATR, close+3×ATR]</th>"
+            "<th>Exposición de la regla</th><th>Escala teórica s/ capital ref.</th></tr>"
+        )
+        for asset, lv in h1_levels.items():
+            expo_pct = round(float(lv["exposicion_regla"]) * 100)
+            p.append(
+                f"<tr><td>{_esc(asset)}</td><td class='num'>{_esc(lv['precio'])}</td>"
+                f"<td class='num'>{_esc(lv['nivel_sma50'])} ({_esc(lv['distancia_a_sma50_pct'])}%)</td>"
+                f"<td class='num'>{_esc(lv['atr14_usd'])} ({_esc(lv['atr14_pct'])}%)</td>"
+                f"<td class='num'>[{_esc(lv['banda_inf_c_menos_2atr'])}, "
+                f"{_esc(lv['banda_sup_c_mas_3atr'])}]</td>"
+                f"<td class='num'>{expo_pct}%</td>"
+                f"<td class='num'>{_esc(lv['escala_usd_sobre_capital_ref'])} USD "
+                f"<span class='small'>(= {expo_pct}% × {_esc(int(lv['capital_ref_usd']))} USD; "
+                f"informativo)</span></td></tr>"
+            )
+        p.append("</table>")
+    p.append("</div>")
 
-    # 3) Evidencia cientifica + sparklines
-    p.append("<div class='panel'><h2>3 · Evidencia científica (resumen M0-M3)</h2>")
+    # 3) Telemetria watchlist multi-marco (descriptiva)
+    p.append(
+        "<div class='panel'><h2>3 · Telemetría watchlist 4H·1D·1W</h2>"
+        "<div class='small'><b>Telemetría descriptiva de precios — No constituye "
+        "hipótesis evaluada ni señal de trading.</b> SMA50 y ATR14 son hechos "
+        "matemáticos del precio en cada marco.</div>"
+    )
+    if telemetry:
+        p.append(
+            "<table><tr><th>Símbolo</th><th>Precio</th><th>24 h</th><th>Choque activo</th>"
+            "<th>4H vs SMA50</th><th>1D vs SMA50</th><th>1W vs SMA50</th>"
+            "<th>ATR14 % (4H/1D/1W)</th></tr>"
+        )
+        shock_syms = {s_["symbol"] for s_ in shocks}
+        for sym, row in telemetry.items():
+
+            def _tf(tf: str, _row: dict[str, Any] = row) -> str:
+                f = _row.get(tf) or {}
+                if not f.get("disponible"):
+                    return "<span class='mut'>n/d</span>"
+                d = f.get("dist_sma50_pct")
+                lado = f.get("lado_sma50", "?")
+                signo = "+" if (d or 0) >= 0 else ""
+                cls = "pos" if (d or 0) >= 0 else "neg"
+                return f"<span class='{cls}'>{_esc(lado)} {signo}{_esc(d)}%</span>"
+
+            choque = (
+                "<span class='badge b-bad'>SÍ</span>"
+                if sym in shock_syms
+                else "<span class='mut'>no</span>"
+            )
+            atrs = " / ".join(
+                str((row.get(tf) or {}).get("atr14_pct", "—")) for tf in ("4h", "1d", "1w")
+            )
+            precio = (row.get("1d") or {}).get("precio")
+            c24 = row.get("cambio_24h_pct")
+            cls24 = "pos" if (c24 or 0) >= 0 else "neg"
+            p.append(
+                f"<tr><td><b>{_esc(sym)}</b></td><td class='num'>{_esc(precio)}</td>"
+                f"<td class='num {cls24}'>{_esc(c24)}%</td><td>{choque}</td>"
+                f"<td class='small'>{_tf('4h')}</td><td class='small'>{_tf('1d')}</td>"
+                f"<td class='small'>{_tf('1w')}</td><td class='num small'>{atrs}</td></tr>"
+            )
+        p.append("</table>")
+    else:
+        p.append("<div class='small'>Sin datos de watchlist en esta corrida.</div>")
+    p.append("</div>")
+
+    # 5) Evidencia cientifica + sparklines
+    p.append("<div class='panel'><h2>5 · Evidencia científica (resumen M0-M3)</h2>")
     p.append(
         "<table><tr><th>Familia</th><th>In-sample 2017-2025</th><th>Holdout 2025-26</th><th>Veredicto final</th></tr>"
     )
@@ -257,6 +338,36 @@ def render_dashboard(
     )
     p.append("</div></div>")  # grid
 
+    p.append(
+        "<div class='panel' style='margin-top:16px'><h2>6 · Glosario para JP</h2>"
+        "<details><summary style='cursor:pointer;color:var(--info)'>Abrir explicaciones "
+        "en lenguaje llano</summary><table>"
+        "<tr><td><b>SMA50</b></td><td>Media del precio de las últimas 50 velas. "
+        "«Por encima/por debajo» dice de qué lado está el precio hoy; la regla H1 "
+        "investigada pasa a FLAT cuando el cierre diario cae por debajo.</td></tr>"
+        "<tr><td><b>ATR14</b></td><td>Rango típico (alto−bajo) de las últimas 14 velas: "
+        "cuánto se mueve el activo por vela. Las cotas close±k×ATR son una regla de rango "
+        "estadístico, no niveles mágicos.</td></tr>"
+        "<tr><td><b>Exposición de la regla</b></td><td>Fracción de capital que la celda "
+        "congelada tendría hoy (0-100 %), tras volatilidad objetivo y banda de 10 pp.</td></tr>"
+        "<tr><td><b>Escala teórica</b></td><td>Multiplicación informativa: exposición × tu "
+        "capital de referencia. No es una cantidad sugerida.</td></tr>"
+        "<tr><td><b>Funding / carry</b></td><td>Pago cada 8 h entre largos y cortos del "
+        "perpetuo. H3 cobra ese flujo con posición neutral (spot largo + perp corto); "
+        "MA30d anualizada &gt; 5 % = señal activa en la regla congelada.</td></tr>"
+        "<tr><td><b>ΔmaxDD vol-matched / p de permutación</b></td><td>Cuánto mejora la "
+        "regla el peor bache frente a un rival con tu misma volatilidad, y cuántas veces "
+        "tu propio calendario barajado lo iguala (p pequeño = difícil de explicar por azar).</td></tr>"
+        "<tr><td><b>DSR / PBO / RC</b></td><td>Exámenes anti-autoengaño: descuentan los "
+        "38 intentos registrados, miden la probabilidad de sobreajuste y de que la mejor "
+        "celda sea chiripa.</td></tr>"
+        "<tr><td><b>INCONTRASTABLE</b></td><td>«La balanza no da para más»: el efecto, si "
+        "existe, es menor que lo que estos datos pueden detectar. No significa «malo»; "
+        "significa «no demostrado».</td></tr>"
+        "<tr><td><b>Cadena de hashes</b></td><td>Cada línea del registro firma a la "
+        "anterior: editar historia rompe el sello.</td></tr>"
+        "</table></details></div>"
+    )
     p.append(
         "<footer>QUANT-ARENA v2 · M4/M5 operativo (alcance conforme ADR-008) · "
         "holdout usado una única vez en M3b · datos: Binance API pública (solo lectura) + RSS públicos · "

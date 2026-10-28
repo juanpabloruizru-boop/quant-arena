@@ -6,6 +6,12 @@
 
 watchlist: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT]
 
+# Capital de REFERENCIA aportado por el usuario (Q2, autorizada por JP 2026-10-28).
+# Solo se usa para mostrar escala aritmetica (exposicion_regla x capital_ref),
+# etiquetada "Escala teorica sobre capital de referencia". No es sizing
+# recomendado ni consejo: la regla de tamanno es la de la celda congelada.
+capital_ref_usd: 1000
+
 noticias:
   feeds:
     - { nombre: Cointelegraph, url: "https://cointelegraph.com/rss" }
