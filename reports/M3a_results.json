@@ -11,7 +11,7 @@
       "seed": 20261027,
       "t_star": 0.025
     },
-    "updated_at_utc": "2026-10-28T14:20:21+00:00"
+    "updated_at_utc": "2026-10-28T14:21:38+00:00"
   },
   "H1": {
     "perm_cost_per_side": 0.0011,
@@ -952,5 +952,249 @@
       }
     },
     "elapsed_s": 3.4
+  },
+  "H2": {
+    "cells": {
+      "L4_N10": {
+        "sharpe_ann": 0.3979,
+        "sortino_ann": 0.4281,
+        "max_drawdown": 0.9312,
+        "calmar": -0.0177,
+        "ulcer_index": 0.675646,
+        "total_return": -0.10374,
+        "n_obs": 343,
+        "bench_sharpe_ann": 0.6053,
+        "skew": 0.186,
+        "kurt": 4.582,
+        "d_sharpe_vs_ew": -0.2074,
+        "exposure_mean": 1.0,
+        "time_in_market_pct": 100.0,
+        "trades_per_year": 17.1,
+        "win_rate_weeks": 0.5015,
+        "mean_eligible": 10.0,
+        "first_week": "2018-08-06",
+        "last_week": "2025-10-20",
+        "last_basket": [
+          "BNBUSDT",
+          "BTCUSDT",
+          "ETHUSDT",
+          "XRPUSDT"
+        ],
+        "d_sharpe_ci95": [
+          -0.5183,
+          0.0786
+        ],
+        "mde_weekly": 0.00603,
+        "mde_annualized": 0.3138,
+        "d_mean_weekly": -0.00302,
+        "cpcv_median_d_sharpe": -0.203,
+        "cpcv_frac_positive": 0.2444,
+        "stress_sharpe_ann": 0.3511,
+        "cagr_net": -0.01647
+      },
+      "L4_N20": {
+        "sharpe_ann": 0.4811,
+        "sortino_ann": 0.4892,
+        "max_drawdown": 0.9019,
+        "calmar": 0.044,
+        "ulcer_index": 0.639397,
+        "total_return": 0.29281,
+        "n_obs": 343,
+        "bench_sharpe_ann": 0.507,
+        "skew": -0.1813,
+        "kurt": 4.3023,
+        "d_sharpe_vs_ew": -0.0259,
+        "exposure_mean": 1.0,
+        "time_in_market_pct": 100.0,
+        "trades_per_year": 17.9,
+        "win_rate_weeks": 0.519,
+        "mean_eligible": 19.9,
+        "first_week": "2019-04-01",
+        "last_week": "2025-10-20",
+        "last_basket": [
+          "BNBUSDT",
+          "BTCUSDT",
+          "TRXUSDT",
+          "NEARUSDT",
+          "ETHUSDT",
+          "LTCUSDT",
+          "XRPUSDT"
+        ],
+        "d_sharpe_ci95": [
+          -0.2698,
+          0.2187
+        ],
+        "mde_weekly": 0.00497,
+        "mde_annualized": 0.2585,
+        "d_mean_weekly": -0.00035,
+        "cpcv_median_d_sharpe": -0.025,
+        "cpcv_frac_positive": 0.4222,
+        "stress_sharpe_ann": 0.4324,
+        "cagr_net": 0.0397
+      },
+      "L12_N10": {
+        "sharpe_ann": 0.5951,
+        "sortino_ann": 0.641,
+        "max_drawdown": 0.9269,
+        "calmar": 0.1495,
+        "ulcer_index": 0.638964,
+        "total_return": 1.35436,
+        "n_obs": 343,
+        "bench_sharpe_ann": 0.6053,
+        "skew": 0.2021,
+        "kurt": 4.9852,
+        "d_sharpe_vs_ew": -0.0102,
+        "exposure_mean": 1.0,
+        "time_in_market_pct": 100.0,
+        "trades_per_year": 11.2,
+        "win_rate_weeks": 0.519,
+        "mean_eligible": 9.8,
+        "first_week": "2018-08-06",
+        "last_week": "2025-10-20",
+        "last_basket": [
+          "BNBUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "BTCUSDT"
+        ],
+        "d_sharpe_ci95": [
+          -0.298,
+          0.2745
+        ],
+        "mde_weekly": 0.00567,
+        "mde_annualized": 0.2949,
+        "d_mean_weekly": 0.00084,
+        "cpcv_median_d_sharpe": -0.0437,
+        "cpcv_frac_positive": 0.4222,
+        "stress_sharpe_ann": 0.567,
+        "cagr_net": 0.13862
+      },
+      "L12_N20": {
+        "sharpe_ann": 0.3829,
+        "sortino_ann": 0.388,
+        "max_drawdown": 0.9365,
+        "calmar": -0.0645,
+        "ulcer_index": 0.672197,
+        "total_return": -0.33701,
+        "n_obs": 343,
+        "bench_sharpe_ann": 0.507,
+        "skew": -0.1735,
+        "kurt": 4.2776,
+        "d_sharpe_vs_ew": -0.1241,
+        "exposure_mean": 1.0,
+        "time_in_market_pct": 100.0,
+        "trades_per_year": 10.9,
+        "win_rate_weeks": 0.516,
+        "mean_eligible": 19.5,
+        "first_week": "2019-04-01",
+        "last_week": "2025-10-20",
+        "last_basket": [
+          "BNBUSDT",
+          "ETHUSDT",
+          "SOLUSDT",
+          "TRXUSDT",
+          "LINKUSDT",
+          "BTCUSDT",
+          "AVAXUSDT"
+        ],
+        "d_sharpe_ci95": [
+          -0.4175,
+          0.1786
+        ],
+        "mde_weekly": 0.00598,
+        "mde_annualized": 0.3111,
+        "d_mean_weekly": -0.00168,
+        "cpcv_median_d_sharpe": -0.0893,
+        "cpcv_frac_positive": 0.3556,
+        "stress_sharpe_ann": 0.3544,
+        "cagr_net": -0.06041
+      },
+      "L26_N10": {
+        "sharpe_ann": 0.5121,
+        "sortino_ann": 0.5227,
+        "max_drawdown": 0.9044,
+        "calmar": 0.066,
+        "ulcer_index": 0.611018,
+        "total_return": 0.46588,
+        "n_obs": 343,
+        "bench_sharpe_ann": 0.6053,
+        "skew": -0.0104,
+        "kurt": 4.7114,
+        "d_sharpe_vs_ew": -0.0932,
+        "exposure_mean": 1.0,
+        "time_in_market_pct": 100.0,
+        "trades_per_year": 8.8,
+        "win_rate_weeks": 0.5364,
+        "mean_eligible": 9.1,
+        "first_week": "2018-08-06",
+        "last_week": "2025-10-20",
+        "last_basket": [
+          "ETHUSDT",
+          "BNBUSDT",
+          "SOLUSDT",
+          "BTCUSDT"
+        ],
+        "d_sharpe_ci95": [
+          -0.5044,
+          0.279
+        ],
+        "mde_weekly": 0.00757,
+        "mde_annualized": 0.3938,
+        "d_mean_weekly": -0.00081,
+        "cpcv_median_d_sharpe": 0.0698,
+        "cpcv_frac_positive": 0.6222,
+        "stress_sharpe_ann": 0.4887,
+        "cagr_net": 0.0597
+      },
+      "L26_N20": {
+        "sharpe_ann": 0.2245,
+        "sortino_ann": 0.2218,
+        "max_drawdown": 0.927,
+        "calmar": -0.185,
+        "ulcer_index": 0.660647,
+        "total_return": -0.71093,
+        "n_obs": 343,
+        "bench_sharpe_ann": 0.507,
+        "skew": -0.2666,
+        "kurt": 4.3871,
+        "d_sharpe_vs_ew": -0.2825,
+        "exposure_mean": 1.0,
+        "time_in_market_pct": 100.0,
+        "trades_per_year": 8.6,
+        "win_rate_weeks": 0.516,
+        "mean_eligible": 17.9,
+        "first_week": "2019-04-01",
+        "last_week": "2025-10-20",
+        "last_basket": [
+          "PENGUUSDT",
+          "ETHUSDT",
+          "BNBUSDT",
+          "SOLUSDT",
+          "LINKUSDT",
+          "BTCUSDT",
+          "WLDUSDT"
+        ],
+        "d_sharpe_ci95": [
+          -0.7268,
+          0.1112
+        ],
+        "mde_weekly": 0.00649,
+        "mde_annualized": 0.3372,
+        "d_mean_weekly": -0.00445,
+        "cpcv_median_d_sharpe": -0.1831,
+        "cpcv_frac_positive": 0.3333,
+        "stress_sharpe_ann": 0.2016,
+        "cagr_net": -0.17151
+      }
+    },
+    "rc": {
+      "v_obs": 0.000843732387987335,
+      "p_value": 0.7615,
+      "best_candidate": 2,
+      "n_boot": 2000
+    },
+    "pbo": 0.535,
+    "common_weeks": 343,
+    "elapsed_s": 31.2
   }
 }

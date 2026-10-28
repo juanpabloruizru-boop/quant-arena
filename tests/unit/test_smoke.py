@@ -18,8 +18,8 @@ def test_version() -> None:
 
 
 def test_cli_stubs_exit_not_implemented() -> None:
+    # research run ya es real (M3a); forward/report siguen siendo stubs hasta M4/M5
     for args in (
-        ["research", "run", "--hypothesis", "H1"],
         ["forward", "run"],
         ["report", "daily"],
     ):
