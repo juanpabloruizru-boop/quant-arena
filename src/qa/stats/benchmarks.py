@@ -153,3 +153,39 @@ def permutation_pvalue(delta_obs: float, deltas_perm: NDArray[np.float64]) -> fl
     """p = (1 + #{perm <= obs}) / (1 + n_perm). Mejora = Delta mas negativo."""
     perm = np.asarray(deltas_perm, dtype=np.float64)
     return float((1 + np.sum(perm <= delta_obs)) / (1 + perm.shape[0]))
+
+
+def timing_permutation_pvalue(
+    positions: NDArray[np.floating[Any]],
+    asset_returns: NDArray[np.floating[Any]],
+    cost_per_side: float,
+    n_perm: int = 10_000,
+    block: int = 20,
+    seed: int = 20261026,
+    chunk: int = 1_000,
+) -> tuple[float, float, float]:
+    """p-valor permutado (bloques circulares) del estadistico primario de H1.
+
+    Devuelve ``(p_valor, delta_obs, p_adverso)``:
+    - delta_obs = maxDD(estrategia neta) - maxDD(B&H vol-matched) (<0 = mejora);
+    - p_valor = (1 + #{delta_perm <= delta_obs}) / (1 + n_perm);
+    - p_adverso = (1 + #{delta_perm >= delta_obs}) / (1 + n_perm) (para NO PASA).
+    Las permutaciones se procesan por chunks de memoria acotada.
+    """
+    pos = np.asarray(positions, dtype=np.float64)
+    bh = np.asarray(asset_returns, dtype=np.float64)
+    strat = pos * bh - np.abs(np.diff(pos, prepend=0.0)) * cost_per_side
+    d_obs = vol_matched_delta(strat, bh)
+    n_le = 0
+    n_ge = 0
+    done = 0
+    while done < n_perm:
+        m = min(chunk, n_perm - done)
+        perms = circular_block_permutations(pos, block, m, seed=seed + done)
+        d_perm, _ = permutation_delta_stats(perms, bh, cost_per_side)
+        n_le += int(np.sum(d_perm <= d_obs))
+        n_ge += int(np.sum(d_perm >= d_obs))
+        done += m
+    p_val = (1 + n_le) / (1 + n_perm)
+    p_adv = (1 + n_ge) / (1 + n_perm)
+    return p_val, float(d_obs), p_adv

@@ -130,6 +130,33 @@ class TrialLedger:
             ],
         )
 
+    def find(
+        self, hypothesis: str, cell_id: str, asset: str, kind: str = "strategy"
+    ) -> dict[str, Any] | None:
+        """Metrics de un trial ya registrado (checkpoint/resume), o None."""
+        rows = self.con.execute(
+            "SELECT metrics FROM trials WHERE hypothesis=? AND cell_id=? AND asset=? AND kind=? "
+            "ORDER BY ts_utc DESC LIMIT 1",
+            [hypothesis, cell_id, asset, kind],
+        ).fetchall()
+        if not rows or not rows[0][0]:
+            return None
+        loaded = json.loads(rows[0][0])
+        return dict(loaded)
+
+    def family_sharpes(self, hypothesis: str, kind: str = "strategy") -> list[float]:
+        """Sharpe anualizados de todos los trials de una familia (para sd del DSR)."""
+        rows = self.con.execute(
+            "SELECT metrics FROM trials WHERE hypothesis=? AND kind=?", [hypothesis, kind]
+        ).fetchall()
+        out: list[float] = []
+        for (m,) in rows:
+            if m:
+                d = json.loads(m)
+                if "sharpe_ann" in d:
+                    out.append(float(d["sharpe_ann"]))
+        return out
+
     def n_trials(self, hypothesis: str | None = None, kind: str = "strategy") -> int:
         q = "SELECT count(*) FROM trials WHERE kind = ?"
         args: list[Any] = [kind]

@@ -98,10 +98,20 @@ def data_verify() -> None:
 
 @research_app.command("run")
 def research_run(
-    hypothesis: Annotated[str, typer.Option("--hypothesis", "-h", help="H1 | H2 | H3")] = "H1",
+    hypothesis: Annotated[
+        str, typer.Option("--hypothesis", "-h", help="H1 | H2 | H3 | all | stats")
+    ] = "H1",
 ) -> None:
-    """Ejecuta una hipotesis pre-registrada (registro obligatorio en trials)."""
-    _todo(f"M3 (hipotesis solicitada: {hypothesis})")
+    """Ejecuta una familia pre-registrada (M3a in-sample; registro obligatorio en trials)."""
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    _sys.argv = ["run_m3a", "--family", hypothesis.lower()]
+    _repo = _Path(__file__).resolve().parents[2]
+    exec(
+        compile((_repo / "scripts" / "run_m3a.py").read_text(), "run_m3a", "exec"),
+        {"__name__": "__main__", "__file__": str(_repo / "scripts" / "run_m3a.py")},
+    )
 
 
 @stats_app.command("report")
