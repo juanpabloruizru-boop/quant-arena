@@ -114,3 +114,36 @@ def test_h3_signal_threshold_and_warmup() -> None:
     cell_off = H3Cell(window_days=7, threshold_ann=0.50)  # 0.219 < 0.5
     sig2, _ = h3_signal(days, funding, cell_off)
     assert not sig2.any()
+
+
+def test_m3b_verdicts_sign_logic() -> None:
+    """C7 mecanico: coherencia de signo (regla pura, sin datos)."""
+    from qa.research.m3b import verdicts_from_results
+
+    base_h3 = {"mean_daily_net_bp": 1.0}
+    # H1 con signo COHERENTE (IS fue mejora d_vm<0; holdout d_vm<0) => INCONTRASTABLE
+    res_ok = {
+        "H1": {"BTCUSDT": {"d_vm_pp": -9.9}, "ETHUSDT": {"d_vm_pp": -17.8}},
+        "H2": {},
+        "H3": {"BTCUSDT": dict(base_h3), "ETHUSDT": dict(base_h3)},
+    }
+    v = verdicts_from_results(res_ok)
+    assert v["H1"]["family"] == "INCONTRASTABLE"
+    assert v["H3"]["family"] == "PASA"
+    # H1 con signo OPUESTO en ambos => NO_PASA
+    res_bad = {
+        "H1": {"BTCUSDT": {"d_vm_pp": +5.0}, "ETHUSDT": {"d_vm_pp": +3.0}},
+        "H2": {},
+        "H3": {"BTCUSDT": dict(base_h3), "ETHUSDT": {"mean_daily_net_bp": -0.4}},
+    }
+    v2 = verdicts_from_results(res_bad)
+    assert v2["H1"]["family"] == "NO_PASA"
+    assert v2["H3"]["per_asset"]["ETHUSDT"] == "NO_PASA"
+    assert v2["H3"]["family"] == "PASA_PARCIAL"
+    # un activo opuesto y otro coherente => no NO_PASA familiar (solo ambos)
+    res_mix = {
+        "H1": {"BTCUSDT": {"d_vm_pp": +5.0}, "ETHUSDT": {"d_vm_pp": -3.0}},
+        "H2": {},
+        "H3": {"BTCUSDT": dict(base_h3), "ETHUSDT": dict(base_h3)},
+    }
+    assert verdicts_from_results(res_mix)["H1"]["family"] == "INCONTRASTABLE"

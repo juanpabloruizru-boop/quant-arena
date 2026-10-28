@@ -1,0 +1,362 @@
+{
+  "mode_official": true,
+  "ho_start": "2025-10-26",
+  "selected": {
+    "H1": {
+      "BTCUSDT": "sma50_s25",
+      "ETHUSDT": "sma50_s25"
+    },
+    "H2": "L26_N10",
+    "H3": {
+      "BTCUSDT": "w30_t5",
+      "ETHUSDT": "w30_t5"
+    }
+  },
+  "capital_default": 10000.0,
+  "H1": {
+    "BTCUSDT": {
+      "sharpe_ann": 0.5975,
+      "sortino_ann": 0.5125,
+      "max_drawdown": 0.1369,
+      "calmar": 0.7289,
+      "ulcer_index": 0.070509,
+      "time_underwater": 351,
+      "total_return": 0.099775,
+      "n_obs": 365,
+      "expectancy_R": 1.1101,
+      "n_trades": 11,
+      "total_return_net": 0.09978,
+      "cagr_net": 0.09978,
+      "bh_return_same_window": -0.28207,
+      "d_sharpe_vs_bh": 1.1326,
+      "d_maxdd_raw_pp": -35.14,
+      "d_vm_pp": -9.91,
+      "perm_p_descriptivo": 0.12949,
+      "perm_p_adverso": 0.87061,
+      "trades_per_year": 11.0,
+      "exposure_mean": 0.3489,
+      "time_in_market_pct": 46.85,
+      "rejected_min_notional": 0,
+      "rejected_liquidity": 0,
+      "last_day": "2026-10-25",
+      "position_last_day": 0.0,
+      "target_weight_last_day": 0.0,
+      "n_days": 365,
+      "stress_d_vm_pp": -8.7,
+      "stress_total_return_net": 0.07804
+    },
+    "ETHUSDT": {
+      "sharpe_ann": 0.8293,
+      "sortino_ann": 0.827,
+      "max_drawdown": 0.1071,
+      "calmar": 1.6845,
+      "ulcer_index": 0.063082,
+      "time_underwater": 281,
+      "total_return": 0.180368,
+      "n_obs": 365,
+      "expectancy_R": 4.9023,
+      "n_trades": 4,
+      "total_return_net": 0.18037,
+      "cagr_net": 0.18037,
+      "bh_return_same_window": -0.41073,
+      "d_sharpe_vs_bh": 1.391,
+      "d_maxdd_raw_pp": -51.59,
+      "d_vm_pp": -17.79,
+      "perm_p_descriptivo": 0.0077,
+      "perm_p_adverso": 0.9924,
+      "trades_per_year": 4.0,
+      "exposure_mean": 0.2346,
+      "time_in_market_pct": 45.21,
+      "rejected_min_notional": 0,
+      "rejected_liquidity": 0,
+      "last_day": "2026-10-25",
+      "position_last_day": 0.0,
+      "target_weight_last_day": 0.0,
+      "n_days": 365,
+      "stress_d_vm_pp": -17.63,
+      "stress_total_return_net": 0.17133
+    }
+  },
+  "H2": {
+    "n_weeks": 52,
+    "total_return_net": -0.38093,
+    "bench_total_return": -0.45114,
+    "sharpe_ann": -0.5002,
+    "bench_sharpe_ann": -0.8616,
+    "d_sharpe_vs_ew": 0.3614,
+    "max_drawdown": 0.4926,
+    "win_rate_weeks": 0.3846,
+    "mean_eligible": 9.7,
+    "last_basket": [
+      "NEARUSDT",
+      "ZECUSDT",
+      "UNIUSDT",
+      "SOLUSDT"
+    ],
+    "first_week": "2025-10-27",
+    "last_week": "2026-10-19",
+    "stress": {
+      "n_weeks": 52,
+      "total_return_net": -0.39135,
+      "bench_total_return": -0.45428,
+      "sharpe_ann": -0.5277,
+      "bench_sharpe_ann": -0.8714,
+      "d_sharpe_vs_ew": 0.3437,
+      "max_drawdown": 0.4989,
+      "win_rate_weeks": 0.3846,
+      "mean_eligible": 9.7,
+      "last_basket": [
+        "NEARUSDT",
+        "ZECUSDT",
+        "UNIUSDT",
+        "SOLUSDT"
+      ],
+      "first_week": "2025-10-27",
+      "last_week": "2026-10-19"
+    }
+  },
+  "H3": {
+    "BTCUSDT": {
+      "sharpe_ann": 2.0165,
+      "sortino_ann": 0.6205,
+      "max_drawdown": 0.0038,
+      "calmar": 2.4757,
+      "ulcer_index": 0.001587,
+      "time_underwater": 282,
+      "total_return": 0.009487,
+      "n_obs": 365,
+      "expectancy_R": 0.4875,
+      "n_trades": 3,
+      "n_days": 365,
+      "total_return_net": 0.00949,
+      "cagr_net": 0.00949,
+      "mean_daily_net_bp": 0.259,
+      "hac_t": 1.1894,
+      "hac_p_one_sided": 0.11715,
+      "funding_total_period": 0.034233,
+      "funding_collected": 0.01965492,
+      "time_in_market_pct": 36.44,
+      "episodes": 6,
+      "episodes_per_year": 6.0,
+      "last_day": "2026-10-25",
+      "signal_active_last_day": false,
+      "funding_ma_ann_last_day": 0.03777,
+      "stress_mean_daily_net_bp": -0.0204,
+      "stress_total_return_net": -0.00078
+    },
+    "ETHUSDT": {
+      "sharpe_ann": -2.3217,
+      "sortino_ann": -0.5797,
+      "max_drawdown": 0.0154,
+      "calmar": -0.8791,
+      "ulcer_index": 0.012621,
+      "time_underwater": 341,
+      "total_return": -0.013512,
+      "n_obs": 365,
+      "expectancy_R": -0.0565,
+      "n_trades": 6,
+      "n_days": 365,
+      "total_return_net": -0.01351,
+      "cagr_net": -0.01351,
+      "mean_daily_net_bp": -0.3722,
+      "hac_t": -1.6185,
+      "hac_p_one_sided": 0.05278,
+      "funding_total_period": 0.025172,
+      "funding_collected": 0.00666479,
+      "time_in_market_pct": 16.44,
+      "episodes": 12,
+      "episodes_per_year": 12.0,
+      "last_day": "2026-10-25",
+      "signal_active_last_day": false,
+      "funding_ma_ann_last_day": 0.03846,
+      "stress_mean_daily_net_bp": -0.9312,
+      "stress_total_return_net": -0.03348
+    }
+  },
+  "benchmarks_bh_holdout": {
+    "bh_BTCUSDT": -0.30033,
+    "bh_ETHUSDT": -0.43973
+  },
+  "capital_scaling": {
+    "100": {
+      "H1_BTCUSDT": {
+        "total_return_net": 0.09978,
+        "max_drawdown": 0.1369,
+        "n_trades": 11,
+        "rejected_min_notional": 0,
+        "rejected_liquidity": 0
+      },
+      "H3_BTCUSDT": {
+        "total_return_net": 0.00949,
+        "mean_daily_net_bp": 0.259,
+        "episodes": 6
+      },
+      "H1_ETHUSDT": {
+        "total_return_net": 0.18037,
+        "max_drawdown": 0.1071,
+        "n_trades": 4,
+        "rejected_min_notional": 0,
+        "rejected_liquidity": 0
+      },
+      "H3_ETHUSDT": {
+        "total_return_net": -0.01351,
+        "mean_daily_net_bp": -0.3722,
+        "episodes": 12
+      },
+      "H2": {
+        "total_return_net": -0.38053,
+        "max_drawdown": 0.4923,
+        "sharpe_ann": -0.4992
+      }
+    },
+    "500": {
+      "H1_BTCUSDT": {
+        "total_return_net": 0.09978,
+        "max_drawdown": 0.1369,
+        "n_trades": 11,
+        "rejected_min_notional": 0,
+        "rejected_liquidity": 0
+      },
+      "H3_BTCUSDT": {
+        "total_return_net": 0.00949,
+        "mean_daily_net_bp": 0.259,
+        "episodes": 6
+      },
+      "H1_ETHUSDT": {
+        "total_return_net": 0.18037,
+        "max_drawdown": 0.1071,
+        "n_trades": 4,
+        "rejected_min_notional": 0,
+        "rejected_liquidity": 0
+      },
+      "H3_ETHUSDT": {
+        "total_return_net": -0.01351,
+        "mean_daily_net_bp": -0.3722,
+        "episodes": 12
+      },
+      "H2": {
+        "total_return_net": -0.38053,
+        "max_drawdown": 0.4923,
+        "sharpe_ann": -0.4992
+      }
+    },
+    "1000": {
+      "H1_BTCUSDT": {
+        "total_return_net": 0.09978,
+        "max_drawdown": 0.1369,
+        "n_trades": 11,
+        "rejected_min_notional": 0,
+        "rejected_liquidity": 0
+      },
+      "H3_BTCUSDT": {
+        "total_return_net": 0.00949,
+        "mean_daily_net_bp": 0.259,
+        "episodes": 6
+      },
+      "H1_ETHUSDT": {
+        "total_return_net": 0.18037,
+        "max_drawdown": 0.1071,
+        "n_trades": 4,
+        "rejected_min_notional": 0,
+        "rejected_liquidity": 0
+      },
+      "H3_ETHUSDT": {
+        "total_return_net": -0.01351,
+        "mean_daily_net_bp": -0.3722,
+        "episodes": 12
+      },
+      "H2": {
+        "total_return_net": -0.38053,
+        "max_drawdown": 0.4923,
+        "sharpe_ann": -0.4992
+      }
+    },
+    "10000": {
+      "H1_BTCUSDT": {
+        "total_return_net": 0.09978,
+        "max_drawdown": 0.1369,
+        "n_trades": 11,
+        "rejected_min_notional": 0,
+        "rejected_liquidity": 0
+      },
+      "H3_BTCUSDT": {
+        "total_return_net": 0.00949,
+        "mean_daily_net_bp": 0.259,
+        "episodes": 6
+      },
+      "H1_ETHUSDT": {
+        "total_return_net": 0.18037,
+        "max_drawdown": 0.1071,
+        "n_trades": 4,
+        "rejected_min_notional": 0,
+        "rejected_liquidity": 0
+      },
+      "H3_ETHUSDT": {
+        "total_return_net": -0.01351,
+        "mean_daily_net_bp": -0.3722,
+        "episodes": 12
+      },
+      "H2": {
+        "total_return_net": -0.38093,
+        "max_drawdown": 0.4926,
+        "sharpe_ann": -0.5002
+      }
+    }
+  },
+  "generated_at_utc": "2026-10-28T14:47:40+00:00",
+  "access_log": {
+    "before": 2,
+    "after_load": 5
+  },
+  "trials_recorded": 5,
+  "n_trials_strategy_sin_cambios": {
+    "H1": 24,
+    "H2": 6,
+    "H3": 8
+  },
+  "verdicts_previos_con_bug": {
+    "H1": {
+      "per_asset": {
+        "BTCUSDT": "NO_PASA",
+        "ETHUSDT": "NO_PASA"
+      },
+      "family": "NO_PASA",
+      "regla": "IS fue INCONTRASTABLE; C7: signo opuesto en AMBOS activos => NO_PASA"
+    },
+    "H2": {
+      "family": "INCONTRASTABLE",
+      "regla": "IS INCONTRASTABLE (CI incluia 0); holdout descriptivo, n=1 ano no concluyente"
+    },
+    "H3": {
+      "per_asset": {
+        "BTCUSDT": "PASA",
+        "ETHUSDT": "NO_PASA"
+      },
+      "family": "PASA_PARCIAL",
+      "regla": "IS PASA_IS + C7: signo del carry neto diario en holdout (no exige significacion, n=1 ano)"
+    }
+  },
+  "verdicts": {
+    "H1": {
+      "per_asset": {
+        "BTCUSDT": "INCONTRASTABLE",
+        "ETHUSDT": "INCONTRASTABLE"
+      },
+      "family": "INCONTRASTABLE",
+      "regla": "IS fue INCONTRASTABLE; C7: signo opuesto en AMBOS activos => NO_PASA"
+    },
+    "H2": {
+      "family": "INCONTRASTABLE",
+      "regla": "IS INCONTRASTABLE (CI incluia 0); holdout descriptivo, n=1 ano no concluyente"
+    },
+    "H3": {
+      "per_asset": {
+        "BTCUSDT": "PASA",
+        "ETHUSDT": "NO_PASA"
+      },
+      "family": "PASA_PARCIAL",
+      "regla": "IS PASA_IS + C7: signo del carry neto diario en holdout (no exige significacion, n=1 ano)"
+    }
+  },
+  "nota_correccion": "Correccion post-extraccion (2026-10-28): la primera version de verdicts_from_results invertia el flag de signo opuesto en C7/H1. Se corrige la funcion y se recomputan los veredictos como funcion pura de las metricas ya extraidas; el holdout NO se volvio a leer (holdout_access.log permanece en 5 entradas)."
+}

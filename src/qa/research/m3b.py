@@ -214,9 +214,9 @@ def verdicts_from_results(results: dict[str, Any]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     h1 = results["H1"]
     is_signs = {"BTCUSDT": -1.0, "ETHUSDT": -1.0}  # IS: mejora (d_vm<0) en ambos
-    opp = [
-        h1[a]["d_vm_pp"] * is_signs[a] > 0 for a in ("BTCUSDT", "ETHUSDT")
-    ]  # True = signo opuesto al IS
+    # signo OPUESTO al IS <=> producto de signos negativo (CORREGIDO: la primera
+    # version marcaba erronneamente el signo coherente como opuesto)
+    opp = [h1[a]["d_vm_pp"] * is_signs[a] < 0 for a in ("BTCUSDT", "ETHUSDT")]
     out["H1"] = {
         "per_asset": {
             a: ("NO_PASA" if opp[i] else "INCONTRASTABLE")
