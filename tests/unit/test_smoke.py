@@ -8,7 +8,7 @@ import pytest
 from typer.testing import CliRunner
 
 import qa
-from qa.cli import NOT_IMPLEMENTED_EXIT, app
+from qa.cli import app
 
 runner = CliRunner()
 
@@ -17,15 +17,11 @@ def test_version() -> None:
     assert qa.__version__ == "0.1.0"
 
 
-def test_cli_stubs_exit_not_implemented() -> None:
-    # research run ya es real (M3a); forward/report siguen siendo stubs hasta M4/M5
-    for args in (
-        ["forward", "run"],
-        ["report", "daily"],
-    ):
-        result = runner.invoke(app, args)
-        assert result.exit_code == NOT_IMPLEMENTED_EXIT, args
-        assert "NO IMPLEMENTADO" in result.stdout
+def test_cli_report_daily_points_to_agent() -> None:
+    """M4/M5: ya no hay stubs; `report daily` redirige al dashboard."""
+    result = runner.invoke(app, ["report", "daily"])
+    assert result.exit_code == 0
+    assert "qa agent run" in result.stdout
 
 
 def test_cli_stats_report_ledger_vacio(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

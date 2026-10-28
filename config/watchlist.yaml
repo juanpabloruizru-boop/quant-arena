@@ -1,0 +1,37 @@
+# Watchlist y parametros del monitor de riesgos (M4/M5 operativo).
+# IMPORTANTE: la watchlist solo alimenta VIGILANCIA DESCRIPTIVA (precios,
+# choques tecnicos, noticias). Las SENALES de reglas solo existen para las
+# 5 celdas congeladas en m3a-freeze (BTC/ETH). Ningun otro activo tiene
+# hipotesis validada: ver ADR-008 y PRERREGISTRO v1.4.
+
+watchlist: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT]
+
+noticias:
+  feeds:
+    - { nombre: Cointelegraph, url: "https://cointelegraph.com/rss" }
+    - { nombre: Decrypt, url: "https://decrypt.co/feed" }
+    - { nombre: CoinDesk, url: "https://www.coindesk.com/arc/outboundfeeds/rss/", tolerar_fallo: true }
+  max_age_hours: 72
+  keywords_riesgo:
+    - hack
+    - exploit
+    - sec
+    - ban
+    - delist
+    - insolvency
+    - insolvent
+    - depeg
+    - crash
+    - fraud
+    - lawsuit
+    - halt
+    - suspended
+
+choques:
+  # Convenciones descriptivas de riesgo (no son senales alpha; no estan
+  # pre-registradas como criterio de nada): umbrales documentados y fijos.
+  atr_window: 14
+  umbral_4h_atr: 2.5        # |movimiento 24h| > 2.5 x ATR14(4h) => choque 4h
+  umbral_1h_atr: 3.0        # |movimiento 6h|  > 3.0 x ATR14(1h) => choque 1h
+  umbral_volumen: 3.0       # quote_volume ultima vela 4h > 3x media(30) => spike
+  umbral_funding_abs: 0.0005   # |lastFunding| > 5 pb / 8h => funding extremo

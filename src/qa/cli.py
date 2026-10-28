@@ -10,6 +10,7 @@ ejecuciones en el ledger correspondiente antes de devolver resultados.
 
 from __future__ import annotations
 
+from datetime import UTC
 from typing import Annotated
 
 import typer
@@ -20,12 +21,16 @@ research_app = typer.Typer(help="Ejecucion de hipotesis pre-registradas (M3)")
 stats_app = typer.Typer(help="Estadistica y validacion anti-sobreajuste (M2)")
 forward_app = typer.Typer(help="Forward-test en paper (M4)")
 report_app = typer.Typer(help="Boletin informativo (M5)")
+agent_app = typer.Typer(help="Agente operativo M4/M5 (estados + tracker + vigilancia)")
+trade_app = typer.Typer(help="Registro de operaciones del USUARIO (el agente no abre nada)")
 
 app.add_typer(data_app, name="data")
 app.add_typer(research_app, name="research")
 app.add_typer(stats_app, name="stats")
 app.add_typer(forward_app, name="forward")
 app.add_typer(report_app, name="report")
+app.add_typer(agent_app, name="agent")
+app.add_typer(trade_app, name="trade")
 
 NOT_IMPLEMENTED_EXIT = 3
 
@@ -143,14 +148,284 @@ def stats_report() -> None:
 
 @forward_app.command("run")
 def forward_run() -> None:
-    """Ejecucion one-shot del forward-test en paper (sin daemon)."""
-    _todo("M4")
+    """One-shot: estado diario de las 5 celdas congeladas -> ledger/forward.jsonl (hash-chain)."""
+    import json as _json
+
+    import pandas as _pd
+
+    from qa.agent.live import fetch_extra_daily, fetch_live
+    from qa.agent.signals import compute_states
+    from qa.data.paths import get_root
+    from qa.data.pit import membership_at
+    from qa.forward.paper import append_forward_record, verify_forward_chain
+
+    root = get_root()
+    pit = _pd.read_parquet(root / "data" / "curated" / "pit_universe.parquet")
+    members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+    live = fetch_live(sorted(set(["BTCUSDT", "ETHUSDT"]) | set(members)))
+    extra = fetch_extra_daily([m for m in members if m not in live["klines"]])
+    for sym, df in extra.items():
+        live["klines"].setdefault(sym, {})["1d"] = df
+    states = compute_states(live, members)
+    rec = append_forward_record(root, states)
+    ok, n, msg = verify_forward_chain(root)
+    typer.echo(_json.dumps(rec, indent=2, default=str))
+    typer.echo(f"forward chain: ok={ok} lineas={n} ({msg})")
+    if not ok:
+        raise typer.Exit(code=1)
 
 
 @report_app.command("daily")
 def report_daily() -> None:
-    """Genera el boletin diario (Telegram one-shot + HTML autocontenido)."""
-    _todo("M5")
+    """Boletin: el canal principal es el dashboard (`qa agent run`).
+
+    Telegram queda pendiente del token del usuario (.env); hasta entonces este
+    comando regenera el dashboard y lo indica.
+    """
+    typer.echo("Canal Telegram pendiente de TELEGRAM_BOT_TOKEN (.env). Usa `qa agent run`.")
+    raise typer.Exit(code=0)
+
+
+@agent_app.command("run")
+def agent_run() -> None:
+    """One-shot: ingesta viva -> estados + tracker + vigilancia -> dashboard."""
+    import json as _json
+
+    import pandas as _pd
+    import yaml as _yaml
+
+    from qa.agent.live import fetch_extra_daily, fetch_live, last_price
+    from qa.agent.news import detect_shocks, fetch_news
+    from qa.agent.signals import compute_states
+    from qa.agent.tracker import diagnose, load_trades, verify_chain
+    from qa.data.paths import get_root, reports_dir
+    from qa.data.pit import membership_at
+    from qa.report.dashboard import render_dashboard
+
+    root = get_root()
+    cfg = _yaml.safe_load((root / "config" / "watchlist.yaml").read_text(encoding="utf-8"))
+    watchlist = list(cfg["watchlist"])
+    pit = _pd.read_parquet(root / "data" / "curated" / "pit_universe.parquet")
+    members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+
+    live = fetch_live(sorted(set(watchlist) | {"BTCUSDT", "ETHUSDT"}))
+    extra = fetch_extra_daily([m for m in members if m not in live["klines"]])
+    for sym, df in extra.items():
+        live["klines"].setdefault(sym, {})["1d"] = df
+    states = compute_states(live, members)
+
+    trades = load_trades(root)
+    ok, n_lines, msg = verify_chain(root)
+    if not ok:
+        typer.echo(f"CADENA DE OPERACIONES ROTA: {msg}")
+        raise typer.Exit(code=1)
+
+    bases = sorted(
+        {t["asset"].replace("USDT", "") for t in trades}
+        | {w.replace("USDT", "") for w in watchlist}
+    )
+    news_cfg = cfg["noticias"]
+    news_items, feed_status = fetch_news(
+        news_cfg["feeds"],
+        list(news_cfg["keywords_riesgo"]),
+        bases,
+        int(news_cfg.get("max_age_hours", 72)),
+    )
+    shocks = detect_shocks(live["klines"], live["premium"], cfg.get("choques", {}))
+
+    diags = []
+    for t in trades:
+        if t.get("status") != "open":
+            diags.append({**diagnose(t, None, "", []), "example": t.get("example", False)})
+            continue
+        px = last_price(live, t["asset"])
+        if px is None:
+            d1 = live["klines"].get(t["asset"], {}).get("1d")
+            px = float(d1["close"].iloc[-1]) if d1 is not None and not d1.empty else None
+        base = t["asset"].replace("USDT", "")
+        st = states["cells"].get(f"H1_{t['asset']}")
+        if st:
+            ctx = (
+                f"1D close {st['close_vs_sma50_pct']:+.1f}% vs SMA50; "
+                f"regla investigada en estado {st['estado']}"
+            )
+        else:
+            ctx = "sin regla validada para este activo (ver ADR-008)"
+        alerts = [
+            f"choque {s['tipo']}: {s['detalle']}" for s in shocks if s["symbol"] == t["asset"]
+        ]
+        alerts += [
+            f"noticia [{','.join(n.keywords) or n.feed}] {n.title[:90]}"
+            for n in news_items
+            if base in [a.upper() for a in n.assets]
+            or (n.keywords and base in " ".join(n.keywords).upper())
+        ]
+        d = diagnose(t, px, ctx, alerts[:4])
+        d["example"] = t.get("example", False)
+        diags.append(d)
+
+    spark = {}
+    for sym in ("BTCUSDT", "ETHUSDT"):
+        d1 = live["klines"].get(sym, {}).get("1d")
+        if d1 is not None and not d1.empty:
+            spark[sym] = [float(x) for x in d1["close"].tail(90)]
+
+    import subprocess as _sp
+
+    try:
+        sha = _sp.run(
+            ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, timeout=10
+        ).stdout.strip()
+    except Exception:
+        sha = "unknown"
+    meta = {
+        "git_sha": sha,
+        "evidencia": {
+            "filas": [
+                [
+                    "H1 tendencia BTC/ETH (sma50_s25)",
+                    "IS 8.2a: CAGR 31.8%/27.2%, MDD 33.9%/24.7%",
+                    "Holdout 25-26: +10.0%/+18.0% vs B&H -30%/-44%",
+                    "INCONTRASTABLE (sin ventaja demostrada)",
+                ],
+                [
+                    "H2 momentum (L26_N10)",
+                    "IS: CAGR 6.0%, MDD 90.4%",
+                    "Holdout: -38.1% vs EW -45.1%",
+                    "INCONTRASTABLE",
+                ],
+                [
+                    "H3 carry BTC (w30_t5)",
+                    "IS: CAGR 11.2%, MDD 2.1%, Sharpe 7.3",
+                    "Holdout: +0.95%, MDD 0.4%",
+                    "PASA a nivel de signo (costes x2 ~ 0: edge fragil)",
+                ],
+                [
+                    "H3 carry ETH (w30_t5)",
+                    "IS: CAGR 14.4%, MDD 1.7%",
+                    "Holdout: -1.35% (costes>funding)",
+                    "NO PASA",
+                ],
+            ]
+        },
+    }
+    html_out = render_dashboard(
+        states,
+        diags,
+        [n.__dict__ for n in news_items],
+        feed_status,
+        shocks,
+        spark,
+        meta,
+    )
+    outdir = reports_dir(root) / "dashboard"
+    outdir.mkdir(parents=True, exist_ok=True)
+    (outdir / "index.html").write_text(html_out, encoding="utf-8")
+    typer.echo(f"dashboard -> {outdir / 'index.html'}")
+    typer.echo(f"operaciones: {len(trades)} (cadena: {n_lines} lineas, {msg})")
+    typer.echo(f"choques: {len(shocks)} | noticias relevantes: {len(news_items)}")
+    typer.echo(
+        "estados: "
+        + _json.dumps(
+            {
+                k: (v.get("estado") or v.get("cesta_teoretica") or v.get("senal_activa"))
+                for k, v in states["cells"].items()
+            },
+            default=str,
+        )
+    )
+
+
+@trade_app.command("open")
+def trade_open(
+    asset: Annotated[str, typer.Option("--asset")],
+    kind: Annotated[str, typer.Option("--kind", help="spot|future_long|future_short")],
+    timeframe: Annotated[str, typer.Option("--timeframe")] = "1d",
+    entry: Annotated[float, typer.Option("--entry")] = 0.0,
+    size_usd: Annotated[float, typer.Option("--size-usd")] = 0.0,
+    sl: Annotated[float, typer.Option("--sl")] = 0.0,
+    tp: Annotated[float, typer.Option("--tp")] = 0.0,
+    note: Annotated[str, typer.Option("--note")] = "",
+    example: Annotated[bool, typer.Option("--example")] = False,
+) -> None:
+    """Registra una operacion ABIERTA POR TI (el agente nunca abre nada)."""
+    from qa.agent.tracker import open_trade
+    from qa.data.paths import get_root
+
+    rec = open_trade(
+        get_root(),
+        asset,
+        kind,
+        timeframe,
+        entry,
+        size_usd,
+        sl or None,
+        tp or None,
+        note,
+        example,
+    )
+    typer.echo(
+        f"registrada: id={rec['id']} {asset} {kind} entrada={entry} tam=${size_usd} "
+        f"SL={sl or '—'} TP={tp or '—'}{' [EJEMPLO]' if example else ''}"
+    )
+
+
+@trade_app.command("close")
+def trade_close(
+    id: Annotated[str, typer.Option("--id")],
+    exit: Annotated[float, typer.Option("--exit")],
+    note: Annotated[str, typer.Option("--note")] = "",
+) -> None:
+    """Registra el cierre de una operacion."""
+    from qa.agent.tracker import close_trade
+    from qa.data.paths import get_root
+
+    close_trade(get_root(), id, exit, note)
+    typer.echo(f"cerrada {id} a {exit}")
+
+
+@trade_app.command("list")
+def trade_list() -> None:
+    """Lista operaciones (abiertas y cerradas)."""
+    import json as _json
+
+    from qa.agent.tracker import load_trades
+    from qa.data.paths import get_root
+
+    for t in load_trades(get_root()):
+        typer.echo(_json.dumps(t, default=str))
+
+
+@trade_app.command("status")
+def trade_status() -> None:
+    """Diagnostico descriptivo de las operaciones abiertas (precios vivos)."""
+    from qa.agent.live import fetch_live, last_price
+    from qa.agent.news import detect_shocks, fetch_news
+    from qa.agent.tracker import diagnose, load_trades
+    from qa.data.paths import get_root
+
+    root = get_root()
+    trades = [t for t in load_trades(root) if t.get("status") == "open"]
+    if not trades:
+        typer.echo("sin operaciones abiertas")
+        return
+    assets = sorted({t["asset"] for t in trades} | {"BTCUSDT", "ETHUSDT"})
+    live = fetch_live(assets)
+    shocks = detect_shocks(live["klines"], live["premium"], {})
+    bases = sorted({t["asset"].replace("USDT", "") for t in trades})
+    news, _ = fetch_news([], [], bases)
+    for t in trades:
+        px = last_price(live, t["asset"])
+        alerts = [
+            f"choque {s['tipo']}: {s['detalle']}" for s in shocks if s["symbol"] == t["asset"]
+        ]
+        alerts += [
+            f"noticia: {n.title[:80]}"
+            for n in news
+            if t["asset"].replace("USDT", "") in [a.upper() for a in n.assets]
+        ]
+        d = diagnose(t, px, "(contexto completo en `qa agent run`)", alerts[:3])
+        typer.echo(str(d))
 
 
 if __name__ == "__main__":
