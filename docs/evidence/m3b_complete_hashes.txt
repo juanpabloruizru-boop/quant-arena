@@ -1,0 +1,10 @@
+QUANT-ARENA v2 — M3b completo (evaluacion unica del holdout)
+Fecha (UTC): 2026-10-28T14:55:05Z
+Commit: 63b696d08db4319c3994b3b809ac5efad3fc7947
+Holdout abierto UNA vez: access log 2->5 entradas (sha256 del log abajo).
+Veredictos finales: H1 INCONTRASTABLE · H2 INCONTRASTABLE · H3 PASA(BTC)/NO_PASA(ETH)=PASA_PARCIAL.
+
+SHA256 (reports/M3b_REPORT.md)          = f03e04f880e9684399938ccd7acff67060bc0aeb520760815bdcb08325db46bd
+SHA256 (reports/M3b_results.json)       = 1598cac53b3adbb4a81cfc5b97274fa3d2906b2d3b2961cf7d4f6abd0f584139
+SHA256 (reports/M3a_selected_cells.json)= f79355a0b19ac5eb1cd8510e060c48c6517f43a3ae3d2aa34ff7df4adceb8297  (celdas congeladas, inalteradas)
+SHA256 (ledger/holdout_access.log)      = 27c84f3f63e37c0f7e2d9876eda4f006218484bda70d35ea41fe0ffc7f513356
