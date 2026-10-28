@@ -24,7 +24,7 @@ def _load(name: str) -> dict[str, Any]:
 
 def test_hypotheses_grid_v1() -> None:
     h = _load("hypotheses.yaml")
-    assert h["version"] == "1.3"
+    assert h["version"] == "1.4"
     cells = h["accounting"]["preregistered_cells"]
     assert cells == {"H1": 24, "H2": 6, "H3": 8, "total": 38}
     assert h["accounting"]["grid_cells_raw"] == {"H1": 12, "H2": 6, "H3": 4}
@@ -47,6 +47,18 @@ def test_hypotheses_grid_v1() -> None:
     assert n3 == h["accounting"]["grid_cells_raw"]["H3"]
     assert n3 * len(h3["evaluated_assets"]) == cells["H3"]
 
+    sc0 = h["success_criteria"]
+    assert sc0["dsr_n_trials_scope"] == "family"
+    assert sc0["dsr_sd_trials_source"] == "ledger"
+    sel = sc0["selection_rule"]
+    assert sel["scope"] == "per_family_per_asset"
+    assert sel["statistic"] == "cpcv_median"
+    assert set(sel["metric_by_family"]) == {"H1", "H2", "H3"}
+    proto = sc0["m3_protocol"]
+    assert proto["m3a"]["n_permutations"] == 10000
+    assert proto["m3a"]["rc_bootstrap_B"] == 2000
+    assert proto["m3b"]["scope"] == "holdout_unico"
+    assert "expected_verdict_predeclared" in h["hypotheses"]["H1"]
     sc = h["success_criteria"]
     assert sc["dsr_min"] == 0.95
     assert sc["pbo_max"] == 0.20

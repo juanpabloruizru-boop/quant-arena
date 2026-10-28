@@ -1,6 +1,12 @@
-# PRERREGISTRO v1.3 — QUANT-ARENA v2
+# PRERREGISTRO v1.4 — QUANT-ARENA v2
 
-**Fecha v1.3:** 2026-10-26 (UTC) · **Estado:** registrado. v1.0 (`prereg-v1`,
+**Fecha v1.4:** 2026-10-27 (UTC) · **Estado:** registrado. v1.4 = solo texto
+(añadidos 1-5 del gate M2b, aprobados por el orquestador): validación
+multi-mundo de t\*, n_trials familiar del DSR con sd estimada del ledger,
+selección de candidata por MEDIANA CPCV (una celda por familia y activo),
+protocolo M3 en dos puertas (M3a in-sample + congelación aprobada; M3b
+holdout único con clave del usuario) y pre-declaración de veredicto esperado
+para H1. Sin cambios en rejilla, sizing ni criterios numéricos. v1.0 (`prereg-v1`,
 `prereg-v1-signed`, commit `82bf430`), v1.1 (`prereg-v1.1`) y v1.2
 (`prereg-v1.2`) intactas. v1.3 sellada en `prereg-v1.3` + OpenTimestamps.
 Incorpora las correcciones pre-M3 del gate M1: (1) la higiene de datos SOLO
@@ -11,7 +17,7 @@ sintético (t* = 0.025, FPR 4.4 %; rotación completa descartada con
 evidencia); (4) FWER del pipeline H1 simulado (0.5 %); (5) prueba de
 regeneración byte-idéntica. Sigue sin calcularse ninguna métrica de
 estrategia sobre datos reales.
-**Espejo máquina:** `config/hypotheses.yaml` v1.3 (este documento manda; si
+**Espejo máquina:** `config/hypotheses.yaml` v1.4 (este documento manda; si
 divergen, es un bug y se corrige el YAML).
 
 > Regla de oro: ninguna regla se implementa ni ejecuta si no está en este
@@ -248,26 +254,58 @@ Verificados en vivo el 2026-10-26:
    (diagnósticos). **Nulo de permutación:** bloques circulares de 20 días
    sobre el vector de posiciones, 10 000 permutaciones, semilla 20261026;
    estadístico completo recalculado por permutación; p-valor con corrección
-   +1. **Subperíodos:** SP1/SP2/SP3 con fronteras fijas (§4), mismo
-   estadístico vol-matched por subperíodo.
+   +1. \1
+   **Validación de t\* (v1.4):** FPR(p≤t\*) ∈ [1.5 %, 4.6 %] en 3 mundos nulos
+   × semillas nuevas (5000 sims cada uno): GBM 4.6 %, vol-MS 1.5 %, vol-MS +
+   jumps 2.3 % — siempre ≤ 5 % nominal y **conservador bajo regímenes de
+   volatilidad**; la potencia sintética reportada debe leerse como **cota
+   superior** (`reports/M2_tstar_validation.md`).
 4. **Incertidumbre**: bootstrap por bloques estacionario (bloque esperado 20 d
    en series diarias; 8 semanas en semanales; 10 000 remuestreos, semilla
    fija) para ICs de diferencias frente a benchmark; errores estándar HAC
    (Newey-West, lag = ventana de formación) para medias.
 5. **Anti-sobreajuste**: PBO vía CSCV sobre la rejilla de la familia;
    Reality Check/SPA sobre todas las celdas vs benchmark — **en H1 el
-   estadístico de SPA/RC es la mejora de ΔmaxDD vol-matched (criterio primario de
-   multiplicidad, condición 3 del gate M0)**; en H2/H3 el estadístico es el
-   retorno/Sharpe neto. DSR (Bailey–López de Prado) con n_trials del ledger,
-   asimetría y curtosis empíricas: **criterio de gate en H2 y H3; en H1 se
-   computa y reporta, sin poder tumbar un PASA**.
+   estadístico de SPA/RC es la mejora de ΔmaxDD vol-matched (criterio primario
+   de multiplicidad, condición 3 del gate M0)**; en H2/H3 el estadístico es el
+   retorno/Sharpe neto. DSR (Bailey–López de Prado): **n_trials = FAMILIA**
+   (filas `kind=strategy` de esa familia en el ledger, con suelo = rejilla
+   familiar: H2 = 6, H3 = 8; en H1 se computa con 24, informativo) y el
+   **N global (38) se reporta junto al DSR por transparencia**. La **sd entre
+   celdas se ESTIMA del ledger** (distribución empírica de los Sharpe de los
+   trials de la familia), no se supone. Asimetría y curtosis empíricas.
+   **Criterio de gate en H2 y H3; en H1 se computa y reporta, sin poder
+   tumbar un PASA.** Nota de programa (v1.4): un PASA en cualquier familia se
+   reportará con la nota de FWER a nivel programa ≤ ~3× el FWER de una familia
+   (cota de unión sobre las 3 familias evaluadas de forma independiente;
+   FWER familiar medido en §9.4b: 0.5 %).
 6. **Costes**: todo neto de costes verificados; repetición obligatoria con ×2.
-7. **Selección de candidata**: por familia, según su métrica primaria — H1:
-   mayor mejora media de ΔmaxDD vol-matched en las 45 trayectorias CPCV
-   in-sample; H2/H3: mayor Sharpe neto medio en las 45 trayectorias. Regla
-   fijada ahora, antes de ver nada. Esa candidata —y solo esa— pasa al holdout.
-8. **Holdout**: evaluación única al final de M3. Prohibido ajustar nada tras
-   verlo. Su resultado se reporta tal cual, gane o pierda.
+7. **Selección de candidata (v1.4, sellada antes de cualquier ejecución):**
+   **UNA celda por familia y activo**, elegida por la **MEDIANA** (no la
+   media) del criterio primario de la familia en las 45 trayectorias CPCV
+   in-sample:
+   - H1: mediana de ΔmaxDD vol-matched (más negativa = mejor); BTCUSDT y
+     ETHUSDT pueden seleccionar celdas distintas.
+   - H2: mediana del Sharpe neto anualizado vs universo equiponderado.
+   - H3: mediana del Sharpe neto del carry diario (por activo).
+   La mediana es más robusta que la media frente a folds extremos. La tabla
+   completa de medianas de TODAS las celdas se publica en el informe M3a.
+   Esas candidatas —y solo esas— pasan al holdout.
+8. **Holdout**: evaluación única al final de M3 (puerta M3b). Prohibido
+   ajustar nada tras verlo. Su resultado se reporta tal cual, gane o pierda.
+9. **Protocolo M3 en dos puertas (v1.4, condición 4 del gate M2b):**
+   - **M3a — SOLO in-sample:** ejecución completa de la rejilla (24 + 6 + 8 =
+     38 trials `kind=strategy` en el ledger; diagnósticos/benchmarks con
+     `kind` propio), permutaciones con **n_perm = 10 000**, Reality Check con
+     **B ≥ 2 000**, CPCV(10,2), costes ×2. Se publican TODAS las celdas. Al
+     terminar: **congelación de las celdas elegidas** (§7.7) en un fichero
+     `reports/M3a_selected_cells.json` con commit + SHA256 + ancla OTS, y
+     **ESPERA de la aprobación del orquestador**. Ningún acceso al holdout.
+   - **M3b — evaluación única del holdout:** solo las celdas congeladas y
+     aprobadas; desbloqueo con la clave del usuario (`QA_HOLDOUT_UNLOCK=1` +
+     `QA_HOLDOUT_KEY`, queda auditado en `ledger/holdout_access.log`);
+     resultado tal cual; veredictos finales PASA / NO PASA / INCONTRASTABLE
+     según §8. Todo ajuste posterior está prohibido.
 
 ## 8. Criterios de éxito (v1.3 — diferenciados por familia; potencia en §9)
 
@@ -288,8 +326,13 @@ Veredictos por familia sobre la candidata seleccionada en §7.7.
 - Co-métricas (Ulcer Index, Calmar, tiempo bajo el agua), benchmarks
   diagnóstico (exposure-matched, B&H crudo, caja) y ΔSharpe con IC bootstrap:
   se reportan SIEMPRE, no hacen gate.
+- **Pre-declaración (v1.4, condición 5 del gate M2b):** para ΔSharpe en el
+  rango plausible según literatura (0.1–0.3), la potencia del PIPELINE
+  completo (compuesta ∧ RC sobre 24 candidatas) es **9.5–18.5 %** → el
+  resultado ESPERADO de H1 es **INCONTRASTABLE**. Un rechazo del nulo sería un
+  resultado extraordinario y exigiría la batería completa de gates.
 - **Política de veredicto por potencia (enmienda 4 del gate M0b, ratificada
-  en v1.3):** la potencia medida con habilidad plantada al nivel t* (§9.4) es
+  en v1.3):** la potencia medida con habilidad plantada al nivel t\* (§9.4) es
   < 50 % para todo efecto ΔSharpe ≤ 0.5 (10-12 % / 18-20 % / 29-30 %). Por tanto, para H1 se pre-declara: si los tests no rechazan
   el nulo, el veredicto por defecto es **INCONTRASTABLE** (no NO PASA).
   **NO PASA** solo si (a) el p-valor adverso de permutación ≤ t* (la
@@ -430,7 +473,7 @@ Con 38 ensayos, t\*=0.025 y 8.2 años, el laboratorio solo confirma efectos
 grandes de timing; todo efecto menor se reportará INCONTRASTABLE con su MDE.
 El FWER del pipeline completo está medido y controlado (≤0.5 % bajo el nulo).
 
-## 10. Sellado del preregistro (estado v1.3)
+## 10. Sellado del preregistro (estado v1.4)
 
 - **v1.0 (intacto, no se modifica):** tag anotado `prereg-v1` + tag FIRMADO
   `prereg-v1-signed` (SSH ed25519, clave pública en `docs/keys/`) sobre el
@@ -458,6 +501,11 @@ El FWER del pipeline completo está medido y controlado (≤0.5 % bajo el nulo).
   congela este documento + `config/hypotheses.yaml` v1.3 +
   `config/universe.yaml` + `config/adjudications.csv` (los CUATRO hashes en
   el mensaje del tag) + anclaje OTS (`normative_hashes_v1.3.txt`).
+- **v1.4:** tag `prereg-v1.4` (anotado y firmado SSH) sobre el commit que
+  congela este documento + `config/hypotheses.yaml` v1.4 +
+  `config/universe.yaml` + `config/adjudications.csv` (4 hashes en el mensaje
+  del tag) + anclaje OTS (`normative_hashes_v1.4.txt`). Solo texto: sin
+  cambios de rejilla, sizing ni umbrales numéricos.
 
 ## 11. Hechos heredados del proyecto anterior (estado de verificación)
 
@@ -480,3 +528,4 @@ El FWER del pipeline completo está medido y controlado (≤0.5 % bajo el nulo).
 | 1.1 | 2026-10-26 | Condiciones 1-4 del gate M0 (orquestador): benchmark primario H1 = B&H matched-exposure + permutación de timing; co-métricas Ulcer/Calmar/time-underwater y regla de subperíodos (≥2 de 3) por activo; DSR deja de ser gate de H1 (SPA/RC sobre ΔmaxDD matched lo sustituye) y sigue siéndolo de H3; grados de libertad documentados (§4). Resoluciones P1 (rejilla disjunta ratificada), P2 (horizonte 2017/2019 + declaración de régimen 2017-18 y PIT fino), P3 (OTS ya, OSF antes de M3), P4 (ETH se mantiene; MDE por activo; regla 2×). Banda de rebalanceo 10 pp añadida por hallazgo PRE-datos del análisis de potencia (§9.3). Sin celdas nuevas. | 38 |
 | 1.2 | 2026-10-26 | Corrección del defecto 1 del gate M0b (benchmark exposure-matched sesgado por Jensen): benchmark primario H1 = B&H vol-matched; exposure-matched degradado a diagnóstico; criterio y subperíodos basados en permutación del vector de exposición; tests de identidad/calibración del nulo como requisito previo; potencia recalculada con drift AR(1) plantado (ΔSharpe ∈ {0.1,0.3,0.5}) → potencia <50 % ⇒ política de veredicto INCONTRASTABLE por defecto en H1; bandas simuladas {0,2,5,10,20} pp documentadas en §4/§9.5; retirado el titular "H1 probablemente NO PASA" (M0b §9.3/R1). Sin cambios en rejilla ni sizing. | 38 |
 | 1.3 | 2026-10-26 | Correcciones pre-M3 del gate M1: (1) higiene mark-only + tabla de adjudicación sellada (`config/adjudications.csv`, 5 eventos, 4 corporate_action con anuncio oficial, 1 real_move conservado íntegro) + convención de deslistado (último precio observado); (2) auditoría de exclusiones del universo (68 pares excluidos en ingesta, 0 colados en pool/PIT); (3) nivel crítico del test de permutación calibrado en nulo sintético: t* = 0.025 (5000 sims; FPR 4.36 %; rotación completa descartada: FPR 2.8 %/potencia 6.8 %); el estadístico de decisión de C1 es el p-valor permutado, no el ΔmaxDD puntual; (4) FWER del pipeline H1 simulado (24 candidatas: compuesta-any 28.5 %, pipeline con RC 0.5 %); (5) cross-check de funding ampliado (14 meses BTC/ETH 2020-2025, 1272 registros, 0 discrepancias); (6) prueba de regeneración byte-idéntica en directorio limpio. Sin cambios en rejilla ni sizing. | 38 |
+| 1.4 | 2026-10-27 | Añadidos 1-5 del gate M2b (solo texto, pre-datos): (1) validación multi-mundo de t* (FPR ∈ [1.5 %, 4.6 %], conservador bajo regímenes de vol; potencia = cota superior); (2) §7.5: n_trials del DSR = FAMILIA (H3=8, H2=6, H1=24 informativo) + N global 38 reportado; sd entre celdas ESTIMADA del ledger; nota de FWER de programa (≤ ~3× familiar) en todo PASA; (3) §7.7: selección = UNA celda por familia y activo por MEDIANA CPCV del criterio primario (H1: ΔmaxDD vol-matched; H2/H3: Sharpe neto), sellada antes de ejecutar; (4) §7.9: protocolo M3 en dos puertas (M3a in-sample, n_perm=10 000, RC B≥2 000, congelación commit/hash/OTS + aprobación; M3b holdout único con clave del usuario); (5) §8-H1: pre-declaración de veredicto esperado INCONTRASTABLE (potencia pipeline 9.5-18.5 % para ΔSharpe 0.1-0.3). | 38 |

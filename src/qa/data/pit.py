@@ -147,3 +147,21 @@ def run_pit(root: Path) -> dict[str, Any]:
     }
     write_json(root, "data/manifests/pit_universe_meta.json", meta)
     return meta
+
+
+def membership_at(pit: pd.DataFrame, ts: pd.Timestamp, n: int) -> list[str]:
+    """Top-N vigente en el instante ts: filas del ultimo mes-start <= ts.
+
+    Causal por construccion: la tabla PIT de cada mes solo usa datos anteriores
+    a ese mes (invarianza por truncamiento testeada).
+    """
+    col = "in_top10" if n == 10 else "in_top20" if n == 20 else None
+    past = pit[pit["month"] <= ts]
+    if past.empty:
+        return []
+    last_month = past["month"].max()
+    sel = past[past["month"] == last_month]
+    if col is not None:
+        sel = sel[sel[col]]
+    out: list[str] = [str(x) for x in sel.sort_values("rank")["symbol"].tolist()]
+    return out

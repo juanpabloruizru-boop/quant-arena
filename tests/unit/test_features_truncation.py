@@ -121,3 +121,73 @@ def test_funding_helpers() -> None:
     assert np.isclose(daily.iloc[0], 0.0003)
     ma = funding_ma_annualized(daily, 2)
     assert np.isclose(ma.iloc[1], 0.0003 * 365.0)
+
+
+@settings(max_examples=15, deadline=None)
+@given(
+    n=st.integers(min_value=60, max_value=140),
+    L=st.integers(min_value=5, max_value=30),
+    data=st.data(),
+)
+def test_ret_L_days_truncation_invariance(n: int, L: int, data: st.DataObject) -> None:
+    """H5: retorno de L dias (variante 'ret' de H1)."""
+    from qa.features.indicators import ret_L_days
+
+    x = np.asarray(
+        data.draw(
+            st.lists(
+                st.floats(min_value=1.0, max_value=1e5, allow_nan=False, allow_infinity=False),
+                min_size=n,
+                max_size=n,
+            )
+        )
+    )
+    full = ret_L_days(x, L)
+    for t in range(L, n):
+        partial = ret_L_days(x[: t + 1], L)
+        assert np.isclose(partial[t], full[t], rtol=1e-12, atol=1e-12)
+
+
+@settings(max_examples=15, deadline=None)
+@given(
+    n=st.integers(min_value=30, max_value=80),
+    L=st.integers(min_value=4, max_value=12),
+    data=st.data(),
+)
+def test_formation_weekly_truncation_invariance(n: int, L: int, data: st.DataObject) -> None:
+    """H5: formacion de H2 (L semanas saltando la ultima)."""
+    from qa.features.indicators import formation_return_weekly
+
+    x = np.asarray(
+        data.draw(
+            st.lists(
+                st.floats(min_value=1.0, max_value=1e5, allow_nan=False, allow_infinity=False),
+                min_size=n,
+                max_size=n,
+            )
+        )
+    )
+    full = formation_return_weekly(x, L)
+    for w in range(L + 2, n):
+        partial = formation_return_weekly(x[: w + 1], L)
+        assert np.isclose(partial[w], full[w], rtol=1e-12, atol=1e-12)
+    # semantica: salta la ultima semana y usa L semanas
+    w = n - 1
+    assert np.isclose(full[w], x[w - 2] / x[w - 2 - L] - 1.0, rtol=1e-12)
+
+
+def test_carry_signal_truncation_invariance() -> None:
+    """H5: senal de carry de H3 (umbral sobre MA anualizada de funding)."""
+    from qa.features.indicators import carry_signal, funding_ma_annualized
+
+    idx = pd.date_range("2024-01-01", periods=120, freq="D", tz="UTC")
+    rates = np.linspace(0.00002, 0.0004, 120)  # funding creciente (determinista)
+    series = pd.Series(rates, index=idx)
+    full = carry_signal(funding_ma_annualized(series, 30), 0.05)
+    for t in range(29, 120):
+        partial = carry_signal(funding_ma_annualized(series.iloc[: t + 1], 30), 0.05)
+        assert bool(partial[t]) == bool(full[t]), t
+    # warmup nunca enciende la senal
+    assert not full[:29].any()
+    # semantica: al superar el umbral anualizado (0.0004*365=0.146 > 0.05) enciende
+    assert full[-1]

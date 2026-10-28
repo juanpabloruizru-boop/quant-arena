@@ -82,3 +82,50 @@ def funding_ma_annualized(funding_daily: pd.Series, window_days: int) -> pd.Seri
     """Media movil (dias) del funding diario, anualizada x365. Causal."""
     ma = rolling_mean(funding_daily.to_numpy(), window_days) * 365.0
     return pd.Series(ma, index=funding_daily.index, name="funding_ma_ann")
+
+
+def log_returns(close: pd.Series | NDArray[np.floating[Any]]) -> F64:
+    """log-return diario: lr[t] = log(close[t]/close[t-1]); NaN en t=0. Causal."""
+    x = _as_array(close)
+    out = np.full(x.shape, np.nan)
+    out[1:] = np.log(x[1:] / x[:-1])
+    return out
+
+
+def ret_L_days(close: pd.Series | NDArray[np.floating[Any]], L: int) -> F64:
+    """Retorno acumulado de L dias (log): log(close[t]/close[t-L]). Causal.
+
+    Es la feature de la variante `ret` de H1 (senal: ret_L_days[t] > 0).
+    """
+    x = _as_array(close)
+    out = np.full(x.shape, np.nan)
+    out[L:] = np.log(x[L:] / x[:-L])
+    return out
+
+
+def formation_return_weekly(weekly_close: pd.Series | NDArray[np.floating[Any]], L: int) -> F64:
+    """Formacion de H2 en la semana w: retorno de las L semanas que terminan en
+    w-1, EXCLUYENDO la ultima semana completada (w-1):
+
+        f[w] = close[w-1-1] / close[w-1-L] - 1   (saltando la semana w-1)
+
+    Convencion: decision en el inicio de la semana w con datos hasta el cierre de
+    w-2 (la 'ultima semana' w-1 se salta). Causal: f[w] solo usa closes
+    anteriores a w.
+    """
+    x = _as_array(weekly_close)
+    out = np.full(x.shape, np.nan)
+    # f[w] = x[w-2]/x[w-2-L] - 1, definido para w >= L+2 (salta la semana w-1)
+    n = x.shape[0]
+    if n >= L + 3:
+        out[L + 2 :] = x[L : n - 2] / x[: n - L - 2] - 1.0
+    return out
+
+
+def carry_signal(
+    funding_ma_ann: pd.Series | NDArray[np.floating[Any]], threshold: float
+) -> NDArray[np.bool_]:
+    """Senal de H3: media movil anualizada del funding > umbral. Causal
+    (NaN durante el warmup => False, nunca True por datos futuros)."""
+    x = _as_array(funding_ma_ann)
+    return np.where(np.isnan(x), False, x > threshold)
