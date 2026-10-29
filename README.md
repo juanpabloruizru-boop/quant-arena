@@ -51,8 +51,9 @@ CLI (typer): `qa data sync | qa data curate | qa data verify | qa research run
 --hypothesis H1 | qa stats report | qa forward run | qa report daily`. Los
 comandos de research/stats/forward/report siguen siendo stubs hasta M2-M5.
 
-## Hitos
+## Hitos y Archivo Histórico
 
-M0 preregistro → M1 datos → M2 motor+validación del laboratorio → M3 investigación
-(una pasada) → M4 forward paper → M5 boletín → M6 operación. Cada hito termina con
-`reports/Mx_REPORT.md` y se detiene hasta `GATE APROBADO Mx` del orquestador.
+El proyecto avanzó a través de los hitos M0 a M6:
+- **M0 preregistro** → **M1 datos** → **M2 validación estadística** → **M3 investigación** → **M4 forward paper** → **M5 boletín y dashboard** → **M6 Agente Autónomo Conquistador**.
+- Los reportes, datos de holdout y bundles de hitos pasados han sido organizados en [`archive/`](archive/).
+- Para más información sobre la estructura de directorios y la trazabilidad histórica, consulta [`docs/TRAZABILIDAD_PROYECTO.md`](docs/TRAZABILIDAD_PROYECTO.md).

@@ -253,8 +253,9 @@ def agent_run() -> None:
         verify_capital_chain,
     )
     from qa.agent.geometry import fee_roundtrip, fee_taker_side
-    from qa.agent.live import fetch_extra_daily, fetch_extra_multi, fetch_live, last_price
-    from qa.agent.news import detect_shocks, fetch_news
+    from qa.agent.live import fetch_extra_daily, fetch_extra_multi, fetch_live, fetch_prices, last_price
+    from qa.agent.news import calcular_termometro_macro, detect_shocks, fetch_news
+    from qa.agent.autopilot import gestionar_y_ejecutar, UNIVERSO as AUTOPILOT_UNIVERSO
     from qa.agent.signals import compute_states
     from qa.agent.telemetry import atr, h1_levels, trade_geometry, watchlist_telemetry
     from qa.agent.tracker import diagnose, load_trades, verify_chain
@@ -272,7 +273,9 @@ def agent_run() -> None:
     pit = _pd.read_parquet(root / "data" / "curated" / "pit_universe.parquet")
     members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
 
-    live = fetch_live(sorted(set(watchlist) | {"BTCUSDT", "ETHUSDT"}))
+    # Asegurar que se descargan los 10 activos completos
+    all_syms = sorted(set(watchlist) | set(AUTOPILOT_UNIVERSO) | set(members))
+    live = fetch_live(all_syms)
     extra_syms = [m for m in members if m not in live["klines"]]
     extra_1d = fetch_extra_daily(extra_syms)
     for sym, df in extra_1d.items():
@@ -286,6 +289,22 @@ def agent_run() -> None:
                     live["klines"].setdefault(sym, {})[interval] = df
     states = compute_states(live, members)
 
+    # Obtener precios spot/perp instantáneos en vivo para ejecución estricta
+    live_spot_prices = fetch_prices(all_syms)
+
+    # 1. EJECUCIÓN AUTÓNOMA DEL AGENTE (M6 Autopilot "Conquistador")
+    # Gestiona operaciones existentes (TP1/TP2/SL) y abre nuevas si < 5 con precio en vivo estricto
+    cap_records_pre = load_capital(root)
+    cap_aportado = net_contributed(cap_records_pre) if cap_records_pre else 1000.0
+    auto_res = gestionar_y_ejecutar(
+        root,
+        live["klines"],
+        capital_total=cap_aportado,
+        max_open_ops=5,
+        live_prices=live_spot_prices,
+    )
+
+    # Recargar trades tras la intervención del autopilot
     trades = load_trades(root)
     ok, n_lines, msg = verify_chain(root)
     if not ok:
@@ -299,6 +318,7 @@ def agent_run() -> None:
     bases = sorted(
         {t["asset"].replace("USDT", "") for t in trades}
         | {w.replace("USDT", "") for w in watchlist}
+        | {s.replace("USDT", "") for s in AUTOPILOT_UNIVERSO}
     )
     news_cfg = cfg["noticias"]
     news_items, feed_status = fetch_news(
@@ -308,6 +328,7 @@ def agent_run() -> None:
         int(news_cfg.get("max_age_hours", 72)),
     )
     shocks = detect_shocks(live["klines"], live["premium"], cfg.get("choques", {}))
+    termometro = calcular_termometro_macro(news_items)
 
     # telemetria descriptiva + geometria R:R del filtro de disciplina (M5b)
     tele = watchlist_telemetry(
@@ -318,16 +339,32 @@ def agent_run() -> None:
         risk_mult=rr_cfg["risk_mult"],
     )
 
-    # precios vivos por activo (para PnL flotante / heat) reutilizando las velas
+    # Precios vivos reales para los 10 activos (¡cero '?' en el dashboard!)
     prices_map: dict[str, float] = {}
-    for t in trades:
-        if t.get("status") == "open" and t["asset"] not in prices_map:
-            px = last_price(live, t["asset"])
-            if px is None:
-                d1 = live["klines"].get(t["asset"], {}).get("1d")
-                px = float(d1["close"].iloc[-1]) if d1 is not None and not d1.empty else None
-            if px is not None:
-                prices_map[t["asset"]] = px
+    trends_map: dict[str, dict[str, str]] = {}
+    for sym in set(AUTOPILOT_UNIVERSO) | set(watchlist):
+        frames = live["klines"].get(sym, {})
+        for tf in ("1h", "4h", "1d"):
+            df = frames.get(tf)
+            if df is not None and not df.empty:
+                prices_map[sym] = float(df["close"].iloc[-1])
+                break
+        # Tendencias 4h, 1d, 1w
+        trends_map[sym] = {}
+        for tf in ("4h", "1d", "1w"):
+            tl = tele.get(sym, {}).get(tf) or {}
+            if tl.get("disponible") and tl.get("dist_sma50_pct") is not None:
+                dist = tl["dist_sma50_pct"]
+                sentido = "Alcista" if dist >= 0 else "Bajista"
+                trends_map[sym][tf] = f"{sentido} ({dist:+.1f}%)"
+            else:
+                trends_map[sym][tf] = "neutral"
+
+    # Inyectar precios, tendencias, scores y termómetro en states para el Dashboard
+    states["prices"] = prices_map
+    states["trends"] = trends_map
+    states["autopilot_scores"] = auto_res.get("scores", {})
+    states["termometro_macro"] = termometro
 
     # contabilidad de capital del usuario (M5b): equity vivo = base de la escala teorica
     cap_records = load_capital(root)
@@ -404,6 +441,16 @@ def agent_run() -> None:
             )
         d["example"] = t.get("example", False)
         d["status"] = "open"
+        # Propagar campos clave del trade a diagnose para el Dashboard M6
+        d["entry"] = t.get("entry_price")
+        d["sl"] = t.get("sl")
+        d["tp"] = t.get("tp")
+        d["size_usd"] = t.get("size_usd")
+        d["note"] = t.get("note")
+        d["rr_neto_inicial"] = t.get("rr_neto_inicial")
+        d["leverage"] = t.get("leverage") or "4x"
+        d["ts_utc"] = t.get("ts_utc")
+        d["tp1_hit"] = t.get("tp1_hit", False)
         diags.append(d)
 
     # auditoria del historial cerrado (M5b)

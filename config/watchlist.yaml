@@ -29,6 +29,7 @@ noticias:
   feeds:
     - { nombre: Cointelegraph, url: "https://cointelegraph.com/rss" }
     - { nombre: Decrypt, url: "https://decrypt.co/feed" }
+    - { nombre: CNBC Economy, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258" }
     - { nombre: CoinDesk, url: "https://www.coindesk.com/arc/outboundfeeds/rss/", tolerar_fallo: true }
   max_age_hours: 72
   keywords_riesgo:

@@ -31,6 +31,7 @@ class NewsItem:
     published_utc: str
     keywords: list[str] = field(default_factory=list)
     assets: list[str] = field(default_factory=list)
+    categoria: str = "⚡ PRINCIPAL DEL DÍA"
 
 
 _BASE_ALIASES = {
@@ -70,6 +71,44 @@ def _http_get(url: str, timeout: float = 15.0) -> bytes | None:
         return None
 
 
+def clasificar_titular(title: str, kws: list[str]) -> str:
+    """Clasifica un titular en una de las 4 categorías solicitadas."""
+    low = title.lower()
+    # 1. Alerta de riesgo (keywords críticas o de seguridad)
+    riesgo_terms = ["hack", "exploit", "sec ", " sec", "ban ", "banned", "halt", "crash", "fraud", "lawsuit", "delist", "insolven", "depeg", "scam"]
+    if any(k in low for k in riesgo_terms) or any(k in ["hack", "exploit", "halt", "crash", "insolvency"] for k in kws):
+        return "⚠️ ALERTA RIESGO"
+    # 2. Macro / Fed / Tasas / Inflación
+    macro_terms = ["fed", "fomc", "rate", "rates", "powell", "cpi", "inflation", "economy", "economic", "tariff", "dollar", "jobs", "treasury", "central bank", "ecb", "gdp", "warsh", "lagarde"]
+    if any(re.search(rf"\b{re.escape(w)}\b", low) for w in macro_terms):
+        return "🏦 MACRO / FED / TASAS"
+    # 3. ETF / Institucional
+    etf_terms = ["etf", "blackrock", "fidelity", "inflow", "outflow", "whale", "wall street", "institution", "fund", "grayscale", "microstrategy"]
+    if any(re.search(rf"\b{re.escape(w)}\b", low) for w in etf_terms):
+        return "🏛️ ETF / INSTITUCIONAL"
+    # 4. Resto principal del día
+    return "⚡ PRINCIPAL DEL DÍA"
+
+
+def calcular_termometro_macro(items: list[NewsItem]) -> str:
+    """Calcula el 'Termómetro Macro y Mercado Hoy' a partir de los titulares recientes."""
+    if not items:
+        return "NEUTRAL"
+    texto = " ".join(it.title.lower() for it in items[:15])
+    bad_count = sum(1 for w in ["crash", "hack", "ban", "lawsuit", "inflation accelerates", "tariff", "recession", "drop", "plunge"] if w in texto)
+    fed_count = sum(1 for w in ["fed", "fomc", "rate", "powell", "interest rate"] if w in texto)
+    good_count = sum(1 for w in ["rally", "surge", "all-time high", "ath", "inflow", "record", "gdp increases", "approval", "bull"] if w in texto)
+
+    if bad_count >= 3:
+        return "DEFENSIVO (Alertas y Presión Macro)"
+    elif fed_count >= 2:
+        return "NEUTRAL - ATENCIÓN FED Y TASAS"
+    elif good_count >= 2:
+        return "ALCISTA (Flujo y Momentum Favorable)"
+    else:
+        return "NEUTRAL (Mercado Estable)"
+
+
 def fetch_news(
     feeds: list[dict[str, Any]],
     keywords: list[str],
@@ -106,19 +145,20 @@ def fetch_news(
             if when < cutoff:
                 continue
             kws, bases = screen_title(title, keywords, assets_bases)
-            if kws or bases:
-                items.append(
-                    NewsItem(
-                        feed=name,
-                        title=title[:200],
-                        link=link,
-                        published_utc=when.isoformat(timespec="minutes"),
-                        keywords=kws,
-                        assets=bases,
-                    )
+            categoria = clasificar_titular(title, kws)
+            items.append(
+                NewsItem(
+                    feed=name,
+                    title=title[:200],
+                    link=link,
+                    published_utc=when.isoformat(timespec="minutes"),
+                    keywords=kws,
+                    assets=bases,
+                    categoria=categoria,
                 )
-                n_ok += 1
-        status[name] = f"ok ({n_ok} relevantes / {max_age_hours}h)"
+            )
+            n_ok += 1
+        status[name] = f"ok ({n_ok} titulares / {max_age_hours}h)"
     items.sort(key=lambda x: x.published_utc, reverse=True)
     return items[:40], status
 
