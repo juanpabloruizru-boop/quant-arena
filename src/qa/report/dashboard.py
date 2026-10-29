@@ -541,38 +541,46 @@ def _audit_panel(audit: dict[str, Any] | None) -> list[str]:
     )
     # Tabla de operaciones
     p.append(
-        "<table><tr><th>Cierre</th><th>Activo/Tipo/Marco</th><th>Duración</th>"
-        "<th>Entrada</th><th>Salida</th><th>Tamaño</th>"
-        "<th>R:R inic. (bruto)</th><th>PnL neto $</th><th>PnL %</th>"
-        "<th>R logrado</th><th>Tag</th><th>Nota / Razón Agente</th></tr>"
+        "<table><tr><th>Cierre</th><th>Activo / Tipo / Marco</th><th>Duración</th>"
+        "<th>Entrada</th><th>Salida</th><th>Tamaño ($)</th>"
+        "<th>R:R Inicial</th><th>PnL Neto $</th><th>PnL %</th>"
+        "<th>R Logrado</th><th>Tag</th><th>Nota / Razón Agente</th></tr>"
     )
     for r in rows:
-        cierre = r.get("ts_cierre", "?")
-        activo = r.get("activo", "?")
-        tipo = r.get("tipo", "?")
-        marco = r.get("marco", "?")
-        entrada = r.get("entrada", "?")
-        salida = r.get("salida", "?")
-        tamaño = r.get("tamaño", "?")
-        rr_inic = r.get("rr_inicial", "?")
+        cierre = r.get("closed_at", r.get("ts_cierre", "—"))
+        activo = r.get("asset", r.get("activo", "—"))
+        tipo = r.get("kind", r.get("tipo", "—"))
+        marco = r.get("timeframe", r.get("marco", "—"))
+        duracion = r.get("duracion", "—")
+        entrada = r.get("entry", r.get("entrada", "—"))
+        salida = r.get("exit", r.get("salida", "—"))
+        tamaño = r.get("size_usd", r.get("tamaño", "—"))
+        rr_inic = r.get("rr_inicial_bruto", r.get("rr_inicial", "—"))
         pnl_neto = r.get("pnl_neto_usd", 0.0)
         pnl_pct = r.get("pnl_pct", 0.0)
-        r_logrado = r.get("r_logrado", "?")
-        tag = r.get("tag", "?")
-        nota = r.get("nota", "?")
+        r_logrado = r.get("r_multiplo", r.get("r_logrado", "—"))
+        tag = r.get("tag", "—")
+        nota = r.get("close_note") or r.get("note") or "—"
+        
+        ent_txt = f"${_fmt(entrada)}" if isinstance(entrada, (int, float)) else str(entrada)
+        sal_txt = f"${_fmt(salida)}" if isinstance(salida, (int, float)) else str(salida)
+        tam_txt = f"${_fmt(tamaño)}" if isinstance(tamaño, (int, float)) else str(tamaño)
+        rr_txt = f"{_fmt(rr_inic)}x" if isinstance(rr_inic, (int, float)) else str(rr_inic)
+        r_txt = f"{_fmt(r_logrado)} R" if isinstance(r_logrado, (int, float)) else str(r_logrado)
+
         p.append(
-            f"<tr><td class='small num'>{_esc(str(cierre)[:16])}</td>"
-            f"<td>{_esc(f'{activo} / {tipo} / {marco}')}</td>"
-            f"<td>{_esc('')}</td>"
-            f"<td>{_esc(entrada)}</td>"
-            f"<td>{_esc(salida)}</td>"
-            f"<td>{_esc(tamaño)}</td>"
-            f"<td>{_fmt(rr_inic)}x</td>"
+            f"<tr><td class='small num'>{_esc(str(cierre)[:19])}</td>"
+            f"<td><b>{_esc(str(activo))}</b> <span class='small'>({_esc(str(tipo))} · {_esc(str(marco))})</span></td>"
+            f"<td>{_esc(str(duracion))}</td>"
+            f"<td>{_esc(ent_txt)}</td>"
+            f"<td><b>{_esc(sal_txt)}</b></td>"
+            f"<td>{_esc(tam_txt)}</td>"
+            f"<td>{_esc(rr_txt)}</td>"
             f"<td>{_signed(pnl_neto)} USD</td>"
-            f"<td>{_fmt(pnl_pct)} %</td>"
-            f"<td>{_fmt(r_logrado)} R</td>"
-            f"<td>{_esc(tag)}</td>"
-            f"<td>{_esc(nota)}</td></tr>"
+            f"<td>{_signed(pnl_pct, suffix='%')}</td>"
+            f"<td><b>{_esc(r_txt)}</b></td>"
+            f"<td><span class='badge b-info'>{_esc(str(tag))}</span></td>"
+            f"<td class='small'>{_esc(str(nota))}</td></tr>"
         )
     p.append("</table>")
     p.append("</div>")

@@ -466,6 +466,25 @@ def agent_run() -> None:
     aportado = net_contributed(cap_records) if cap_records else None
     audit_out = run_audit(trades, costs, aportado)
 
+    # Exportación automática del log estadístico detallado a CSV
+    try:
+        import csv as _csv
+        csv_path = root / "ledger" / "trades_statistical_log.csv"
+        csv_rows = audit_out.get("rows") or []
+        csv_fieldnames = [
+            "id", "asset", "kind", "timeframe", "opened_at", "closed_at",
+            "duracion", "entry", "exit", "size_usd", "rr_inicial_bruto",
+            "pnl_bruto_usd", "fees_est_usd", "pnl_neto_usd", "pnl_pct",
+            "r_multiplo", "tag", "note", "close_note"
+        ]
+        with open(csv_path, "w", newline="", encoding="utf-8") as f_csv:
+            writer = _csv.DictWriter(f_csv, fieldnames=csv_fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            for r in csv_rows:
+                writer.writerow(r)
+    except Exception:
+        pass
+
     spark = {}
     for sym in ("BTCUSDT", "ETHUSDT"):
         d1 = live["klines"].get(sym, {}).get("1d")
@@ -532,7 +551,7 @@ def agent_run() -> None:
         capital_ref=capital_cfg_ref,
         capital=capital_status,
         audit=audit_out,
-        calc=calc_cfg,
+        calc=None,
     )
     outdir = reports_dir(root) / "dashboard"
     outdir.mkdir(parents=True, exist_ok=True)
