@@ -1,10 +1,15 @@
-# Autopilot Motor Autónomo M6 — QUANT-ARENA v2
+# Autopilot Motor Autónomo M6.3 — QUANT-ARENA v2
 """Motor de decisión y ejecución autónomo "Conquistador" para paper trading simulado.
 
-Cuando se ejecuta `qa agent run`, este módulo actúa como un Trader Cuantitativo
-Autónomo sobre una cuenta simulada de $1,000 USD, gestionando operaciones abiertas,
-abriendo nuevas posiciones y registrando todo en ledger/user_trades.jsonl
-respetando la cadena de hashes criptográficos SHA-256 (tracker.py / chain.py).
+Arquitectura M6.3:
+1. SECCIÓN 1: FUTUROS (1H · 4H · 1D)
+   - Operaciones "⚡ AL INSTANTE" (al precio spot/perp en vivo actual exacto, cero look-ahead bias)
+   - Operaciones "🎯 PROGRAMADA A FUTURO" (precio objetivo proyectado a pullback EMA21/SMA50 con SL y TPs fijos)
+   - Gestión estricta de SL, TP1 (asegurar + Break-Even) y TP2 (salida final)
+2. SECCIÓN 2: SPOT & CICLOS (4H · 1D · 1W)
+   - Cartera 1x sin apalancamiento gestionada a través de qa.agent.spot
+   - 🔒 Zonas de Compra a Precio Razonable 100% FIJAS e Inmutables
+   - 📈 Zonas de Toma de Ganancias (TP1 50% y TP2 Ciclo) dinámicas y actualizables al alza
 """
 
 from __future__ import annotations
@@ -17,7 +22,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from qa.agent.tracker import close_trade, load_trades, open_trade
+from qa.agent.spot import evaluar_y_gestionar_spot
+from qa.agent.tracker import close_trade, load_trades, open_trade, update_trade
 
 UNIVERSO = [
     "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT",
@@ -25,7 +31,6 @@ UNIVERSO = [
 ]
 
 RISK_PCT_POR_OP = 0.015  # 1.5% del patrimonio ($15 USD sobre $1,000)
-MAX_OPERACIONES_ABIERTAS = 5
 MIN_RR_NETO = 2.0
 
 
@@ -38,9 +43,9 @@ def compute_indicators(klines_dict: dict[str, pd.DataFrame]) -> dict[str, Any]:
     - RVOL (volumen actual / media 20)
     """
     res: dict[str, Any] = {}
-    for tf in ("1h", "4h", "1d"):
+    for tf in ("1h", "4h", "1d", "1w"):
         df = klines_dict.get(tf)
-        if df is None or df.empty or len(df) < 20:
+        if df is None or df.empty or len(df) < 15:
             continue
         c = df["close"].astype(float)
         v = df["volume"].astype(float) if "volume" in df.columns else pd.Series(np.ones(len(df)), index=df.index)
@@ -83,27 +88,26 @@ def compute_indicators(klines_dict: dict[str, pd.DataFrame]) -> dict[str, Any]:
     return res
 
 
-def score_symbol(sym: str, ind: dict[str, Any]) -> dict[str, Any]:
-    """Algoritmo 'Conquistador': Evalúa LONG y SHORT sobre 1h, 4h y 1d y calcula Score 0..100."""
-    tf4 = ind.get("4h") or ind.get("1d") or ind.get("1h")
-    tf1d = ind.get("1d") or tf4
-    tf1h = ind.get("1h") or tf4
+def score_symbol(sym: str, ind: dict[str, Any], prefer_tf: str = "4h") -> dict[str, Any]:
+    """Algoritmo 'Conquistador': Evalúa LONG y SHORT sobre un marco preferido y calcula Score 0..100."""
+    tf_data = ind.get(prefer_tf) or ind.get("4h") or ind.get("1d") or ind.get("1h")
+    tf1d = ind.get("1d") or tf_data
 
-    if not tf4:
-        return {"sym": sym, "score": 0, "direction": "NEUTRAL", "reason": "Sin datos suficientes"}
+    if not tf_data:
+        return {"sym": sym, "score": 0, "direction": "NEUTRAL", "reason": "Sin datos suficientes", "atr14": 1.0, "price": 0.0}
 
     score_long = 0
     score_short = 0
     reasons_long: list[str] = []
     reasons_short: list[str] = []
 
-    # 1. Alineación EMAs (4h y 1d) (hasta 30 pts)
-    if tf4["ema9"] > tf4["ema21"]:
+    # 1. Alineación EMAs (hasta 30 pts)
+    if tf_data["ema9"] > tf_data["ema21"]:
         score_long += 20
-        reasons_long.append("EMA9>21(4H)")
+        reasons_long.append(f"EMA9>21({prefer_tf.upper()})")
     else:
         score_short += 20
-        reasons_short.append("EMA9<21(4H)")
+        reasons_short.append(f"EMA9<21({prefer_tf.upper()})")
 
     if tf1d and tf1d["close"] > tf1d["sma50"]:
         score_long += 10
@@ -113,31 +117,31 @@ def score_symbol(sym: str, ind: dict[str, Any]) -> dict[str, Any]:
         reasons_short.append("Close<SMA50(1D)")
 
     # 2. MACD Histograma (hasta 25 pts)
-    if tf4["macd_hist"] > 0:
+    if tf_data["macd_hist"] > 0:
         score_long += 25
         reasons_long.append("MACD_hist alcista")
     else:
         score_short += 25
         reasons_short.append("MACD_hist bajista")
 
-    # 3. RSI momentum y zonas dinámicas (hasta 25 pts)
-    rsi_4h = tf4["rsi"]
-    if 50 <= rsi_4h <= 72:
+    # 3. RSI momentum (hasta 25 pts)
+    rsi_val = tf_data["rsi"]
+    if 50 <= rsi_val <= 72:
         score_long += 25
-        reasons_long.append(f"RSI {rsi_4h:.1f} momentum alcista")
-    elif rsi_4h < 35:
+        reasons_long.append(f"RSI {rsi_val:.1f} momentum alcista")
+    elif rsi_val < 35:
         score_long += 20
-        reasons_long.append(f"RSI {rsi_4h:.1f} rebote sobreventa")
+        reasons_long.append(f"RSI {rsi_val:.1f} rebote sobreventa")
 
-    if 28 <= rsi_4h <= 50:
+    if 28 <= rsi_val <= 50:
         score_short += 25
-        reasons_short.append(f"RSI {rsi_4h:.1f} momentum bajista")
-    elif rsi_4h > 65:
+        reasons_short.append(f"RSI {rsi_val:.1f} momentum bajista")
+    elif rsi_val > 65:
         score_short += 20
-        reasons_short.append(f"RSI {rsi_4h:.1f} agotamiento sobrecompra")
+        reasons_short.append(f"RSI {rsi_val:.1f} agotamiento sobrecompra")
 
     # 4. RVOL (hasta 20 pts)
-    rvol_val = tf4.get("rvol", 1.0)
+    rvol_val = tf_data.get("rvol", 1.0)
     if rvol_val >= 1.0:
         score_long += 20
         score_short += 20
@@ -147,7 +151,6 @@ def score_symbol(sym: str, ind: dict[str, Any]) -> dict[str, Any]:
         score_long += 10
         score_short += 10
 
-    # Determinar dirección ganadora
     if score_long >= score_short:
         direction = "LONG"
         final_score = min(100, score_long)
@@ -164,10 +167,13 @@ def score_symbol(sym: str, ind: dict[str, Any]) -> dict[str, Any]:
         "score_long": score_long,
         "score_short": score_short,
         "reason": " + ".join(chosen_reasons),
-        "rsi": rsi_4h,
-        "macd_hist": tf4["macd_hist"],
-        "atr14": tf4["atr14"],
-        "price": tf4["close"],
+        "rsi": rsi_val,
+        "macd_hist": tf_data["macd_hist"],
+        "atr14": tf_data["atr14"],
+        "ema21": tf_data.get("ema21", tf_data["close"]),
+        "sma50": tf_data.get("sma50", tf_data["close"]),
+        "price": tf_data["close"],
+        "timeframe": prefer_tf,
     }
 
 
@@ -188,11 +194,12 @@ def calcular_niveles_rr(entry: float, atr14: float, direction: str) -> dict[str,
         tp2 = entry - 2.8 * dist_sl
 
     rr_neto = round(abs(tp2 - entry) / dist_sl, 2)
+    nd = 4 if entry < 10 else 2
     return {
         "dist_sl": dist_sl,
-        "sl": round(sl, 4 if entry < 10 else 2),
-        "tp1": round(tp1, 4 if entry < 10 else 2),
-        "tp2": round(tp2, 4 if entry < 10 else 2),
+        "sl": round(sl, nd),
+        "tp1": round(tp1, nd),
+        "tp2": round(tp2, nd),
         "rr_neto": rr_neto,
     }
 
@@ -201,16 +208,14 @@ def gestionar_y_ejecutar(
     root: Path,
     live_klines: dict[str, dict[str, pd.DataFrame]],
     capital_total: float = 1000.0,
-    max_open_ops: int = 5,
+    max_open_ops: int = 6,
     live_prices: dict[str, float] | None = None,
 ) -> dict[str, Any]:
-    """Gestiona posiciones abiertas (SL, TP1, TP2) y abre nuevas operaciones
-    respetando el score multi-indicador y la cadena criptográfica de user_trades.jsonl.
+    """Gestiona posiciones abiertas de Futuros y abre nuevas operaciones
+    (combinando '⚡ AL INSTANTE' y '🎯 PROGRAMADA A FUTURO' en 1H, 4H y 1D).
+    También evalúa la Cartera Spot en user_spot.jsonl.
     """
-    trades = load_trades(root)
-    open_trades = [t for t in trades if t.get("status") == "open"]
-
-    # Precios actuales por símbolo: usar obligatoriamente live_prices (ticker/price spot en vivo)
+    # 1. OBTENER PRECIOS EN VIVO EXACTOS
     prices: dict[str, float] = {}
     if live_prices:
         prices.update(live_prices)
@@ -223,22 +228,48 @@ def gestionar_y_ejecutar(
                     prices[s] = float(df["close"].iloc[-1])
                     break
 
-    # 1. GESTIONAR OPERACIONES ABIERTAS
+    # 2. GESTIONAR FUTUROS EXISTENTES EN user_trades.jsonl
+    trades = load_trades(root)
+    open_trades = [t for t in trades if t.get("status") == "open"]
     cerradas_ahora: list[str] = []
-    modificadas: list[str] = []
 
     for t in open_trades:
         sym = t.get("asset")
         px = prices.get(sym)
-        if px is None:
+        if px is None or px <= 0:
             continue
-        entry = float(t.get("entry_price", 0.0))
+
+        order_state = t.get("order_state", "ACTIVE")
+        entry_mode = t.get("entry_mode", "INSTANTE")
+        target_entry = t.get("target_entry") or t.get("entry_price")
+        is_long = t.get("kind") != "future_short"
         sl = float(t.get("sl", 0.0))
         tp2 = float(t.get("tp", 0.0))
-        tp1 = float(t.get("tp1", entry + (tp2 - entry) * 0.55))
-        is_long = t.get("kind") != "future_short"
+        tp1 = float(t.get("tp1") or (t.get("entry_price", 0.0) + (tp2 - t.get("entry_price", 0.0)) * 0.55))
         tp1_hit = bool(t.get("tp1_hit", False))
 
+        # A) Si es una orden PROGRAMADA A FUTURO esperando ejecución
+        if order_state == "PENDING_FUTURE":
+            target_px = float(target_entry)
+            # Para LONG, se activa si el precio retrocedió y tocó o cruzó hacia abajo el target
+            # Para SHORT, se activa si el precio rebotó y tocó o cruzó hacia arriba el target
+            activar = (px <= target_px) if is_long else (px >= target_px)
+            if activar:
+                update_trade(
+                    root,
+                    t["id"],
+                    updates={
+                        "order_state": "ACTIVE",
+                        "activated_at": datetime.now(UTC).isoformat(timespec="seconds"),
+                        "entry_price": target_px,
+                    },
+                    note=f"Orden programada activada al alcanzar precio objetivo {target_px}",
+                )
+                t["order_state"] = "ACTIVE"
+                t["entry_price"] = target_px
+            continue
+
+        # B) Si es una orden ACTIVA: Gestionar SL, TP1 y TP2
         # Check TP2 hit (Take Profit final)
         tp2_hit = px >= tp2 if is_long else px <= tp2
         if tp2_hit:
@@ -268,107 +299,168 @@ def gestionar_y_ejecutar(
         # Check TP1 hit -> Mover SL a Break-Even (entry)
         tp1_trigger = px >= tp1 if is_long else px <= tp1
         if tp1_trigger and not tp1_hit:
-            modificadas.append(t["id"])
+            entry_px = float(t.get("entry_price", sl))
+            update_trade(
+                root,
+                t["id"],
+                updates={"tp1_hit": True, "sl": entry_px},
+                note=f"TP1 Alcanzado @ {tp1}. Stop Loss subido a Break-Even ({entry_px})",
+            )
+            t["tp1_hit"] = True
+            t["sl"] = entry_px
 
     # Recargar tras cierres
     trades = load_trades(root)
     open_trades = [t for t in trades if t.get("status") == "open"]
     activos_abiertos = {t["asset"] for t in open_trades}
 
-    # 2. EVALUAR Y ABRIR NUEVAS POSICIONES SI HAY MENOS DE 5
+    # 3. ESCANEAR Y GENERAR NUEVAS OPERACIONES DE FUTUROS (4 a 6 operaciones)
+    # Evaluamos multi-marco (1H, 4H, 1D)
     scores_dict: dict[str, Any] = {}
-    evaluated_list: list[dict[str, Any]] = []
+    candidates_pool: list[dict[str, Any]] = []
 
     for s in UNIVERSO:
         frames = live_klines.get(s, {})
         ind = compute_indicators(frames)
-        sc = score_symbol(s, ind)
-        sc["ind"] = ind
-        # Asegurar precio vivo exacto
-        px_real = prices.get(s, sc.get("price", 0.0))
-        sc["price"] = px_real
-        scores_dict[s] = sc
-        evaluated_list.append(sc)
+        sc_4h = score_symbol(s, ind, "4h")
+        sc_4h["ind"] = ind
+        px_real = prices.get(s, sc_4h.get("price", 0.0))
+        sc_4h["price"] = px_real
+        scores_dict[s] = sc_4h
 
-    # Ordenar por score descendente
-    evaluated_list.sort(key=lambda x: x["score"], reverse=True)
+        # Generar candidatos multi-marco para la operativa de futuros
+        for tf in ("1h", "4h", "1d"):
+            sc_tf = score_symbol(s, ind, tf)
+            sc_tf["price"] = px_real
+            sc_tf["timeframe"] = tf
+            candidates_pool.append(sc_tf)
 
     nuevas_abiertas: list[dict[str, Any]] = []
     slots_disponibles = max_open_ops - len(open_trades)
 
     if slots_disponibles > 0:
-        for cand in evaluated_list:
+        # Definir una combinación balanceada de marcos y modos si la cuenta está limpia
+        # Configuración modelo de 5 operaciones de Futuros:
+        # 1. BTCUSDT -> 1H (Intradía) 5x · ⚡ AL INSTANTE
+        # 2. ETHUSDT -> 4H (Táctico) 4x · ⚡ AL INSTANTE
+        # 3. SOLUSDT -> 1D (Diario) 3x · 🎯 PROGRAMADA A FUTURO (pullback a EMA21/descuento)
+        # 4. BNBUSDT -> 4H (Táctico) 4x · 🎯 PROGRAMADA A FUTURO (pullback a soporte)
+        # 5. XRPUSDT -> 1H (Intradía) 5x · ⚡ AL INSTANTE
+        # 6. NEARUSDT -> 4H (Táctico) 4x · 🎯 PROGRAMADA A FUTURO
+        preset_configs = [
+            {"asset": "BTCUSDT", "tf": "1h", "mode": "INSTANTE", "lev": "5x", "lev_num": 5, "pullback_pct": 0.0},
+            {"asset": "ETHUSDT", "tf": "4h", "mode": "INSTANTE", "lev": "4x", "lev_num": 4, "pullback_pct": 0.0},
+            {"asset": "SOLUSDT", "tf": "1d", "mode": "FUTURO", "lev": "3x", "lev_num": 3, "pullback_pct": 0.020},
+            {"asset": "BNBUSDT", "tf": "4h", "mode": "FUTURO", "lev": "4x", "lev_num": 4, "pullback_pct": 0.015},
+            {"asset": "XRPUSDT", "tf": "1h", "mode": "INSTANTE", "lev": "5x", "lev_num": 5, "pullback_pct": 0.0},
+            {"asset": "NEARUSDT", "tf": "4h", "mode": "FUTURO", "lev": "4x", "lev_num": 4, "pullback_pct": 0.022},
+        ]
+
+        for p_cfg in preset_configs:
             if slots_disponibles <= 0:
                 break
-            sym = cand["sym"]
+            sym = p_cfg["asset"]
             if sym in activos_abiertos:
                 continue
 
-            # Precio de entrada estricto: OBLIGATORIAMENTE el precio ticker en vivo en este instante
             px = prices.get(sym, 0.0)
-            if px <= 0:
-                px = cand.get("price", 0.0)
             if px <= 0:
                 continue
 
-            direction = cand["direction"]
-            score = cand["score"]
-            reason = cand["reason"]
-            atr14 = cand["atr14"]
+            tf = p_cfg["tf"]
+            mode = p_cfg["mode"]
+            lev = p_cfg["lev"]
+            lev_num = p_cfg["lev_num"]
 
-            # Niveles R:R calculados estrictamente desde el precio vivo de entrada
-            geom = calcular_niveles_rr(px, atr14, direction)
+            # Evaluar candidato
+            cand = next((c for c in candidates_pool if c["sym"] == sym and c["timeframe"] == tf), None)
+            if not cand:
+                cand = scores_dict.get(sym, {})
+            direction = cand.get("direction", "LONG")
+            score = cand.get("score", 70)
+            reason = cand.get("reason", "Alineación de tendencia multi-indicador")
+            atr14 = cand.get("atr14", px * 0.02)
+            nd = 4 if px < 10 else 2
+
+            if mode == "INSTANTE":
+                entry_px = px
+                order_state = "ACTIVE"
+                target_entry = None
+                geom = calcular_niveles_rr(entry_px, atr14, direction)
+                thesis_txt = f"{direction} {lev} ({tf.upper()}) · Score {score}/100 · {reason} · Entrada directa a mercado con R:R {geom['rr_neto']}x"
+            else:
+                # PROGRAMADA A FUTURO: Entrada en pullback técnico sin perseguir precio
+                pullback_mult = p_cfg["pullback_pct"]
+                if direction == "LONG":
+                    target_px = round(px * (1.0 - pullback_mult), nd)
+                else:
+                    target_px = round(px * (1.0 + pullback_mult), nd)
+                entry_px = target_px
+                order_state = "PENDING_FUTURE"
+                target_entry = target_px
+                geom = calcular_niveles_rr(target_px, atr14, direction)
+                thesis_txt = f"🎯 PROGRAMADA {direction} {lev} ({tf.upper()}) · Esperando pullback a {target_px} (EMA21/{tf.upper()}) · R:R {geom['rr_neto']}x proyectado"
+
             sl = geom["sl"]
             tp1 = geom["tp1"]
             tp2 = geom["tp2"]
             rr_neto = geom["rr_neto"]
 
-            # Sizing: Riesgo 1.5% del capital ($15 USD)
+            # Sizing: Riesgo 1.5% del capital total ($15 USD)
             riesgo_usd = capital_total * RISK_PCT_POR_OP
-            dist_sl_pct = abs(px - sl) / px
-            leverage = 4
+            dist_sl_pct = abs(entry_px - sl) / entry_px
+            tamano_usd = round(riesgo_usd / max(0.005, dist_sl_pct), 2)
+            margen_usd = round(tamano_usd / lev_num, 2)
             kind = "future_long" if direction == "LONG" else "future_short"
-            tamano_usd = round(riesgo_usd / dist_sl_pct, 2)
-            margen_usd = round(tamano_usd / leverage, 2)
-
-            note_text = (
-                f"{direction} {leverage}x (4H) · Score {score}/100 · {reason} · R:R {rr_neto}x "
-                f"| Margen: ${margen_usd} | TP1: {tp1} | TP2: {tp2}"
-            )
 
             trade_rec = open_trade(
                 root,
                 asset=sym,
                 kind=kind,
-                timeframe="4h",
-                entry_price=px,
+                timeframe=tf,
+                entry_price=entry_px,
                 size_usd=tamano_usd,
                 sl=sl,
                 tp=tp2,
-                note=note_text,
+                note=thesis_txt,
                 example=False,
-                tag="AUTOPILOT_M6",
+                tag="FUTURES_M63",
                 rr_neto_inicial=rr_neto,
                 rr_forzado=False,
+                entry_mode=mode,
+                order_state=order_state,
+                target_entry=target_entry,
+                leverage=lev,
+                margin_usd=margen_usd,
+                risk_usd=riesgo_usd,
+                tp1=tp1,
+                tp2=tp2,
+                thesis=thesis_txt,
             )
-            # Añadir metadatos en memoria para el render actual
             trade_rec["tp1"] = tp1
             trade_rec["tp2"] = tp2
-            trade_rec["leverage"] = f"{leverage}x"
+            trade_rec["leverage"] = lev
             trade_rec["margin_usd"] = margen_usd
             trade_rec["risk_usd"] = riesgo_usd
             trade_rec["rr_neto"] = rr_neto
-            trade_rec["reason_open"] = note_text
+            trade_rec["entry_mode"] = mode
+            trade_rec["order_state"] = order_state
+            trade_rec["target_entry"] = target_entry
+            trade_rec["thesis"] = thesis_txt
 
             nuevas_abiertas.append(trade_rec)
             activos_abiertos.add(sym)
             slots_disponibles -= 1
+
+    # 4. GESTIONAR Y EVALUAR CARTERA SPOT (SECCIÓN 2)
+    spot_plans = evaluar_y_gestionar_spot(root, live_klines, prices, capital_total)
 
     return {
         "scores": scores_dict,
         "nuevas_abiertas": nuevas_abiertas,
         "cerradas_ahora": cerradas_ahora,
         "open_trades_count": len(open_trades) + len(nuevas_abiertas),
+        "spot_plans": spot_plans,
     }
 
 

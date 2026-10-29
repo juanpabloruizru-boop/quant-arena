@@ -301,15 +301,15 @@ def agent_run() -> None:
     # Obtener precios spot/perp instantáneos en vivo para ejecución estricta
     live_spot_prices = fetch_prices(all_syms)
 
-    # 1. EJECUCIÓN AUTÓNOMA DEL AGENTE (M6 Autopilot "Conquistador")
-    # Gestiona operaciones existentes (TP1/TP2/SL) y abre nuevas si < 5 con precio en vivo estricto
+    # 1. EJECUCIÓN AUTÓNOMA DEL AGENTE (M6.3 Autopilot: Futuros + Spot)
+    # Gestiona operaciones existentes (TP1/TP2/SL) y abre nuevas (instant + programadas) con precio vivo estricto
     cap_records_pre = load_capital(root)
     cap_aportado = net_contributed(cap_records_pre) if cap_records_pre else 1000.0
     auto_res = gestionar_y_ejecutar(
         root,
         live["klines"],
         capital_total=cap_aportado,
-        max_open_ops=5,
+        max_open_ops=6,
         live_prices=live_spot_prices,
     )
 
@@ -454,7 +454,7 @@ def agent_run() -> None:
             )
         d["example"] = t.get("example", False)
         d["status"] = "open"
-        # Propagar campos clave del trade a diagnose para el Dashboard M6
+        # Propagar campos clave del trade a diagnose para el Dashboard M6.3
         d["entry"] = t.get("entry_price")
         d["sl"] = t.get("sl")
         d["tp"] = t.get("tp")
@@ -464,57 +464,107 @@ def agent_run() -> None:
         d["leverage"] = t.get("leverage") or "4x"
         d["ts_utc"] = t.get("ts_utc")
         d["tp1_hit"] = t.get("tp1_hit", False)
+        d["entry_mode"] = t.get("entry_mode", "INSTANTE")
+        d["order_state"] = t.get("order_state", "ACTIVE")
+        d["target_entry"] = t.get("target_entry")
+        d["thesis"] = t.get("thesis") or t.get("note", "")
+        d["margin_usd"] = t.get("margin_usd")
+        d["risk_usd"] = t.get("risk_usd")
         diags.append(d)
 
-    # auditoria del historial cerrado (M5b)
+    # Auditorías M6.3: Futuros (Pestaña 1) y Spot & Ciclos (Pestaña 2)
+    from qa.agent.audit import audit_futures, audit_spot
+    spot_plans = auto_res.get("spot_plans", [])
     aportado = net_contributed(cap_records) if cap_records else None
     audit_out = run_audit(trades, costs, aportado)
+    audit_fut = audit_futures(trades, costs, live_prices=prices_map)
+    audit_sp = audit_spot(spot_plans)
 
-    # Exportación automática del log estadístico detallado a CSV (incluye open y closed con columna status)
+    # Exportación automática de los 3 CSVs estadísticos (audit_futures.csv, audit_spot.csv, trades_statistical_log.csv)
     try:
         import csv as _csv
+
+        # 1. audit_futures.csv
+        fut_csv_path = root / "ledger" / "audit_futures.csv"
+        fut_fields = [
+            "id", "asset", "kind", "leverage", "timeframe", "entry_mode", "order_state",
+            "status", "opened_at", "closed_at", "duracion", "entry", "exit", "live_price",
+            "size_usd", "margin_usd", "sl", "tp1", "tp2", "rr_neto", "pnl_vivo_usd",
+            "pnl_vivo_pct", "pnl_neto_usd", "r_multiplo", "thesis", "tag"
+        ]
+        with open(fut_csv_path, "w", newline="", encoding="utf-8-sig") as f_fut:
+            writer = _csv.DictWriter(f_fut, fieldnames=fut_fields, extrasaction="ignore")
+            writer.writeheader()
+            for r in (audit_fut.get("master_rows") or []):
+                writer.writerow(r)
+
+        # 2. audit_spot.csv
+        spot_csv_path = root / "ledger" / "audit_spot.csv"
+        spot_fields = [
+            "id", "asset", "timeframe", "horizon_label", "status", "opened_at", "closed_at",
+            "duracion", "allocated_usd", "buy_zone_low", "buy_zone_high", "buy_ref_price",
+            "entry_executed_price", "current_price", "dist_zona_txt", "tp1_zone", "tp2_zone",
+            "sl_spot", "tp_updated", "rr_ciclo", "pnl_usd", "pnl_pct", "thesis"
+        ]
+        with open(spot_csv_path, "w", newline="", encoding="utf-8-sig") as f_spot:
+            writer = _csv.DictWriter(f_spot, fieldnames=spot_fields, extrasaction="ignore")
+            writer.writeheader()
+            for r in (audit_sp.get("master_rows") or []):
+                writer.writerow(r)
+
+        # 3. Log Consolidado General (trades_statistical_log.csv)
         csv_path = root / "ledger" / "trades_statistical_log.csv"
         csv_fieldnames = [
-            "id", "status", "asset", "kind", "timeframe", "opened_at", "closed_at",
-            "duracion", "entry", "exit", "size_usd", "rr_inicial_bruto",
-            "pnl_bruto_usd", "fees_est_usd", "pnl_neto_usd", "pnl_pct",
-            "r_multiplo", "tag", "note", "close_note"
+            "id", "tipo_libro", "status", "asset", "timeframe", "opened_at", "closed_at",
+            "duracion", "entry", "exit", "size_usd", "sl", "tp", "rr_neto",
+            "pnl_neto_usd", "pnl_pct", "r_multiplo", "tag", "thesis_or_note"
         ]
         csv_rows: list[dict[str, Any]] = []
-        # Agregar filas de audit_out (operaciones cerradas)
-        for r in (audit_out.get("rows") or []):
-            item = dict(r)
-            item["status"] = "closed"
-            csv_rows.append(item)
-        # Agregar operaciones abiertas en vivo
-        for d in diags:
-            if d.get("status") == "open":
-                px_now = d.get("price_now")
-                entry_px = d.get("entry")
-                pnl_now = d.get("pnl_vivo") or {}
-                csv_rows.append({
-                    "id": d.get("id"),
-                    "status": "open",
-                    "asset": d.get("asset"),
-                    "kind": d.get("kind"),
-                    "timeframe": d.get("timeframe"),
-                    "opened_at": d.get("ts_utc"),
-                    "closed_at": "",
-                    "duracion": d.get("tiempo_abierta", "—"),
-                    "entry": entry_px,
-                    "exit": px_now,
-                    "size_usd": d.get("size_usd"),
-                    "rr_inicial_bruto": d.get("rr_inicial_tp_sl") or d.get("rr_neto_inicial"),
-                    "pnl_bruto_usd": pnl_now.get("pnl_usd", 0.0),
-                    "fees_est_usd": 0.0,
-                    "pnl_neto_usd": pnl_now.get("pnl_usd", 0.0),
-                    "pnl_pct": pnl_now.get("pnl_pct", 0.0),
-                    "r_multiplo": "",
-                    "tag": d.get("tag", "AUTOPILOT_M6"),
-                    "note": d.get("note", ""),
-                    "close_note": "",
-                })
-        with open(csv_path, "w", newline="", encoding="utf-8") as f_csv:
+        for r in (audit_fut.get("master_rows") or []):
+            csv_rows.append({
+                "id": r.get("id"),
+                "tipo_libro": "FUTUROS",
+                "status": r.get("status"),
+                "asset": r.get("asset"),
+                "timeframe": r.get("timeframe"),
+                "opened_at": r.get("opened_at"),
+                "closed_at": r.get("closed_at"),
+                "duracion": r.get("duracion"),
+                "entry": r.get("entry"),
+                "exit": r.get("exit"),
+                "size_usd": r.get("size_usd"),
+                "sl": r.get("sl"),
+                "tp": r.get("tp2"),
+                "rr_neto": r.get("rr_neto"),
+                "pnl_neto_usd": r.get("pnl_neto_usd"),
+                "pnl_pct": r.get("pnl_vivo_pct"),
+                "r_multiplo": r.get("r_multiplo"),
+                "tag": r.get("tag"),
+                "thesis_or_note": r.get("thesis"),
+            })
+        for r in (audit_sp.get("master_rows") or []):
+            csv_rows.append({
+                "id": r.get("id"),
+                "tipo_libro": "SPOT",
+                "status": r.get("status"),
+                "asset": r.get("asset"),
+                "timeframe": r.get("timeframe"),
+                "opened_at": r.get("opened_at"),
+                "closed_at": r.get("closed_at"),
+                "duracion": r.get("duracion"),
+                "entry": r.get("entry_executed_price"),
+                "exit": r.get("current_price"),
+                "size_usd": r.get("allocated_usd"),
+                "sl": r.get("sl_spot"),
+                "tp": r.get("tp2_zone"),
+                "rr_neto": r.get("rr_ciclo"),
+                "pnl_neto_usd": r.get("pnl_usd"),
+                "pnl_pct": r.get("pnl_pct"),
+                "r_multiplo": "-",
+                "tag": "SPOT_M63",
+                "thesis_or_note": r.get("thesis"),
+            })
+        with open(csv_path, "w", newline="", encoding="utf-8-sig") as f_csv:
             writer = _csv.DictWriter(f_csv, fieldnames=csv_fieldnames, extrasaction="ignore")
             writer.writeheader()
             for r in csv_rows:
@@ -589,6 +639,9 @@ def agent_run() -> None:
         capital=capital_status,
         audit=audit_out,
         calc=None,
+        spot_plans=spot_plans,
+        audit_futuros=audit_fut,
+        audit_spot_data=audit_sp,
     )
     outdir = reports_dir(root) / "dashboard"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -1154,6 +1207,42 @@ def capital_reset_examples(
         if not c["ok"]:
             raise typer.Exit(code=1)
     typer.echo("Listo: puedes empezar desde cero con tu dinero real (qa capital set --amount …).")
+
+
+@capital_app.command("hard-reset")
+def capital_hard_reset(
+    amount: Annotated[float, typer.Option("--amount", help="Capital inicial simulado")] = 1000.0,
+    note: Annotated[str, typer.Option("--note", help="Nota de reinicio")] = "Capital inicial limpio simulado",
+) -> None:
+    """Reinicia limpiamente tanto el libro de Futuros como el de Spot con el capital indicado ($1,000 USD)."""
+    from qa.agent.capital import set_capital
+    from qa.data.paths import get_root
+
+    root = get_root()
+    # 1. Limpiar user_trades.jsonl
+    trades_path = root / "ledger" / "user_trades.jsonl"
+    trades_path.parent.mkdir(parents=True, exist_ok=True)
+    trades_path.write_text("", encoding="utf-8")
+
+    # 2. Limpiar user_spot.jsonl
+    spot_path = root / "ledger" / "user_spot.jsonl"
+    spot_path.write_text("", encoding="utf-8")
+
+    # 3. Limpiar y recrear user_capital.jsonl con el monto exacto
+    cap_path = root / "ledger" / "user_capital.jsonl"
+    cap_path.write_text("", encoding="utf-8")
+    set_capital(root, amount, note)
+
+    # 4. Limpiar CSVs estadísticos
+    for csv_file in ("trades_statistical_log.csv", "audit_futures.csv", "audit_spot.csv"):
+        p = root / "ledger" / csv_file
+        if p.exists():
+            try:
+                p.unlink()
+            except Exception:
+                pass
+
+    typer.echo(f"hard-reset completado con éxito: capital=${amount:,.2f} USD (libros de Futuros y Spot reiniciados)")
 
 
 if __name__ == "__main__":

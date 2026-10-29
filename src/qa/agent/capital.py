@@ -169,6 +169,11 @@ def compute_status(
     floating_detail: list[dict[str, Any]] = []
     sin_precio: list[str] = []
     for t in opened:
+        if t.get("order_state") == "PENDING_FUTURE":
+            floating_detail.append(
+                {"id": t.get("id"), "asset": t["asset"], "price_now": prices.get(t["asset"]), "pnl_usd": 0.0}
+            )
+            continue
         px = prices.get(t["asset"])
         size = float(t.get("size_usd", 0.0))
         entry = float(t.get("entry_price", 0.0))

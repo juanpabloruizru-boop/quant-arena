@@ -55,8 +55,17 @@ def open_trade(
     ts_utc: str | None = None,
     rr_neto_inicial: float | None = None,
     rr_forzado: bool = False,
+    entry_mode: str = "INSTANTE",
+    order_state: str = "ACTIVE",
+    target_entry: float | None = None,
+    leverage: str = "4x",
+    margin_usd: float | None = None,
+    risk_usd: float | None = None,
+    tp1: float | None = None,
+    tp2: float | None = None,
+    thesis: str = "",
 ) -> dict[str, Any]:
-    """Registra una operación abierta POR EL USUARIO (tag/ts opcionales, M5b).
+    """Registra una operación abierta POR EL USUARIO o AUTOPILOT (tag/ts opcionales, M6.3).
 
     `rr_neto_inicial` y `rr_forzado` dejan traza del filtro de disciplina
     R:R >= min_rr en el momento del registro (auditable a posteriori).
@@ -79,6 +88,33 @@ def open_trade(
         "example": example,
         "rr_neto_inicial": rr_neto_inicial,
         "rr_forzado": rr_forzado,
+        "entry_mode": entry_mode,
+        "order_state": order_state,
+        "target_entry": None if target_entry is None else float(target_entry),
+        "leverage": leverage,
+        "margin_usd": None if margin_usd is None else float(margin_usd),
+        "risk_usd": None if risk_usd is None else float(risk_usd),
+        "tp1": None if tp1 is None else float(tp1),
+        "tp2": None if tp2 is None else float(tp2),
+        "thesis": thesis,
+    }
+    return _append(root, rec)
+
+
+def update_trade(
+    root: Path,
+    trade_id: str,
+    updates: dict[str, Any],
+    note: str = "",
+    ts_utc: str | None = None,
+) -> dict[str, Any]:
+    """Registra una actualización sobre una operación (activación de programada, mover SL a BE)."""
+    rec = {
+        "action": "update",
+        "id": trade_id,
+        "ts_utc": ts_utc or datetime.now(UTC).isoformat(timespec="seconds"),
+        "updates": updates,
+        "note": note,
     }
     return _append(root, rec)
 
@@ -109,7 +145,7 @@ def load_trades(root: Path) -> list[dict[str, Any]]:
     opens: dict[str, dict[str, Any]] = {}
     for rec in read_records(_log_path(root)):
         if rec.get("action") == "open":
-            opens[rec["id"]] = rec
+            opens[rec["id"]] = dict(rec)
         elif rec.get("action") == "close" and rec.get("id") in opens:
             updates: dict[str, Any] = {
                 "status": "closed",
@@ -120,6 +156,8 @@ def load_trades(root: Path) -> list[dict[str, Any]]:
             if rec.get("tag"):
                 updates["close_tag"] = rec["tag"]
             opens[rec["id"]].update(updates)
+        elif rec.get("action") == "update" and rec.get("id") in opens:
+            opens[rec["id"]].update(rec.get("updates", {}))
     for t in opens.values():
         t.setdefault("status", "open")
     return list(opens.values())
@@ -140,10 +178,16 @@ def diagnose(
         return out
     direction = -1.0 if trade["kind"] == "future_short" else 1.0
     entry = float(trade["entry_price"])
-    pnl_pct = (price_now / entry - 1.0) * direction
     out["price_now"] = price_now
-    out["pnl_pct"] = round(pnl_pct * 100, 3)
-    out["pnl_usd"] = round(pnl_pct * float(trade["size_usd"]), 2)
+
+    if trade.get("order_state") == "PENDING_FUTURE":
+        out["pnl_pct"] = 0.0
+        out["pnl_usd"] = 0.0
+        out["dist_entry_pct"] = round(abs(price_now - entry) / entry * 100.0, 2)
+    else:
+        pnl_pct = (price_now / entry - 1.0) * direction
+        out["pnl_pct"] = round(pnl_pct * 100, 3)
+        out["pnl_usd"] = round(pnl_pct * float(trade["size_usd"]), 2)
     if trade.get("sl"):
         out["dist_sl_pct"] = round(
             (price_now - float(trade["sl"])) / price_now * 100 * direction, 2
