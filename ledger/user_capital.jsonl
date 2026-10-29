@@ -1,2 +1,1 @@
-{"action": "set", "amount": 1000.0, "example": true, "note": "EJEMPLO: capital inicial", "prev_hash": "", "ts_utc": "2026-09-15T10:00:00+00:00"}
-{"action": "add", "amount": 200.0, "example": true, "note": "EJEMPLO: adici\u00f3n mensual", "prev_hash": "3b368777a014d813bedbdf209b74d4efde0e8139384b4ec7796dba799324933e", "ts_utc": "2026-10-01T10:00:00+00:00"}
+{"action": "set", "amount": 1000.0, "example": false, "note": "Mi capital inicial real", "prev_hash": "", "ts_utc": "2026-10-28T20:14:40+00:00"}
