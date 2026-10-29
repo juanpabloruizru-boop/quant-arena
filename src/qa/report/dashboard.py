@@ -277,24 +277,36 @@ def _calcular_ventana_entrada(
     tp2: float,
     is_long: bool,
     tp1_hit: bool,
+    fee_roundtrip: float = 0.001,
 ) -> tuple[str, str, float]:
     """Calcula el semáforo y estado de la ventana de entrada para copiar la operación."""
     dist_total_tp1 = abs(tp1 - entry)
-    dist_total_sl = abs(entry - sl)
     if is_long:
         dist_avanzada_tp1 = px - entry
-        dist_sl_actual = px - sl
-        dist_tp2_actual = tp2 - px
+        sl_cruzado = px <= sl
+        tp2_superado = px >= tp2
     else:
         dist_avanzada_tp1 = entry - px
-        dist_sl_actual = sl - px
-        dist_tp2_actual = px - tp2
+        sl_cruzado = px >= sl
+        tp2_superado = px <= tp2
 
-    rr_residual = round(dist_tp2_actual / dist_sl_actual, 2) if dist_sl_actual > 0 else 0.0
+    # Fórmula obligatoria de R:R actual (residual para quien entra HOY al live_price)
+    if sl_cruzado or tp2_superado or px <= 0:
+        rr_residual = 0.0
+    else:
+        riesgo_hoy = abs(px - sl) + (px * fee_roundtrip)
+        beneficio_hoy = abs(tp2 - px) - (px * fee_roundtrip)
+        if riesgo_hoy > 0 and beneficio_hoy > 0:
+            rr_residual = round(beneficio_hoy / riesgo_hoy, 2)
+        else:
+            rr_residual = 0.0
+
     pct_tp1 = (dist_avanzada_tp1 / dist_total_tp1 * 100.0) if dist_total_tp1 > 0 else 0.0
 
-    if tp1_hit or pct_tp1 > 60.0:
-        return "b-bad", "🔴 TARDE PARA ENTRAR (Trade avanzado / TP1)", rr_residual
+    if sl_cruzado:
+        return "b-bad", "🔴 STOP LOSS ALCANZADO (Operación cerrada)", 0.0
+    elif tp1_hit or pct_tp1 > 60.0 or tp2_superado:
+        return "b-bad", f"🔴 TARDE PARA ENTRAR (Trade avanzado / TP1 · R:R actual {rr_residual:.2f}x)", rr_residual
     elif dist_avanzada_tp1 < 0:
         return "b-ok", f"🟢 MEJOR PRECIO QUE EL AGENTE (R:R actual {rr_residual:.2f}x)", rr_residual
     elif pct_tp1 < 25.0 and rr_residual >= 2.0:

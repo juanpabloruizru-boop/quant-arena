@@ -35,24 +35,20 @@ def fetch_live(watchlist: list[str]) -> dict[str, Any]:
         for sym in watchlist:
             kl[sym] = {}
             for interval, limit in LIMITS.items():
-                now_ms = int(datetime.now(UTC).timestamp() * 1000)
-                rows = fetch_klines_paged(
-                    c,
-                    SPOT_BASE,
-                    "/api/v3/klines",
-                    sym,
-                    interval,
-                    start_ms=now_ms - _span_ms(interval, limit),
-                    end_ms=now_ms,
-                    limit=limit,
-                    max_pages=1 if interval != "1d" else 1,
-                )
-                # fetch_klines_paged pagina hacia adelante desde start; con un
-                # solo max_pages y limit adecuado traemos la cola reciente
+                req_limit = min(limit + 5, 1000)
+                try:
+                    rows = c.get_json(
+                        SPOT_BASE,
+                        "/api/v3/klines",
+                        {"symbol": sym, "interval": interval, "limit": req_limit},
+                    )
+                except Exception:
+                    rows = []
                 df = klines_frame(rows, sym, interval) if rows else pd.DataFrame()
+                df = _drop_forming(df, interval)
                 if not df.empty and len(df) > limit:
                     df = df.tail(limit).reset_index(drop=True)
-                kl[sym][interval] = _drop_forming(df, interval)
+                kl[sym][interval] = df
         # funding reciente BTC/ETH (35 dias) + premiumIndex
         fund: dict[str, pd.DataFrame] = {}
         prem: dict[str, dict[str, Any]] = {}
@@ -95,22 +91,20 @@ def fetch_extra_daily(symbols: list[str], limit: int = 400) -> dict[str, pd.Data
     out: dict[str, pd.DataFrame] = {}
     with BinancePublicClient() as c:
         for sym in symbols:
-            now_ms = int(datetime.now(UTC).timestamp() * 1000)
-            rows = fetch_klines_paged(
-                c,
-                SPOT_BASE,
-                "/api/v3/klines",
-                sym,
-                "1d",
-                start_ms=now_ms - int(86_400_000 * limit * 1.05),
-                end_ms=now_ms,
-                limit=limit,
-                max_pages=1,
-            )
+            req_limit = min(limit + 5, 1000)
+            try:
+                rows = c.get_json(
+                    SPOT_BASE,
+                    "/api/v3/klines",
+                    {"symbol": sym, "interval": "1d", "limit": req_limit},
+                )
+            except Exception:
+                rows = []
             df = klines_frame(rows, sym, "1d") if rows else pd.DataFrame()
+            df = _drop_forming(df, "1d")
             if not df.empty and len(df) > limit:
                 df = df.tail(limit).reset_index(drop=True)
-            out[sym] = _drop_forming(df, "1d")
+            out[sym] = df
     return out
 
 
@@ -133,22 +127,20 @@ def fetch_extra_multi(
             out[sym] = {}
             for interval in intervals:
                 limit = limits.get(interval, 180)
-                now_ms = int(datetime.now(UTC).timestamp() * 1000)
-                rows = fetch_klines_paged(
-                    c,
-                    SPOT_BASE,
-                    "/api/v3/klines",
-                    sym,
-                    interval,
-                    start_ms=now_ms - _span_ms(interval, limit),
-                    end_ms=now_ms,
-                    limit=limit,
-                    max_pages=1,
-                )
+                req_limit = min(limit + 5, 1000)
+                try:
+                    rows = c.get_json(
+                        SPOT_BASE,
+                        "/api/v3/klines",
+                        {"symbol": sym, "interval": interval, "limit": req_limit},
+                    )
+                except Exception:
+                    rows = []
                 df = klines_frame(rows, sym, interval) if rows else pd.DataFrame()
+                df = _drop_forming(df, interval)
                 if not df.empty and len(df) > limit:
                     df = df.tail(limit).reset_index(drop=True)
-                out[sym][interval] = _drop_forming(df, interval)
+                out[sym][interval] = df
     return out
 
 

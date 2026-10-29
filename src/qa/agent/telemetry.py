@@ -180,6 +180,19 @@ def trade_geometry(
         d_tp = abs(float(tp) - price_now) / price_now
         out["rr_inicial_tp_sl"] = round(d_tp0 / d_sl0, 2) if d_sl0 > 0 else None
         out["rr_actual_tp_sl"] = round(d_tp / d_sl, 2) if d_sl > 0 else None
+        
+        # R:R actual neto (con comisiones estimadas para entrada a precio actual)
+        p_now = float(price_now)
+        sl_val = float(sl)
+        tp_val = float(tp)
+        fee_rt = 2.0 * float(fee_taker_lado) if fee_taker_lado is not None else 0.001
+        riesgo_hoy = abs(p_now - sl_val) + (p_now * fee_rt)
+        beneficio_hoy = abs(tp_val - p_now) - (p_now * fee_rt)
+        if riesgo_hoy > 0 and beneficio_hoy > 0:
+            out["rr_actual_neto"] = round(beneficio_hoy / riesgo_hoy, 2)
+        else:
+            out["rr_actual_neto"] = 0.0
+
         out["dist_sl_pct"] = round(d_sl * 100 * direction, 2)
         out["dist_tp_pct"] = round(d_tp * 100 * direction, 2)
     if entry > 0 and fee_taker_lado is not None:
