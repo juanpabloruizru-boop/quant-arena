@@ -1,59 +1,53 @@
-# QUANT-ARENA v2
+# QUANT-ARENA v2 — Agente Autónomo Conquistador (M6)
 
-Laboratorio de investigación **reproducible** para responder una pregunta con rigor
-estadístico: ¿existe alguna regla simple y de baja frecuencia con **ventaja neta de
-costes** en criptomonedas líquidas?
+Agente autónomo de **Paper Trading en Criptomonedas** para gestión de cartera simulada sobre **$1,000 USD** con lectura de mercado en tiempo real, filtro de disciplina geométrica $R:R \ge 2.0\text{x}$ y registro contable inmutable auditado con SHA-256.
 
-> Un resultado negativo bien documentado es un resultado exitoso.
-> Un resultado positivo mal validado es un fracaso.
+---
 
-## Reglas del proyecto
+## 🚀 Inicio Rápido (Windows)
 
-- **Sin dinero real**: ni claves de exchange, ni órdenes, ni webhooks/daemons. Solo
-  endpoints públicos de lectura y paper trading (M4+).
-- **Hipótesis antes que código**: todo está pre-registrado en
-  [`docs/PREREGISTRO.md`](docs/PREREGISTRO.md) antes de ejecutarse.
-- **Cero look-ahead**: invarianza por truncamiento en cada feature.
-- **Todo backtest se registra solo** en el ledger `ledger/trials.duckdb`
-  (append-only); el DSR lee `n_trials` de ahí, nunca de un número manual.
-- **Holdout sellado**: los últimos 12 meses se evalúan una sola vez, al final de M3.
-- **Ningún número sin trazabilidad**: `run_id`, hash de fichero o `[NO VERIFICADO]`.
+En esta carpeta principal tienes dos accesos directos:
 
-## Estructura
+1. **`EJECUTAR_QUANT_ARENA.bat`** (Doble clic):
+   - Descarga velas y precios vivos desde la API pública de Binance (sin API keys ni riesgo).
+   - Gestiona las posiciones abiertas: ejecuta Stop Loss, sube el SL a Break-Even si toca TP1, y toma ganancias al alcanzar TP2.
+   - Escanea el universo de 10 monedas y abre las mejores oportunidades hasta un máximo de 5 posiciones simultáneas.
+   - Abre automáticamente el Dashboard (`reports/dashboard/index.html`) en tu navegador web.
 
-```
-quant-arena/
-  docs/{adr/, LITERATURA.md, PREREGISTRO.md, GLOSARIO.md, evidence/}
-  config/{universe.yaml, costs.yaml, hypotheses.yaml}
-  src/qa/{data/, features/, strategies/, backtest/, stats/, forward/, report/, cli.py}
-  scripts/{verify_sources.py, probe_binance.py, power_analysis.py}
-  tests/{unit/, property/, integration/, synthetic/}
-  data/{raw/, curated/, manifests/}
-  reports/  ledger/
-```
+2. **`CONSOLA_COMANDOS.bat`** (Doble clic):
+   - Abre la consola con el entorno virtual activado para consultar tu patrimonio (`qa capital status`), auditar el historial (`qa trade audit`) o gestionar operaciones.
 
-## Uso
+---
 
-```bash
-make install          # crea .venv e instala el paquete + herramientas dev
-make ci               # ruff + mypy --strict + pytest (mismos gates que CI)
-make power            # re-genera el analisis de potencia (v1.2)
-make verify-sources   # re-verifica la bibliografia contra Crossref/arXiv
-make verify-endpoints # re-verifica endpoints/fees/minimos de Binance en vivo
-make reproduce        # ci + power (reproduccion completa del hito actual)
+## 📁 Estructura del Proyecto
 
-qa data sync          # M1: ingesta cruda resumible (meta,monthly,pool,daily,futures,funding)
-qa data curate        # M1: curacion + universo PIT + holdout sellado + informe de calidad
-qa data verify        # M1: verifica SHA256 de los 1204+ ficheros (falla si algo cambia)
+```text
+C:\Users\Acer\Documents\QUANT-ARENA\
+├── EJECUTAR_QUANT_ARENA.bat       <-- Doble clic: actualiza el Agente en vivo y abre el Dashboard
+├── CONSOLA_COMANDOS.bat           <-- Doble clic: abre terminal lista para comandos manuales
+├── README.md                      <-- Este archivo explicativo
+├── pyproject.toml                 <-- Configuración del paquete Python
+├── config/                        <-- Configuración operativa
+│   ├── watchlist.yaml             <-- Monedas seguidas, parámetros de riesgo y fuentes RSS
+│   └── costs.yaml                 <-- Comisiones verificadas (spot y futuros USD-M)
+├── docs/                          <-- Documentación de usuario
+│   ├── GUIA_MODIFICACION_JP.md    <-- Guía de uso diario y lectura de métricas
+│   ├── GLOSARIO.md                <-- Conceptos financieros y técnicos
+│   └── TRAZABILIDAD_PROYECTO.md   <-- Resumen de hitos y trazabilidad
+├── ledger/                        <-- Libros contables inmutables (cadena SHA-256)
+│   ├── user_capital.jsonl         <-- Historial de capital aportado y retiros
+│   └── user_trades.jsonl          <-- Registro auditado de operaciones abiertas y cerradas
+├── reports/
+│   └── dashboard/
+│       └── index.html             <-- Dashboard visual HTML interactivo
+├── src/qa/                        <-- Motor del Agente Autónomo M6
+└── tests/                         <-- Pruebas automatizadas de consistencia
 ```
 
-CLI (typer): `qa data sync | qa data curate | qa data verify | qa research run
---hypothesis H1 | qa stats report | qa forward run | qa report daily`. Los
-comandos de research/stats/forward/report siguen siendo stubs hasta M2-M5.
+---
 
-## Hitos y Archivo Histórico
+## 🛡️ Reglas y Seguridad
 
-El proyecto avanzó a través de los hitos M0 a M6:
-- **M0 preregistro** → **M1 datos** → **M2 validación estadística** → **M3 investigación** → **M4 forward paper** → **M5 boletín y dashboard** → **M6 Agente Autónomo Conquistador**.
-- Los reportes, datos de holdout y bundles de hitos pasados han sido organizados en [`archive/`](archive/).
-- Para más información sobre la estructura de directorios y la trazabilidad histórica, consulta [`docs/TRAZABILIDAD_PROYECTO.md`](docs/TRAZABILIDAD_PROYECTO.md).
+- **Sin dinero real ni API Keys privadas**: Todo funciona con endpoints públicos de Binance y simulación estricta de comisiones reales.
+- **Riesgo controlado**: Máximo 1.5% de riesgo por operación ($15 USD) y límite estricto de calor de cartera (Portfolio Heat).
+- **Relación Riesgo:Beneficio ($R:R$)**: Construcción matemática con $R:R \ge 2.2\text{x}$ hacia TP2.

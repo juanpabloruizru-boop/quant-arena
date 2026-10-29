@@ -187,8 +187,12 @@ def forward_run(
 
     root = get_root()
     now = datetime.now(UTC)
-    pit = _pd.read_parquet(root / "data" / "curated" / "pit_universe.parquet")
-    members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+    pit_file = root / "data" / "curated" / "pit_universe.parquet"
+    if pit_file.exists():
+        pit = _pd.read_parquet(pit_file)
+        members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+    else:
+        members = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
     live = fetch_live(sorted({"BTCUSDT", "ETHUSDT"} | set(members)))
     extra = fetch_extra_daily([m for m in members if m not in live["klines"]])
     for sym, df in extra.items():
@@ -270,18 +274,23 @@ def agent_run() -> None:
     rr_cfg = load_rr_config(root)
     min_rr = rr_cfg["min_rr"]
     fee_rt_spot = fee_roundtrip("spot", costs)
-    pit = _pd.read_parquet(root / "data" / "curated" / "pit_universe.parquet")
-    members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+    
+    # Miembros del universo: usar el universo de Autopilot M6 directamente si no existe parquet antiguo
+    pit_file = root / "data" / "curated" / "pit_universe.parquet"
+    if pit_file.exists():
+        pit = _pd.read_parquet(pit_file)
+        members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+    else:
+        members = list(AUTOPILOT_UNIVERSO)
 
     # Asegurar que se descargan los 10 activos completos
     all_syms = sorted(set(watchlist) | set(AUTOPILOT_UNIVERSO) | set(members))
     live = fetch_live(all_syms)
     extra_syms = [m for m in members if m not in live["klines"]]
-    extra_1d = fetch_extra_daily(extra_syms)
-    for sym, df in extra_1d.items():
-        live["klines"].setdefault(sym, {})["1d"] = df
-    # también 4h/1w para los miembros PIT extra (evita n/d en Panel 3 watchlist)
     if extra_syms:
+        extra_1d = fetch_extra_daily(extra_syms)
+        for sym, df in extra_1d.items():
+            live["klines"].setdefault(sym, {})["1d"] = df
         extra_multi = fetch_extra_multi(extra_syms)
         for sym, frames in extra_multi.items():
             for interval, df in frames.items():

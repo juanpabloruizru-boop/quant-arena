@@ -1,7 +1,0 @@
-QUANT-ARENA v2 — hashes normativos del preregistro v1.1
-Fecha (UTC): 2026-10-26T18:40:55Z
-Motivo: condiciones 1-4 del orquestador en el gate M0 + resoluciones P1-P4.
-La version v1.0 permanece intacta bajo los tags prereg-v1 / prereg-v1-signed (commit 82bf430).
-
-SHA256 (docs/PREREGISTRO.md v1.1)    = b223fd55ea2cd5a90133b3304b55b6f00754d349f804cea92633d2b0b14fa64d
-SHA256 (config/hypotheses.yaml v1.1) = ddd0a23a32d985f07a053ab009b94b4578ec023d026279cbb834f9d359bbf99c
