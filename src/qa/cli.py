@@ -349,15 +349,19 @@ def agent_run() -> None:
     )
 
     # Precios vivos reales para los 10 activos (¡cero '?' en el dashboard!)
+    # Prioridad absoluta al precio spot/ticker en tiempo real (live_spot_prices)
     prices_map: dict[str, float] = {}
     trends_map: dict[str, dict[str, str]] = {}
     for sym in set(AUTOPILOT_UNIVERSO) | set(watchlist):
-        frames = live["klines"].get(sym, {})
-        for tf in ("1h", "4h", "1d"):
-            df = frames.get(tf)
-            if df is not None and not df.empty:
-                prices_map[sym] = float(df["close"].iloc[-1])
-                break
+        if sym in live_spot_prices and live_spot_prices[sym] > 0:
+            prices_map[sym] = float(live_spot_prices[sym])
+        else:
+            frames = live["klines"].get(sym, {})
+            for tf in ("1h", "4h", "1d"):
+                df = frames.get(tf)
+                if df is not None and not df.empty:
+                    prices_map[sym] = float(df["close"].iloc[-1])
+                    break
         # Tendencias 4h, 1d, 1w
         trends_map[sym] = {}
         for tf in ("4h", "1d", "1w"):
@@ -466,17 +470,50 @@ def agent_run() -> None:
     aportado = net_contributed(cap_records) if cap_records else None
     audit_out = run_audit(trades, costs, aportado)
 
-    # Exportación automática del log estadístico detallado a CSV
+    # Exportación automática del log estadístico detallado a CSV (incluye open y closed con columna status)
     try:
         import csv as _csv
         csv_path = root / "ledger" / "trades_statistical_log.csv"
-        csv_rows = audit_out.get("rows") or []
         csv_fieldnames = [
-            "id", "asset", "kind", "timeframe", "opened_at", "closed_at",
+            "id", "status", "asset", "kind", "timeframe", "opened_at", "closed_at",
             "duracion", "entry", "exit", "size_usd", "rr_inicial_bruto",
             "pnl_bruto_usd", "fees_est_usd", "pnl_neto_usd", "pnl_pct",
             "r_multiplo", "tag", "note", "close_note"
         ]
+        csv_rows: list[dict[str, Any]] = []
+        # Agregar filas de audit_out (operaciones cerradas)
+        for r in (audit_out.get("rows") or []):
+            item = dict(r)
+            item["status"] = "closed"
+            csv_rows.append(item)
+        # Agregar operaciones abiertas en vivo
+        for d in diags:
+            if d.get("status") == "open":
+                px_now = d.get("price_now")
+                entry_px = d.get("entry")
+                pnl_now = d.get("pnl_vivo") or {}
+                csv_rows.append({
+                    "id": d.get("id"),
+                    "status": "open",
+                    "asset": d.get("asset"),
+                    "kind": d.get("kind"),
+                    "timeframe": d.get("timeframe"),
+                    "opened_at": d.get("ts_utc"),
+                    "closed_at": "",
+                    "duracion": d.get("tiempo_abierta", "—"),
+                    "entry": entry_px,
+                    "exit": px_now,
+                    "size_usd": d.get("size_usd"),
+                    "rr_inicial_bruto": d.get("rr_inicial_tp_sl") or d.get("rr_neto_inicial"),
+                    "pnl_bruto_usd": pnl_now.get("pnl_usd", 0.0),
+                    "fees_est_usd": 0.0,
+                    "pnl_neto_usd": pnl_now.get("pnl_usd", 0.0),
+                    "pnl_pct": pnl_now.get("pnl_pct", 0.0),
+                    "r_multiplo": "",
+                    "tag": d.get("tag", "AUTOPILOT_M6"),
+                    "note": d.get("note", ""),
+                    "close_note": "",
+                })
         with open(csv_path, "w", newline="", encoding="utf-8") as f_csv:
             writer = _csv.DictWriter(f_csv, fieldnames=csv_fieldnames, extrasaction="ignore")
             writer.writeheader()

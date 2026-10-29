@@ -210,12 +210,12 @@ def gestionar_y_ejecutar(
     trades = load_trades(root)
     open_trades = [t for t in trades if t.get("status") == "open"]
 
-    # Precios actuales por símbolo: usar live_prices (ticker/price spot) o último close disponible
+    # Precios actuales por símbolo: usar obligatoriamente live_prices (ticker/price spot en vivo)
     prices: dict[str, float] = {}
     if live_prices:
         prices.update(live_prices)
     for s in UNIVERSO:
-        if s not in prices:
+        if s not in prices or prices[s] <= 0:
             frames = live_klines.get(s, {})
             for tf in ("1h", "4h", "1d"):
                 df = frames.get(tf)
@@ -304,7 +304,10 @@ def gestionar_y_ejecutar(
             if sym in activos_abiertos:
                 continue
 
-            px = prices.get(sym, cand["price"])
+            # Precio de entrada estricto: OBLIGATORIAMENTE el precio ticker en vivo en este instante
+            px = prices.get(sym, 0.0)
+            if px <= 0:
+                px = cand.get("price", 0.0)
             if px <= 0:
                 continue
 
@@ -313,7 +316,7 @@ def gestionar_y_ejecutar(
             reason = cand["reason"]
             atr14 = cand["atr14"]
 
-            # Niveles R:R calculados estrictamente desde el precio vivo
+            # Niveles R:R calculados estrictamente desde el precio vivo de entrada
             geom = calcular_niveles_rr(px, atr14, direction)
             sl = geom["sl"]
             tp1 = geom["tp1"]
