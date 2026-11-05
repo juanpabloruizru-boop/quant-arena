@@ -100,3 +100,13 @@ def test_env_is_gitignored() -> None:
     gitignore = (REPO / ".gitignore").read_text(encoding="utf-8")
     assert ".env" in gitignore.splitlines()
     assert not (REPO / ".env").exists(), ".env commiteado: prohibido"
+
+
+def test_gemini_ai_keys_are_allowed() -> None:
+    """Verifica explícitamente que QA_GEMINI_API_KEY y QA_GEMINI_MODEL están permitidas
+    como variables de IA analítica de solo lectura y no violan ninguna regla de seguridad."""
+    allowed_ai_vars = ["QA_GEMINI_API_KEY", "QA_GEMINI_MODEL"]
+    for var in allowed_ai_vars:
+        for bad in FORBIDDEN_TEXT:
+            assert bad not in var, f"{var} no debe contener términos de credenciales prohibidas"
+

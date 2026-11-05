@@ -80,6 +80,56 @@ def breakeven_neto(entry: float, kind: str, costs: dict[str, Any], long: bool) -
     return entry * (1.0 + f) / (1.0 - f) if long else entry * (1.0 - f) / (1.0 + f)
 
 
+def anti_wick_trailing_sl(
+    entry: float,
+    current_sl: float,
+    current_price: float,
+    atr14: float,
+    direction: str,
+    atr_mult: float = 2.2,
+) -> float:
+    """Calcula el Stop Loss dinámico protector tendencial (Anti-Wick):
+
+    Modo Carrera (Fat Tails):
+    Trailing SL (LONG)  = max(SL_prev, Precio - 2.2 * ATR14)
+    Trailing SL (SHORT) = min(SL_prev, Precio + 2.2 * ATR14)
+    Garantiza que el SL nunca retrocede y da holgura frente a mechas de volatilidad,
+    permitiendo capturar movimientos de 5R a 15R en expansiones parabólicas.
+    """
+    nd = 4 if current_price < 10 else 2
+    is_long = direction.upper() in ("LONG", "FUTURE_LONG", "SPOT")
+    if is_long:
+        candidate = current_price - atr_mult * max(1e-9, atr14)
+        new_sl = max(current_sl, candidate)
+    else:
+        candidate = current_price + atr_mult * max(1e-9, atr14)
+        new_sl = min(current_sl, candidate) if current_sl > 0 else candidate
+    return round(new_sl, nd)
+
+
+def adaptive_risk_pct(
+    base_risk: float = 0.035,
+    score: float = 70.0,
+    current_atr: float = 1.0,
+    mean_atr: float = 1.0,
+    min_risk: float = 0.02,
+    max_risk: float = 0.05,
+) -> float:
+    """Dimensionamiento dinámico adaptativo Modo Carrera (Half-Kelly / Volatility Targeting).
+
+    Risk% = clip(BaseRisk * (Score / 70) * (mean_ATR / current_ATR), 0.02, 0.05).
+    Base al 3.5% del balance, escalable hasta el 5.0% cuando Score >= 80 y en compresión ATR.
+    Rango dinámico acotado estrictamente entre 2.0% y 5.0%.
+    """
+    score_term = max(0.0, float(score)) / 70.0
+    safe_atr = max(1e-9, float(current_atr))
+    vol_term = max(0.5, min(2.0, float(mean_atr) / safe_atr))
+    raw_risk = float(base_risk) * score_term * vol_term
+    clipped = max(float(min_risk), min(float(max_risk), raw_risk))
+    return round(clipped, 6)
+
+
+
 def tp_minimo_para_rr(
     entry: float, sl: float, kind: str, costs: dict[str, Any], long: bool, k: float
 ) -> float | None:

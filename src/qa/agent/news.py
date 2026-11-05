@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Vigilante de noticias y choques tecnicos (M4/M5) — SOLO DESCRIPTIVO.
 
 - Noticias: RSS publicos (sin claves), criba por keywords de riesgo y por
@@ -18,7 +19,6 @@ from email.utils import parsedate_to_datetime
 from typing import Any
 
 import numpy as np
-import pandas as pd
 
 _USER_AGENT = {"User-Agent": "QUANT-ARENA-agent/1.0 (monitor de riesgos, solo lectura)"}
 
@@ -163,7 +163,7 @@ def fetch_news(
     return items[:40], status
 
 
-def atr14(df: pd.DataFrame) -> float:
+def atr14(df: Any) -> float:
     """ATR(14) sobre velas (high/low/close), en unidades de precio."""
     if len(df) < 15:
         return float("nan")
@@ -176,7 +176,7 @@ def atr14(df: pd.DataFrame) -> float:
 
 
 def detect_shocks(
-    klines: dict[str, dict[str, pd.DataFrame]],
+    klines: dict[str, dict[str, Any]],
     premium: dict[str, dict[str, Any]],
     cfg: dict[str, Any],
 ) -> list[dict[str, Any]]:

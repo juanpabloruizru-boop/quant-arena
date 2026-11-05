@@ -111,19 +111,35 @@ def realized_pnl_usd(trade: dict[str, Any], costs: dict[str, Any]) -> dict[str, 
 
     Modelo de comisiones (documentado, coherente con costs.yaml VERIFICADO):
     ida y vuelta taker sobre el nocional de entrada (spot 0.20 %, perp 0.10 %).
+    Incluye de forma integrada cualquier ganancia/comisión de cierres parciales previos (TP1).
     """
     entry = float(trade["entry_price"])
     exit_px = float(trade.get("exit_price", entry))
     size = float(trade.get("size_usd", 0.0))
     direction = -1.0 if trade.get("kind") == "future_short" else 1.0
-    bruto = size * (exit_px / entry - 1.0) * direction
-    fees = size * fee_roundtrip(str(trade.get("kind", "spot")), costs)
-    neto = bruto - fees
-    pct = (exit_px / entry - 1.0) * 100.0 * direction
+    bruto_rem = size * (exit_px / entry - 1.0) * direction
+    fees_rem = size * fee_roundtrip(str(trade.get("kind", "spot")), costs)
+    neto_rem = bruto_rem - fees_rem
+
+    # Integración de cierres parciales si existieron
+    part_neto = float(trade.get("partial_realized_pnl_usd", 0.0))
+    part_fees = float(trade.get("partial_fees_usd", 0.0))
+    part_bruto = part_neto + part_fees
+
+    total_bruto = bruto_rem + part_bruto
+    total_fees = fees_rem + part_fees
+    total_neto = neto_rem + part_neto
+
+    part_closed = float(trade.get("partial_closed_size_usd", 0.0))
+    initial_size = float(trade.get("initial_size_usd") or (size + part_closed))
+    if initial_size > 0:
+        pct = (total_neto / initial_size) * 100.0
+    else:
+        pct = (exit_px / entry - 1.0) * 100.0 * direction
     return {
-        "pnl_bruto_usd": round(bruto, 2),
-        "fees_estimadas_usd": round(fees, 2),
-        "pnl_neto_usd": round(neto, 2),
+        "pnl_bruto_usd": round(total_bruto, 2),
+        "fees_estimadas_usd": round(total_fees, 2),
+        "pnl_neto_usd": round(total_neto, 2),
         "pnl_pct": round(pct, 3),
     }
 
@@ -162,7 +178,14 @@ def compute_status(
         r = realized_pnl_usd(t, costs)
         realized += r["pnl_neto_usd"]
         fees_closed += r["fees_estimadas_usd"]
+
+    # Incorporar PnL ya realizado de cierres parciales (TP1) en operaciones aún abiertas
+    for t in opened:
+        realized += float(t.get("partial_realized_pnl_usd", 0.0))
+        fees_closed += float(t.get("partial_fees_usd", 0.0))
+
     realized = round(realized, 2)
+    fees_closed = round(fees_closed, 2)
 
     floating = 0.0
     fees_open_est = 0.0
@@ -171,7 +194,12 @@ def compute_status(
     for t in opened:
         if t.get("order_state") == "PENDING_FUTURE":
             floating_detail.append(
-                {"id": t.get("id"), "asset": t["asset"], "price_now": prices.get(t["asset"]), "pnl_usd": 0.0}
+                {
+                    "id": t.get("id"),
+                    "asset": t["asset"],
+                    "price_now": prices.get(t["asset"]),
+                    "pnl_usd": 0.0,
+                }
             )
             continue
         px = prices.get(t["asset"])

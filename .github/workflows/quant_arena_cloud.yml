@@ -1,0 +1,83 @@
+name: QUANT-ARENA Cloud Autopilot
+
+on:
+  schedule:
+    # Ejecución programada cada 25 minutos, 24/7 en la nube gratuita de GitHub
+    - cron: "*/25 * * * *"
+  workflow_dispatch: # Permite ejecución manual inmediata desde la web de GitHub o móvil
+
+# Permisos para commitear el historial del ledger y desplegar en GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: quant-arena-cloud
+  cancel-in-progress: false
+
+jobs:
+  run-agent:
+    name: Run Agent & Update State
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run QUANT-ARENA Agent
+        env:
+          QA_TELEGRAM_BOT_TOKEN: ${{ secrets.QA_TELEGRAM_BOT_TOKEN }}
+          QA_TELEGRAM_CHAT_ID: ${{ secrets.QA_TELEGRAM_CHAT_ID }}
+          QA_GEMINI_API_KEY: ${{ secrets.QA_GEMINI_API_KEY }}
+          QA_GEMINI_MODEL: ${{ secrets.QA_GEMINI_MODEL || 'gemini-2.5-flash' }}
+        run: |
+          python -m qa.cli agent run
+
+      - name: Commit and Push Ledger & Dashboard State
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add ledger/*.jsonl ledger/*.json ledger/*.csv reports/dashboard/index.html || true
+          if git diff --staged --quiet; then
+            echo "Sin cambios en el ledger o dashboard para commitear."
+          else
+            git commit -m "chore(cloud): auto-update ledger & dashboard [skip ci]"
+            git push
+          fi
+
+      - name: Ensure .nojekyll in Dashboard Artifact
+        run: |
+          touch reports/dashboard/.nojekyll
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "reports/dashboard"
+
+  deploy-pages:
+    name: Deploy Live Dashboard
+    needs: run-agent
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

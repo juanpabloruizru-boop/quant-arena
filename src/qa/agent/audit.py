@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 # Audit M6.3 — QUANT-ARENA v2
 """Auditoría del historial de operaciones del USUARIO y AUTOPILOT (M6.3).
 
@@ -11,21 +12,27 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-import pandas as pd
-
 from qa.agent.capital import realized_pnl_usd
+
+
+def _parse_ts(ts: str | None) -> datetime | None:
+    if not ts:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+    except Exception:
+        return None
 
 
 def _duration_txt(opened: str | None, closed: str | None) -> str:
     if not opened:
         return "—"
     try:
-        t0 = pd.Timestamp(opened)
-        t1 = pd.Timestamp(closed) if closed else pd.Timestamp.now(UTC)
-        if t0.tzinfo is None:
-            t0 = t0.tz_localize("UTC")
-        if t1.tzinfo is None:
-            t1 = t1.tz_localize("UTC")
+        t0 = _parse_ts(opened)
+        if not t0:
+            return "—"
+        t1 = _parse_ts(closed) or datetime.now(UTC)
         d = t1 - t0
         if d.days > 0:
             return f"{d.days}d {d.seconds // 3600}h"
@@ -167,7 +174,7 @@ def audit_summary(
         "max_drawdown_realizado_usd": max_drawdown_realizado_usd(rows),
         "trades_sin_sl": sum(1 for r in rows if r.get("r_multiplo") is None),
         "por_tag": por_tag,
-        "generado_utc": pd.Timestamp.now(UTC).isoformat(timespec="seconds"),
+        "generado_utc": datetime.now(UTC).isoformat(timespec="seconds"),
     }
 
 

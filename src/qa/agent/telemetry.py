@@ -10,11 +10,10 @@ las etiquetas del dashboard deben mantenerlo explícito.
 from __future__ import annotations
 
 import math
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
-import pandas as pd
 
 from qa.agent.geometry import rr_tendencia
 from qa.features.indicators import sma
@@ -22,7 +21,7 @@ from qa.features.indicators import sma
 ATR_WINDOW = 14
 
 
-def atr(df: pd.DataFrame, n: int = ATR_WINDOW) -> float:
+def atr(df: Any, n: int = ATR_WINDOW) -> float:
     """ATR(n) en unidades de precio (Wilder simplificado: media de TR)."""
     if len(df) < n + 1:
         return float("nan")
@@ -35,7 +34,7 @@ def atr(df: pd.DataFrame, n: int = ATR_WINDOW) -> float:
 
 
 def _frame_stats(
-    df: pd.DataFrame | None,
+    df: Any | None,
     fee_rt: float = 0.002,
     min_rr: float = 2.0,
     reward_mult: float = 3.0,
@@ -75,7 +74,7 @@ def _frame_stats(
 
 
 def watchlist_telemetry(
-    klines: dict[str, dict[str, pd.DataFrame]],
+    klines: dict[str, dict[str, Any]],
     fee_rt: float = 0.002,
     min_rr: float = 2.0,
     reward_mult: float = 3.0,
@@ -98,7 +97,7 @@ def watchlist_telemetry(
 
 
 def h1_levels(
-    daily: pd.DataFrame,
+    daily: Any,
     posicion_regla: float,
     capital_base_usd: float,
     fee_rt_spot: float = 0.002,
@@ -162,10 +161,10 @@ def trade_geometry(
     opened = trade.get("opened_at") or trade.get("ts_utc")
     if opened:
         try:
-            t0 = pd.Timestamp(opened)
+            t0 = datetime.fromisoformat(str(opened).replace("Z", "+00:00"))
             if t0.tzinfo is None:
-                t0 = t0.tz_localize("UTC")
-            delta = pd.Timestamp.now(UTC) - t0
+                t0 = t0.replace(tzinfo=UTC)
+            delta = datetime.now(UTC) - t0
             out["tiempo_abierta"] = f"{delta.days}d {delta.seconds // 3600}h"
         except (ValueError, TypeError):
             out["tiempo_abierta"] = "?"
@@ -180,7 +179,7 @@ def trade_geometry(
         d_tp = abs(float(tp) - price_now) / price_now
         out["rr_inicial_tp_sl"] = round(d_tp0 / d_sl0, 2) if d_sl0 > 0 else None
         out["rr_actual_tp_sl"] = round(d_tp / d_sl, 2) if d_sl > 0 else None
-        
+
         # R:R actual neto (con comisiones estimadas para entrada a precio actual)
         p_now = float(price_now)
         sl_val = float(sl)

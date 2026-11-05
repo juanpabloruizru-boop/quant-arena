@@ -5,7 +5,9 @@ REM  Uso: Doble clic en este archivo
 REM ============================================================
 
 cd /d "%~dp0"
-call .venv\Scripts\activate.bat
+if exist .venv\Scripts\activate.bat (
+    call .venv\Scripts\activate.bat
+)
 
 title QUANT-ARENA v2 Console
 color 0A

@@ -19,7 +19,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    import qa._pandas_compat as pd
 
 from qa.data.manifest import Manifest, write_json
 from qa.data.paths import curated_dir, holdout_sealed_dir

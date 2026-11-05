@@ -15,6 +15,14 @@ from typing import Any, Protocol
 import httpx
 
 SPOT_BASE = "https://api.binance.com"
+SPOT_FALLBACK_HOSTS = [
+    "https://api.binance.com",
+    "https://data-api.binance.vision",
+    "https://api1.binance.com",
+    "https://api2.binance.com",
+    "https://api3.binance.com",
+    "https://api4.binance.com",
+]
 FAPI_BASE = "https://fapi.binance.com"
 _HEADERS = {"User-Agent": "QUANT-ARENA-M1/1.0 (investigacion publica, solo lectura)"}
 
@@ -34,6 +42,7 @@ class BinancePublicClient:
         self._last_call = 0.0
         self.used_weight_1m = 0
         self.n_requests = 0
+        self._active_spot_base = SPOT_BASE
 
     # -- contexto -----------------------------------------------------------
     def __enter__(self) -> BinancePublicClient:
@@ -61,34 +70,63 @@ class BinancePublicClient:
             time.sleep(max(0.0, 61.0 - (time.time() % 60.0)))
 
     def get_json(self, base_url: str, path: str, params: dict[str, Any] | None = None) -> Any:
+        # Failover para Spot en caso de bloqueo geográfico (HTTP 451/403 o red en cloud de EE.UU.)
+        is_spot = (
+            base_url in SPOT_FALLBACK_HOSTS
+            or path.startswith("/api/v3")
+            or ("binance" in base_url and "fapi" not in base_url)
+        )
+        if is_spot:
+            candidates = [self._active_spot_base] + [
+                h for h in SPOT_FALLBACK_HOSTS if h != self._active_spot_base
+            ]
+        else:
+            candidates = [base_url]
+
         last_err: Exception | None = None
-        for attempt in range(self._max_retries):
-            self._throttle()
-            self._last_call = time.monotonic()
-            try:
-                resp = self._client.get(base_url + path, params=params)
-            except httpx.HTTPError as e:  # red/timeout: reintentar
-                last_err = e
-                time.sleep(min(2.0**attempt, 30.0))
-                continue
-            self.n_requests += 1
-            w = resp.headers.get("x-mbx-used-weight-1m") or resp.headers.get("x-mbx-used-weight")
-            if w is not None:
-                with contextlib.suppress(ValueError):
-                    self.used_weight_1m = int(w)
-            if resp.status_code == 200:
-                return resp.json()
-            if resp.status_code in (429, 418):
-                retry_after = resp.headers.get("retry-after")
-                sleep_s = float(retry_after) if retry_after else min(2.0**attempt * 10, 120.0)
-                last_err = RuntimeError(f"rate-limit {resp.status_code}: {resp.text[:150]}")
-                time.sleep(sleep_s)
-                continue
-            if resp.status_code >= 500:
-                last_err = RuntimeError(f"server {resp.status_code}: {resp.text[:150]}")
-                time.sleep(min(2.0**attempt, 30.0))
-                continue
-            raise RuntimeError(f"HTTP {resp.status_code} en {path}: {resp.text[:200]}")
+        for host in candidates:
+            for attempt in range(self._max_retries):
+                self._throttle()
+                self._last_call = time.monotonic()
+                try:
+                    resp = self._client.get(host + path, params=params)
+                except httpx.HTTPError as e:  # red/timeout: reintentar o conmutar
+                    last_err = e
+                    if attempt == self._max_retries - 1:
+                        break
+                    time.sleep(min(2.0**attempt, 30.0))
+                    continue
+                self.n_requests += 1
+                w = (
+                    resp.headers.get("x-mbx-used-weight-1m")
+                    or resp.headers.get("x-mbx-used-weight")
+                )
+                if w is not None:
+                    with contextlib.suppress(ValueError):
+                        self.used_weight_1m = int(w)
+                if resp.status_code == 200:
+                    if is_spot:
+                        self._active_spot_base = host
+                    return resp.json()
+                if resp.status_code in (451, 403):
+                    # Bloqueo geográfico en cloud (ej. runners US de GitHub Actions)
+                    preview = resp.text[:150]
+                    last_err = RuntimeError(
+                        f"HTTP {resp.status_code} (bloqueo geográfico) en {host}{path}: {preview}"
+                    )
+                    # Conmutar inmediatamente al siguiente host sin reintentos
+                    break
+                if resp.status_code in (429, 418):
+                    retry_after = resp.headers.get("retry-after")
+                    sleep_s = float(retry_after) if retry_after else min(2.0**attempt * 10, 120.0)
+                    last_err = RuntimeError(f"rate-limit {resp.status_code}: {resp.text[:150]}")
+                    time.sleep(sleep_s)
+                    continue
+                if resp.status_code >= 500:
+                    last_err = RuntimeError(f"server {resp.status_code}: {resp.text[:150]}")
+                    time.sleep(min(2.0**attempt, 30.0))
+                    continue
+                raise RuntimeError(f"HTTP {resp.status_code} en {path}: {resp.text[:200]}")
         raise RuntimeError(f"agotados {self._max_retries} reintentos en {path}: {last_err}")
 
     def get_bytes(self, url: str) -> bytes:

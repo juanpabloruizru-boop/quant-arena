@@ -15,6 +15,7 @@ __pycache__/
 # Datos (solo se versionan manifiestos, evidencias y codigo; los datos crudos/curados se regeneran con `qa data sync`)
 data/raw/*
 data/curated/*
+data/cache/*
 !data/raw/.gitkeep
 !data/curated/.gitkeep
 !data/manifests/

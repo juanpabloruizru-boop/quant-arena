@@ -15,7 +15,12 @@ echo [1/2] Conectando con Binance API y calculando decisiones...
 echo.
 
 REM Ejecutar el agente directamente con el Python del entorno virtual
-.venv\Scripts\python.exe -m qa.cli agent run
+if exist .venv\Scripts\python.exe (
+    set "PYTHON_EXE=.venv\Scripts\python.exe"
+) else (
+    set "PYTHON_EXE=python"
+)
+"%PYTHON_EXE%" -m qa.cli agent run
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -36,5 +41,5 @@ start "" "reports\dashboard\index.html"
 
 echo Listo. Puedes cerrar esta ventana.
 echo.
-timeout /t 5 >nul
+timeout /t 5 >nul 2>&1 || ping 127.0.0.1 -n 6 >nul
 exit /b 0

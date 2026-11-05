@@ -6,6 +6,9 @@
 
 watchlist: [BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT]
 
+# Blacklist Definitivo (activos excluidos o pausados por degradación o expectativa negativa):
+blacklist: [ZECUSDT, XRPUSDT]
+
 # Capital de REFERENCIA aportado por el usuario (Q2, autorizada por JP 2026-10-28).
 # Solo se usa para mostrar escala aritmetica (exposicion_regla x capital_ref),
 # etiquetada "Escala teorica sobre capital de referencia". No es sizing

@@ -12,7 +12,10 @@ from __future__ import annotations
 
 from typing import Any
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    import qa._pandas_compat as pd
 
 from qa.data.client import JsonClient
 from qa.data.timestamps import assert_consistent_units, to_ms, to_utc_datetime

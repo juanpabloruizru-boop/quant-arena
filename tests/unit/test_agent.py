@@ -310,7 +310,11 @@ def test_dashboard_language_guard() -> None:
     # Las operaciones nuevas están permitidas (sin guard de lenguaje)
     assert "ABRE LONG" in html_out or "ABRIR LONG" in html_out or "COMPRAR" in html_out
     # Decisiones del agente visibles
-    assert "🟢 ABIERTA EN CARTERA" in html_out or "🟡 DESCARTADA" in html_out or "🔴 BLOQUEADA" in html_out
+    assert (
+        "🟢 ABIERTA EN CARTERA" in html_out
+        or "🟡 DESCARTADA" in html_out
+        or "🔴 BLOQUEADA" in html_out
+    )
     # Barra de heat/risk visible
     assert "Riesgo en Mesa" in html_out
     # Sin PROHIBIDOS - ya no se lanza AssertionError por lenguaje

@@ -16,7 +16,11 @@ import math
 from typing import Any
 
 import numpy as np
-import pandas as pd
+
+try:
+    import pandas as pd
+except ImportError:
+    import qa._pandas_compat as pd
 
 from qa.features.indicators import (
     daily_funding_from_events,
@@ -81,6 +85,39 @@ def h1_state(daily: pd.DataFrame, sigma_obj: float = 0.25, window: int = 50) -> 
         "close_vs_sma50_pct": round((last_close / last_sma - 1.0) * 100, 2) if last_sma else None,
         "vol_realizada_20d_ann": round(float(rv[-1]), 4) if not math.isnan(float(rv[-1])) else None,
         "last_candle_utc": str(daily["open_time"].iloc[-1]),
+    }
+
+
+def btc_macro_regime(btc_daily: pd.DataFrame, window: int = 200) -> dict[str, Any]:
+    """Evalúa el Régimen Macro de Bitcoin (Close_BTC_1D vs SMA200_1D).
+
+    Si Close < SMA200: 'BAJISTA_INVIERNO' -> Veto total a compras (LONGs) en altcoins.
+    Si Close >= SMA200: 'ALCISTA_EXPANSIVO' -> Compras en altcoins habilitadas.
+    """
+    close = np.asarray(btc_daily["close"].to_numpy(), dtype=np.float64)
+    if len(close) < window:
+        sma_val = float(np.mean(close))
+    else:
+        sma_arr = sma(close, window)
+        sma_val = float(sma_arr[-1])
+
+    last_close = float(close[-1])
+    is_bull = last_close >= sma_val
+    regimen = "ALCISTA_EXPANSIVO" if is_bull else "BAJISTA_INVIERNO"
+    dist_pct = round((last_close / sma_val - 1.0) * 100.0, 2) if sma_val > 0 else 0.0
+
+    return {
+        "regimen": regimen,
+        "is_bullish": is_bull,
+        "veto_altcoin_longs": not is_bull,
+        "close_btc": last_close,
+        "sma200_btc": round(sma_val, 2),
+        "dist_sma200_pct": dist_pct,
+        "nota": (
+            "RÉGIMEN ALCISTA: LONGs agresivos habilitados"
+            if is_bull
+            else "INVIERNO CRIPTO: Prohibido comprar altcoins. Solo SHORTs o 100% Cash"
+        ),
     }
 
 

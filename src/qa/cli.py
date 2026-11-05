@@ -17,6 +17,9 @@ from typing import Annotated, Any
 
 import typer
 
+# Compatibilidad pandas -> pure Python/NumPy si C-extensions estan bloqueadas
+import qa._pandas_compat  # noqa: F401
+
 # Compatibilidad PyYAML -> ruamel.yaml (pure Python) para Python 3.15+ en Windows sin MSVC
 import qa._yaml_compat  # noqa: F401
 
@@ -170,12 +173,9 @@ def forward_run(
     import json as _json
     from datetime import datetime
 
-    import pandas as _pd
-
     from qa.agent.live import fetch_extra_daily, fetch_live
     from qa.agent.signals import compute_states
     from qa.data.paths import get_root
-    from qa.data.pit import membership_at
     from qa.forward.paper import (
         append_record,
         init_state,
@@ -189,8 +189,15 @@ def forward_run(
     now = datetime.now(UTC)
     pit_file = root / "data" / "curated" / "pit_universe.parquet"
     if pit_file.exists():
-        pit = _pd.read_parquet(pit_file)
-        members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+        try:
+            import pandas as _pd
+
+            from qa.data.pit import membership_at
+
+            pit = _pd.read_parquet(pit_file)
+            members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+        except Exception:
+            members = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
     else:
         members = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
     live = fetch_live(sorted({"BTCUSDT", "ETHUSDT"} | set(members)))
@@ -244,10 +251,11 @@ def agent_run() -> None:
     """One-shot: ingesta viva -> estados + contabilidad + tracker + vigilancia -> dashboard."""
     import json as _json
 
-    import pandas as _pd
     import yaml as _yaml
 
     from qa.agent.audit import run_audit
+    from qa.agent.autopilot import UNIVERSO as AUTOPILOT_UNIVERSO
+    from qa.agent.autopilot import gestionar_y_ejecutar
     from qa.agent.capital import (
         compute_status,
         load_capital,
@@ -257,14 +265,18 @@ def agent_run() -> None:
         verify_capital_chain,
     )
     from qa.agent.geometry import fee_roundtrip, fee_taker_side
-    from qa.agent.live import fetch_extra_daily, fetch_extra_multi, fetch_live, fetch_prices, last_price
+    from qa.agent.live import (
+        fetch_extra_daily,
+        fetch_extra_multi,
+        fetch_live,
+        fetch_prices,
+    )
     from qa.agent.news import calcular_termometro_macro, detect_shocks, fetch_news
-    from qa.agent.autopilot import gestionar_y_ejecutar, UNIVERSO as AUTOPILOT_UNIVERSO
     from qa.agent.signals import compute_states
+    from qa.agent.sniper import evaluar_y_gestionar_sniper, verify_sniper_chain
     from qa.agent.telemetry import atr, h1_levels, trade_geometry, watchlist_telemetry
     from qa.agent.tracker import diagnose, load_trades, verify_chain
     from qa.data.paths import get_root, reports_dir
-    from qa.data.pit import membership_at
     from qa.report.dashboard import render_dashboard
 
     root = get_root()
@@ -274,12 +286,19 @@ def agent_run() -> None:
     rr_cfg = load_rr_config(root)
     min_rr = rr_cfg["min_rr"]
     fee_rt_spot = fee_roundtrip("spot", costs)
-    
-    # Miembros del universo: usar el universo de Autopilot M6 directamente si no existe parquet antiguo
+
+    # Miembros del universo: usar universo de Autopilot M6 directamente si no existe parquet
     pit_file = root / "data" / "curated" / "pit_universe.parquet"
     if pit_file.exists():
-        pit = _pd.read_parquet(pit_file)
-        members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+        try:
+            import pandas as _pd
+
+            from qa.data.pit import membership_at
+
+            pit = _pd.read_parquet(pit_file)
+            members = membership_at(pit, _pd.Timestamp.now(tz=UTC), 10)
+        except Exception:
+            members = list(AUTOPILOT_UNIVERSO)
     else:
         members = list(AUTOPILOT_UNIVERSO)
 
@@ -301,31 +320,11 @@ def agent_run() -> None:
     # Obtener precios spot/perp instantáneos en vivo para ejecución estricta
     live_spot_prices = fetch_prices(all_syms)
 
-    # 1. EJECUCIÓN AUTÓNOMA DEL AGENTE (M6.3 Autopilot: Futuros + Spot)
-    # Gestiona operaciones existentes (TP1/TP2/SL) y abre nuevas (instant + programadas) con precio vivo estricto
-    cap_records_pre = load_capital(root)
-    cap_aportado = net_contributed(cap_records_pre) if cap_records_pre else 1000.0
-    auto_res = gestionar_y_ejecutar(
-        root,
-        live["klines"],
-        capital_total=cap_aportado,
-        max_open_ops=6,
-        live_prices=live_spot_prices,
-    )
-
-    # Recargar trades tras la intervención del autopilot
-    trades = load_trades(root)
-    ok, n_lines, msg = verify_chain(root)
-    if not ok:
-        typer.echo(f"CADENA DE OPERACIONES ROTA: {msg}")
-        raise typer.Exit(code=1)
-    okc, n_cap, msgc = verify_capital_chain(root)
-    if not okc:
-        typer.echo(f"CADENA DE CAPITAL ROTA: {msgc}")
-        raise typer.Exit(code=1)
-
+    # 1. EJECUCIÓN AUTÓNOMA DEL AGENTE (M6.3 Autopilot: Futuros + Spot + Jefe de Mesa IA)
+    # Gestiona operaciones existentes (TP1/TP2/SL) y abre nuevas con autorización de Gemini
+    trades_pre = load_trades(root)
     bases = sorted(
-        {t["asset"].replace("USDT", "") for t in trades}
+        {t["asset"].replace("USDT", "") for t in trades_pre}
         | {w.replace("USDT", "") for w in watchlist}
         | {s.replace("USDT", "") for s in AUTOPILOT_UNIVERSO}
     )
@@ -338,6 +337,47 @@ def agent_run() -> None:
     )
     shocks = detect_shocks(live["klines"], live["premium"], cfg.get("choques", {}))
     termometro = calcular_termometro_macro(news_items)
+
+    cap_records_pre = load_capital(root)
+    cap_aportado = net_contributed(cap_records_pre) if cap_records_pre else 1000.0
+    funding_dict = {
+        s: float(live.get("premium", {}).get(s, {}).get("last_funding_rate", 0.0))
+        for s in all_syms
+    }
+    auto_res = gestionar_y_ejecutar(
+        root,
+        live["klines"],
+        capital_total=cap_aportado,
+        max_open_ops=6,
+        live_prices=live_spot_prices,
+        funding_rates=funding_dict,
+        news_headlines=[n.title for n in news_items],
+    )
+
+    # 2. EJECUCIÓN AUTÓNOMA MOTOR 2: SNIPER INTRADÍA (1H - STOCKBEE / VCP)
+    sniper_res = evaluar_y_gestionar_sniper(
+        root,
+        live["klines"],
+        live_spot_prices,
+        starting_capital=1000.0,
+        news_items=news_items,
+        funding_rates=funding_dict,
+    )
+
+    # Recargar trades tras la intervención del autopilot
+    trades = load_trades(root)
+    ok, n_lines, msg = verify_chain(root)
+    if not ok:
+        typer.echo(f"CADENA DE OPERACIONES ROTA: {msg}")
+        raise typer.Exit(code=1)
+    okc, n_cap, msgc = verify_capital_chain(root)
+    if not okc:
+        typer.echo(f"CADENA DE CAPITAL ROTA: {msgc}")
+        raise typer.Exit(code=1)
+    ok_snip, n_snip, msg_snip = verify_sniper_chain(root)
+    if not ok_snip:
+        typer.echo(f"CADENA DE SNIPER ROTA: {msg_snip}")
+        raise typer.Exit(code=1)
 
     # telemetria descriptiva + geometria R:R del filtro de disciplina (M5b)
     tele = watchlist_telemetry(
@@ -378,6 +418,11 @@ def agent_run() -> None:
     states["trends"] = trends_map
     states["autopilot_scores"] = auto_res.get("scores", {})
     states["termometro_macro"] = termometro
+    states["ai_brain"] = auto_res.get("ai_brain", {})
+    states["market_health"] = auto_res.get("market_health", {})
+    states["circuit_breaker"] = auto_res.get("circuit_breaker", {})
+    states["sniper"] = sniper_res
+    states["kronos"] = auto_res.get("kronos", {})
 
     # contabilidad de capital del usuario (M5b): equity vivo = base de la escala teorica
     cap_records = load_capital(root)
@@ -409,7 +454,11 @@ def agent_run() -> None:
     diags = []
     for t in trades:
         if t.get("status") != "open":
-            diags.append({**diagnose(t, None, "", []), "example": t.get("example", False), "status": "closed"})
+            diags.append({
+                **diagnose(t, None, "", []),
+                "example": t.get("example", False),
+                "status": "closed",
+            })
             continue
         px = prices_map.get(t["asset"])
         base = t["asset"].replace("USDT", "")
@@ -480,7 +529,8 @@ def agent_run() -> None:
     audit_fut = audit_futures(trades, costs, live_prices=prices_map)
     audit_sp = audit_spot(spot_plans)
 
-    # Exportación automática de los 3 CSVs estadísticos (audit_futures.csv, audit_spot.csv, trades_statistical_log.csv)
+    # Exportación automática de los 3 CSVs estadísticos
+    # (audit_futures.csv, audit_spot.csv, trades_statistical_log.csv)
     try:
         import csv as _csv
 
@@ -617,7 +667,8 @@ def agent_run() -> None:
             ]
         },
     }
-    calc_cfg = {
+    # calc_cfg preparado para panel de dimensionamiento si aplica
+    _ = {
         "equity_usd": capital_base,
         "equity_origen": capital_origen,
         "min_rr": min_rr,
@@ -642,6 +693,7 @@ def agent_run() -> None:
         spot_plans=spot_plans,
         audit_futuros=audit_fut,
         audit_spot_data=audit_sp,
+        sniper_data=sniper_res,
     )
     outdir = reports_dir(root) / "dashboard"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -649,6 +701,11 @@ def agent_run() -> None:
     typer.echo(f"dashboard -> {outdir / 'index.html'}")
     typer.echo(f"operaciones: {len(trades)} (cadena: {n_lines} lineas, {msg})")
     typer.echo(f"capital: {n_cap} movimientos (cadena: {msgc})")
+    snip_eq = sniper_res.get("equity_status", {})
+    typer.echo(
+        f"sniper 1H: {len(sniper_res.get('open_trades', []))} ops abiertas "
+        f"(cadena: {n_snip} reg, equity ${snip_eq.get('total_equity', 1000.0):.2f})"
+    )
     if not capital_status["sin_registros"]:
         typer.echo(
             "patrimonio: aportado "
@@ -679,6 +736,62 @@ def agent_run() -> None:
             default=str,
         )
     )
+
+
+@agent_app.command("setup-telegram")
+def agent_setup_telegram(
+    token: Annotated[
+        str | None,
+        typer.Option("--token", help="Token del bot (lee QA_TELEGRAM_BOT_TOKEN por defecto)"),
+    ] = None,
+    chat_id: Annotated[
+        str | None, typer.Option("--chat-id", help="Chat ID específico del usuario (opcional)")
+    ] = None,
+    timeout: Annotated[
+        int, typer.Option("--timeout", help="Segundos máximos de espera para detectar mensaje")
+    ] = 30,
+) -> None:
+    """Configuración automática del bot de Telegram y persistencia en .env."""
+    import os
+
+    from qa.agent.setup_telegram import setup_telegram
+
+    resolved_token = token or os.environ.get("QA_TELEGRAM_BOT_TOKEN")
+    if not resolved_token:
+        typer.echo("[ERROR] Debe indicar --token <TOKEN> o definir QA_TELEGRAM_BOT_TOKEN en .env")
+        raise typer.Exit(code=1)
+
+    ok = setup_telegram(token=resolved_token, chat_id=chat_id, timeout_sec=timeout)
+    if not ok:
+        raise typer.Exit(code=1)
+
+
+@agent_app.command("watch")
+def agent_watch(
+    interval: Annotated[
+        int, typer.Option("--interval", help="Segundos entre ciclos de supervisión")
+    ] = 30,
+) -> None:
+    """Supervisión continua 24/7 con prevención de suspensión en Windows (Anti-Sleep)."""
+    import time
+
+    from qa.agent.anti_sleep import prevent_windows_sleep
+
+    anti_sleep = prevent_windows_sleep()
+    if anti_sleep:
+        typer.echo("[OK] Modo Anti-Sueño activado: Windows no suspenderá la CPU.")
+    else:
+        typer.echo("[i] Modo Anti-Sueño no aplicable en este entorno.")
+
+    typer.echo(f"Iniciando bucle de supervisión continua (ciclo cada {interval}s)...")
+    try:
+        while True:
+            agent_run()
+            typer.echo(f"\n[OK] Ciclo completado. Próxima actualización en {interval}s...")
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        typer.echo("\nSupervisión finalizada por el usuario.")
+        raise typer.Exit(code=0) from None
 
 
 @trade_app.command("open")
@@ -1211,10 +1324,12 @@ def capital_reset_examples(
 
 @capital_app.command("hard-reset")
 def capital_hard_reset(
-    amount: Annotated[float, typer.Option("--amount", help="Capital inicial simulado")] = 1000.0,
-    note: Annotated[str, typer.Option("--note", help="Nota de reinicio")] = "Capital inicial limpio simulado",
+    amount: Annotated[float, typer.Option("--amount", help="Capital simulado")] = 1000.0,
+    note: Annotated[str, typer.Option("--note", help="Nota")] = "Capital inicial limpio simulado",
 ) -> None:
-    """Reinicia limpiamente tanto el libro de Futuros como el de Spot con el capital indicado ($1,000 USD)."""
+    """Reinicia limpiamente tanto el libro de Futuros como Spot con capital indicado ($1,000)."""
+    import contextlib
+
     from qa.agent.capital import set_capital
     from qa.data.paths import get_root
 
@@ -1237,12 +1352,10 @@ def capital_hard_reset(
     for csv_file in ("trades_statistical_log.csv", "audit_futures.csv", "audit_spot.csv"):
         p = root / "ledger" / csv_file
         if p.exists():
-            try:
+            with contextlib.suppress(Exception):
                 p.unlink()
-            except Exception:
-                pass
 
-    typer.echo(f"hard-reset completado con éxito: capital=${amount:,.2f} USD (libros de Futuros y Spot reiniciados)")
+    typer.echo(f"hard-reset completado: capital=${amount:,.2f} USD (Futuros y Spot reiniciados)")
 
 
 if __name__ == "__main__":

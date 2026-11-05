@@ -1,0 +1,42 @@
+{
+  "BTCUSDT": {
+    "veredicto": "ORDEN_LIMITE_PULLBACK",
+    "confianza": 72,
+    "precio_entrada_sugerido": 78603.18,
+    "razonamiento": "Precio extendido a la baja tras vela de -5.4%. Entrar ahora es 'chasing' cerca del Swing Low. El ATR extremo y macro alcista aumentan riesgo de squeeze; esperamos retroceso a EMA21 para validar resistencia antes de entrar short.",
+    "timestamp_utc": "2026-11-05T19:33:54+00:00",
+    "symbol": "BTCUSDT",
+    "direction": "SHORT",
+    "model_used": "gemini-3-flash-preview"
+  },
+  "ETHUSDT": {
+    "veredicto": "ORDEN_LIMITE_PULLBACK",
+    "confianza": 82,
+    "precio_entrada_sugerido": 2332.48,
+    "razonamiento": "Vela 15 muestra capitulación (-7%) y absorción inferior. Entrar SHORT ahora es 'chasing'. El precio está muy extendido respecto a la EMA21. Macro BTC alcista y Kronos sugieren rebote inminente. Esperar retroceso a la EMA21.",
+    "timestamp_utc": "2026-11-05T19:34:02+00:00",
+    "symbol": "ETHUSDT",
+    "direction": "SHORT",
+    "model_used": "gemini-3-flash-preview"
+  },
+  "SOLUSDT": {
+    "veredicto": "VETAR_TRAMPA",
+    "confianza": 88,
+    "precio_entrada_sugerido": 94.29,
+    "razonamiento": "Vela 15 (-6.5%) extremadamente extendida respecto a EMA21. Precio colapsando sobre el Swing Low (89.22) con BTC alcista y Kronos proyectando rebote. Entrar en SHORT aquí es vender soporte (chasing) con alto riesgo de bear trap.",
+    "timestamp_utc": "2026-11-05T19:34:12+00:00",
+    "symbol": "SOLUSDT",
+    "direction": "SHORT",
+    "model_used": "gemini-3-flash-preview"
+  },
+  "SUIUSDT": {
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 82,
+    "precio_entrada_sugerido": 0.8576,
+    "razonamiento": "Vela 15 muestra fuerte expansión bajista (-7.6% cuerpo) perforando soportes con alta volatilidad (ATR percentil 89%). Kronos proyecta continuación bajista. Entrada limpia en el breakdown sin perseguir.",
+    "timestamp_utc": "2026-11-05T19:34:16+00:00",
+    "symbol": "SUIUSDT",
+    "direction": "SHORT",
+    "model_used": "gemini-3.5-flash-lite"
+  }
+}
