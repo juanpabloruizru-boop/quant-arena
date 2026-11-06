@@ -1,6 +1,11 @@
 name: QUANT-ARENA Cloud Autopilot
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "ledger/**"
+      - "reports/**"
   schedule:
     # Ejecución programada cada 25 minutos, 24/7 en la nube gratuita de GitHub
     - cron: "*/25 * * * *"
