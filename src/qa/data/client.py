@@ -8,26 +8,30 @@
 from __future__ import annotations
 
 import contextlib
+import os
 import time
 from types import TracebackType
 from typing import Any, Protocol
 
 import httpx
 
-SPOT_BASE = "https://api.binance.com"
+IS_CLOUD = os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("CI") == "true"
+
 SPOT_FALLBACK_HOSTS = [
-    "https://api.binance.com",
-    "https://data-api.binance.vision",
+    "https://data-api.binance.vision" if IS_CLOUD else "https://api.binance.com",
+    "https://api.binance.com" if IS_CLOUD else "https://data-api.binance.vision",
     "https://api1.binance.com",
     "https://api2.binance.com",
     "https://api3.binance.com",
     "https://api4.binance.com",
 ]
+SPOT_BASE = SPOT_FALLBACK_HOSTS[0]
 FAPI_BASE = "https://fapi.binance.com"
 _HEADERS = {"User-Agent": "QUANT-ARENA-M1/1.0 (investigacion publica, solo lectura)"}
 
-
 class BinancePublicClient:
+    _active_process_spot_base: str | None = None
+
     def __init__(
         self,
         weight_budget_per_min: int = 4200,
@@ -42,7 +46,9 @@ class BinancePublicClient:
         self._last_call = 0.0
         self.used_weight_1m = 0
         self.n_requests = 0
-        self._active_spot_base = SPOT_BASE
+        self._active_spot_base = (
+            BinancePublicClient._active_process_spot_base or SPOT_BASE
+        )
 
     # -- contexto -----------------------------------------------------------
     def __enter__(self) -> BinancePublicClient:
@@ -107,6 +113,7 @@ class BinancePublicClient:
                 if resp.status_code == 200:
                     if is_spot:
                         self._active_spot_base = host
+                        BinancePublicClient._active_process_spot_base = host
                     return resp.json()
                 if resp.status_code in (451, 403):
                     # Bloqueo geográfico en cloud (ej. runners US de GitHub Actions)
@@ -114,6 +121,11 @@ class BinancePublicClient:
                     last_err = RuntimeError(
                         f"HTTP {resp.status_code} (bloqueo geográfico) en {host}{path}: {preview}"
                     )
+                    if is_spot and host != "https://data-api.binance.vision":
+                        BinancePublicClient._active_process_spot_base = (
+                            "https://data-api.binance.vision"
+                        )
+                        self._active_spot_base = "https://data-api.binance.vision"
                     # Conmutar inmediatamente al siguiente host sin reintentos
                     break
                 if resp.status_code in (429, 418):

@@ -280,6 +280,7 @@ def agent_run() -> None:
     from qa.report.dashboard import render_dashboard
 
     root = get_root()
+    (root / "ledger").mkdir(parents=True, exist_ok=True)
     cfg = _yaml.safe_load((root / "config" / "watchlist.yaml").read_text(encoding="utf-8"))
     watchlist = list(cfg["watchlist"])
     costs = load_costs(root)

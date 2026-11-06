@@ -1,42 +1,42 @@
 {
   "BTCUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 72,
-    "precio_entrada_sugerido": 78603.18,
-    "razonamiento": "Precio extendido a la baja tras vela de -5.4%. Entrar ahora es 'chasing' cerca del Swing Low. El ATR extremo y macro alcista aumentan riesgo de squeeze; esperamos retroceso a EMA21 para validar resistencia antes de entrar short.",
-    "timestamp_utc": "2026-11-05T19:33:54+00:00",
+    "confianza": 82,
+    "precio_entrada_sugerido": 77460.86,
+    "razonamiento": "Buscamos SHORT tras fuerte caída, pero el precio actual está bajo EMA9/21 con RSI en 38. Evitar chase bajista cerca del soporte local. Esperar pullback a EMA21.",
+    "timestamp_utc": "2026-11-06T17:00:59+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3-flash-preview"
+    "model_used": "gemini-3.5-flash-lite"
   },
   "ETHUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 82,
-    "precio_entrada_sugerido": 2332.48,
-    "razonamiento": "Vela 15 muestra capitulación (-7%) y absorción inferior. Entrar SHORT ahora es 'chasing'. El precio está muy extendido respecto a la EMA21. Macro BTC alcista y Kronos sugieren rebote inminente. Esperar retroceso a la EMA21.",
-    "timestamp_utc": "2026-11-05T19:34:02+00:00",
+    "confianza": 75,
+    "precio_entrada_sugerido": 2291.71,
+    "razonamiento": "Precio extendido de EMA21 con absorción en mínimos (mechas largas). Kronos prevé rebote y el macro BTC es alcista. Shortear aquí es 'chasing' el bottom. Buscamos entrada óptima en el pullback a la EMA21 para evitar reversión.",
+    "timestamp_utc": "2026-11-06T17:01:06+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "gemini-3-flash-preview"
   },
   "SOLUSDT": {
     "veredicto": "VETAR_TRAMPA",
-    "confianza": 88,
-    "precio_entrada_sugerido": 94.29,
-    "razonamiento": "Vela 15 (-6.5%) extremadamente extendida respecto a EMA21. Precio colapsando sobre el Swing Low (89.22) con BTC alcista y Kronos proyectando rebote. Entrar en SHORT aquí es vender soporte (chasing) con alto riesgo de bear trap.",
-    "timestamp_utc": "2026-11-05T19:34:12+00:00",
+    "confianza": 85,
+    "precio_entrada_sugerido": 92.45,
+    "razonamiento": "Macro de BTC alcista y proyecciones de Kronos apuntan a rebote (+0.50%). Para un SHORT, el precio está rebotando desde el soporte cerca de 88-89 y Kronos da 80% probabilidad alcista. Se veta por contradicción macro/oráculo.",
+    "timestamp_utc": "2026-11-06T17:01:26+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3-flash-preview"
+    "model_used": "gemini-3.5-flash-lite"
   },
   "SUIUSDT": {
-    "veredicto": "EJECUTAR_AHORA",
-    "confianza": 82,
-    "precio_entrada_sugerido": 0.8576,
-    "razonamiento": "Vela 15 muestra fuerte expansión bajista (-7.6% cuerpo) perforando soportes con alta volatilidad (ATR percentil 89%). Kronos proyecta continuación bajista. Entrada limpia en el breakdown sin perseguir.",
-    "timestamp_utc": "2026-11-05T19:34:16+00:00",
+    "veredicto": "ORDEN_LIMITE_PULLBACK",
+    "confianza": 78,
+    "precio_entrada_sugerido": 0.88,
+    "razonamiento": "Estructura bajista bajo EMA21 y SMA50. Evitamos 'chasing' tras el rebote de las últimas velas. Buscamos entrada óptima en testeo de la EMA21 (0.88) para capitalizar la proyección de Kronos con un ratio riesgo/beneficio superior.",
+    "timestamp_utc": "2026-11-06T17:01:36+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3.5-flash-lite"
+    "model_used": "gemini-3-flash-preview"
   }
 }

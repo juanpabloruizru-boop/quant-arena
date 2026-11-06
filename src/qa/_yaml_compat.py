@@ -1,77 +1,70 @@
-"""Compatibilidad PyYAML -> ruamel.yaml (pure Python) para Python 3.15+ en Windows sin MSVC.
+"""Compatibilidad PyYAML <-> ruamel.yaml.
 
-Este módulo proporciona la API de PyYAML (yaml.safe_load, yaml.safe_dump, etc.)
-usando ruamel.yaml como backend puro en Python. Se importa automáticamente al
-iniciar la CLI (qa/cli.py).
+Si PyYAML está instalado y operativo (Linux, macOS, Windows estándar), lo usa directamente.
+Si no (ej. Windows con Python 3.15 sin MSVC), recurre a ruamel.yaml (pure Python) como fallback.
 """
 from __future__ import annotations
 
 import sys
 from typing import Any, TextIO
 
-# ruamel.yaml es pure Python, no requiere compilación C
-from ruamel.yaml import YAML as _RuamelYAML
+try:
+    import yaml as _orig_yaml
+    _HAS_PYYAML = True
+except (ImportError, OSError):
+    _orig_yaml = None
+    _HAS_PYYAML = False
 
-# Instancia configurada para comportamiento seguro (equivalente a safe_load)
-_ruamel = _RuamelYAML(typ="safe", pure=True)
-_ruamel.default_flow_style = False
-_ruamel.allow_unicode = True
+if _HAS_PYYAML and _orig_yaml is not None:
+    safe_load = _orig_yaml.safe_load
+    safe_load_all = getattr(_orig_yaml, "safe_load_all", None)
+    safe_dump = _orig_yaml.safe_dump
+    dump = _orig_yaml.dump
+    load = getattr(_orig_yaml, "safe_load", None)
+    YAMLError = _orig_yaml.YAMLError
+    MarkedYAMLError = getattr(_orig_yaml, "MarkedYAMLError", YAMLError)
+    __version__ = getattr(_orig_yaml, "__version__", "6.0.2")
+    __with_libyaml__ = getattr(_orig_yaml, "__with_libyaml__", False)
+else:
+    try:
+        from ruamel.yaml import YAML as _RuamelYAML
 
+        _ruamel = _RuamelYAML(typ="safe", pure=True)
+        _ruamel.default_flow_style = False
+        _ruamel.allow_unicode = True
 
-def safe_load(stream: str | TextIO) -> Any:
-    """Carga YAML de forma segura (equivale a yaml.safe_load)."""
-    if hasattr(stream, "read"):
-        return _ruamel.load(stream)
-    return _ruamel.load(stream)
+        def safe_load(stream: str | TextIO) -> Any:
+            """Carga YAML de forma segura (equivale a yaml.safe_load)."""
+            return _ruamel.load(stream)
 
+        def safe_load_all(stream: str | TextIO) -> Any:
+            """Carga múltiples documentos YAML (equivale a yaml.safe_load_all)."""
+            return _ruamel.load_all(stream)
 
-def safe_load_all(stream: str | TextIO) -> Any:
-    """Carga múltiples documentos YAML (equivale a yaml.safe_load_all)."""
-    if hasattr(stream, "read"):
-        return _ruamel.load_all(stream)
-    return _ruamel.load_all(stream)
+        def safe_dump(data: Any, stream: TextIO | None = None, **kw: Any) -> str | None:
+            """Vuelca a YAML de forma segura (equivale a yaml.safe_dump)."""
+            allowed = {"default_flow_style", "allow_unicode", "indent", "width"}
+            filtered = {k: v for k, v in kw.items() if k in allowed}
+            if stream is None:
+                return str(_ruamel.dump(data, **filtered))
+            _ruamel.dump(data, stream, **filtered)
+            return None
 
+        def dump(data: Any, stream: TextIO | None = None, **kw: Any) -> str | None:
+            return safe_dump(data, stream, **kw)
 
-def safe_dump(data: Any, stream: TextIO | None = None, **kw: Any) -> str | None:
-    """Vuelca a YAML de forma segura (equivale a yaml.safe_dump)."""
-    # ruamel.yaml no acepta todos los kwargs de PyYAML; filtramos los comunes
-    allowed = {"default_flow_style", "allow_unicode", "indent", "width"}
-    filtered = {k: v for k, v in kw.items() if k in allowed}
-    if stream is None:
-        return str(_ruamel.dump(data, **filtered))
-    _ruamel.dump(data, stream, **filtered)
-    return None
+        def load(stream: str | TextIO, Loader: Any = None) -> Any:
+            return safe_load(stream)
 
+        class YAMLError(Exception):
+            pass
 
-def dump(data: Any, stream: TextIO | None = None, **kw: Any) -> str | None:
-    """Alias para safe_dump (compatibilidad)."""
-    return safe_dump(data, stream, **kw)
+        class MarkedYAMLError(YAMLError):
+            pass
 
+        __version__ = "6.0.3-compat"
+        __with_libyaml__ = False
 
-def load(stream: str | TextIO, Loader: Any = None) -> Any:
-    """Carga YAML (equivale a yaml.load con Loader seguro por defecto)."""
-    if Loader is not None:
-        # Ignoramos Loader personalizado por seguridad; usamos safe
+        sys.modules["yaml"] = sys.modules[__name__]
+    except (ImportError, OSError):
         pass
-    return safe_load(stream)
-
-
-# Exponer clases de error para compatibilidad
-class YAMLError(Exception):
-    pass
-
-
-class MarkedYAMLError(YAMLError):
-    pass
-
-
-# Constantes de versión
-__version__ = "6.0.3-compat"
-__with_libyaml__ = False
-
-# Inyectar en sys.modules para que `import yaml` funcione
-sys.modules["yaml"] = sys.modules[__name__]
-
-
-# Auto-inyección opcional: si se importa este módulo, yaml queda disponible
-# Uso: `import qa._yaml_compat` al inicio de cli.py

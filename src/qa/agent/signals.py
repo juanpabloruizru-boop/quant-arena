@@ -128,7 +128,10 @@ def h2_state(members: list[str], klines_daily: dict[str, pd.DataFrame]) -> dict[
         if df is None or df.empty:
             continue
         d = df.copy()
-        d["week"] = d["open_time"].dt.to_period("W-SUN").dt.start_time
+        open_col = d["open_time"]
+        if hasattr(open_col.dt, "tz") and open_col.dt.tz is not None:
+            open_col = open_col.dt.tz_localize(None)
+        d["week"] = open_col.dt.to_period("W-SUN").dt.start_time
         wk = d.groupby("week")["close"].last()
         closes[sym] = wk
     panel = pd.DataFrame(closes)

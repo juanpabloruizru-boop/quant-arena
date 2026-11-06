@@ -20,11 +20,16 @@ jobs:
   run-agent:
     name: Run Agent & Update State
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -43,6 +48,7 @@ jobs:
           QA_TELEGRAM_CHAT_ID: ${{ secrets.QA_TELEGRAM_CHAT_ID }}
           QA_GEMINI_API_KEY: ${{ secrets.QA_GEMINI_API_KEY }}
           QA_GEMINI_MODEL: ${{ secrets.QA_GEMINI_MODEL || 'gemini-2.5-flash' }}
+          PYTHONUNBUFFERED: "1"
         run: |
           python -m qa.cli agent run
 
@@ -50,12 +56,13 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add ledger/*.jsonl ledger/*.json ledger/*.csv reports/dashboard/index.html || true
+          git add ledger/ reports/dashboard/index.html || true
           if git diff --staged --quiet; then
             echo "Sin cambios en el ledger o dashboard para commitear."
           else
             git commit -m "chore(cloud): auto-update ledger & dashboard [skip ci]"
-            git push
+            git pull --rebase origin main || true
+            git push origin main
           fi
 
       - name: Ensure .nojekyll in Dashboard Artifact
@@ -74,6 +81,9 @@ jobs:
     name: Deploy Live Dashboard
     needs: run-agent
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
