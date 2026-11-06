@@ -1,42 +1,42 @@
 {
   "BTCUSDT": {
-    "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 82,
-    "precio_entrada_sugerido": 77460.86,
-    "razonamiento": "Buscamos SHORT tras fuerte caída, pero el precio actual está bajo EMA9/21 con RSI en 38. Evitar chase bajista cerca del soporte local. Esperar pullback a EMA21.",
-    "timestamp_utc": "2026-11-06T17:00:59+00:00",
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 80,
+    "precio_entrada_sugerido": 75893.76,
+    "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
+    "timestamp_utc": "2026-11-06T21:06:46+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3.5-flash-lite"
+    "model_used": "local_heuristics"
   },
   "ETHUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 75,
-    "precio_entrada_sugerido": 2291.71,
-    "razonamiento": "Precio extendido de EMA21 con absorción en mínimos (mechas largas). Kronos prevé rebote y el macro BTC es alcista. Shortear aquí es 'chasing' el bottom. Buscamos entrada óptima en el pullback a la EMA21 para evitar reversión.",
-    "timestamp_utc": "2026-11-06T17:01:06+00:00",
+    "confianza": 78,
+    "precio_entrada_sugerido": 2282.05,
+    "razonamiento": "Short extendido -2.5% bajo EMA21. Esperar rebote correctivo a 2282.05 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-06T21:06:46+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3-flash-preview"
+    "model_used": "local_heuristics"
   },
   "SOLUSDT": {
-    "veredicto": "VETAR_TRAMPA",
-    "confianza": 85,
-    "precio_entrada_sugerido": 92.45,
-    "razonamiento": "Macro de BTC alcista y proyecciones de Kronos apuntan a rebote (+0.50%). Para un SHORT, el precio está rebotando desde el soporte cerca de 88-89 y Kronos da 80% probabilidad alcista. Se veta por contradicción macro/oráculo.",
-    "timestamp_utc": "2026-11-06T17:01:26+00:00",
-    "symbol": "SOLUSDT",
-    "direction": "SHORT",
-    "model_used": "gemini-3.5-flash-lite"
-  },
-  "SUIUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 0.88,
-    "razonamiento": "Estructura bajista bajo EMA21 y SMA50. Evitamos 'chasing' tras el rebote de las últimas velas. Buscamos entrada óptima en testeo de la EMA21 (0.88) para capitalizar la proyección de Kronos con un ratio riesgo/beneficio superior.",
-    "timestamp_utc": "2026-11-06T17:01:36+00:00",
+    "precio_entrada_sugerido": 92.06,
+    "razonamiento": "Short extendido -2.4% bajo EMA21. Esperar rebote correctivo a 92.06 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-06T21:06:46+00:00",
+    "symbol": "SOLUSDT",
+    "direction": "SHORT",
+    "model_used": "local_heuristics"
+  },
+  "SUIUSDT": {
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 80,
+    "precio_entrada_sugerido": 0.8725,
+    "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
+    "timestamp_utc": "2026-11-06T21:06:46+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3-flash-preview"
+    "model_used": "local_heuristics"
   }
 }
