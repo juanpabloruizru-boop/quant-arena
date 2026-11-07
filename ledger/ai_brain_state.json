@@ -2,9 +2,9 @@
   "BTCUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 75936.02,
+    "precio_entrada_sugerido": 75818.1,
     "razonamiento": "Estructura alcista sana apoyada sobre EMA21 sin sobrecompra.",
-    "timestamp_utc": "2026-11-07T14:12:51+00:00",
+    "timestamp_utc": "2026-11-07T18:54:56+00:00",
     "symbol": "BTCUSDT",
     "direction": "LONG",
     "model_used": "local_heuristics"
@@ -12,9 +12,9 @@
   "ETHUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 2268.57,
-    "razonamiento": "Short extendido -1.2% bajo EMA21. Esperar rebote correctivo a 2268.57 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-07T14:12:51+00:00",
+    "precio_entrada_sugerido": 2265.32,
+    "razonamiento": "Short extendido -1.4% bajo EMA21. Esperar rebote correctivo a 2265.32 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-07T18:54:56+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -22,9 +22,9 @@
   "SOLUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 91.38,
-    "razonamiento": "Short extendido -1.8% bajo EMA21. Esperar rebote correctivo a 91.38 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-07T14:12:51+00:00",
+    "precio_entrada_sugerido": 91.2,
+    "razonamiento": "Short extendido -1.8% bajo EMA21. Esperar rebote correctivo a 91.2 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-07T18:54:56+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -32,9 +32,9 @@
   "SUIUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 0.8767,
-    "razonamiento": "Short extendido -1.9% bajo EMA21. Esperar rebote correctivo a 0.8767 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-07T14:12:51+00:00",
+    "precio_entrada_sugerido": 0.8748,
+    "razonamiento": "Short extendido -1.7% bajo EMA21. Esperar rebote correctivo a 0.8748 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-07T18:54:56+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
