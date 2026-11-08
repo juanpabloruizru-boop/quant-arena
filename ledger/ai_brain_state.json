@@ -2,9 +2,9 @@
   "BTCUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 80,
-    "precio_entrada_sugerido": 75921.58,
+    "precio_entrada_sugerido": 76057.63,
     "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
-    "timestamp_utc": "2026-11-08T08:39:10+00:00",
+    "timestamp_utc": "2026-11-08T15:37:44+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -12,9 +12,9 @@
   "ETHUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 80,
-    "precio_entrada_sugerido": 2238.16,
+    "precio_entrada_sugerido": 2240.94,
     "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
-    "timestamp_utc": "2026-11-08T08:39:10+00:00",
+    "timestamp_utc": "2026-11-08T15:37:44+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -22,9 +22,9 @@
   "SOLUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 80,
-    "precio_entrada_sugerido": 89.22,
+    "precio_entrada_sugerido": 89.68,
     "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
-    "timestamp_utc": "2026-11-08T08:39:10+00:00",
+    "timestamp_utc": "2026-11-08T15:37:44+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -32,9 +32,9 @@
   "SUIUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 80,
-    "precio_entrada_sugerido": 0.8527,
+    "precio_entrada_sugerido": 0.8504,
     "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
-    "timestamp_utc": "2026-11-08T08:39:10+00:00",
+    "timestamp_utc": "2026-11-08T15:37:44+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
