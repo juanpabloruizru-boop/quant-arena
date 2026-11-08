@@ -2,9 +2,9 @@
   "BTCUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 80,
-    "precio_entrada_sugerido": 75764.0,
+    "precio_entrada_sugerido": 75921.58,
     "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
-    "timestamp_utc": "2026-11-08T01:53:42+00:00",
+    "timestamp_utc": "2026-11-08T08:39:10+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -12,9 +12,9 @@
   "ETHUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 80,
-    "precio_entrada_sugerido": 2234.98,
+    "precio_entrada_sugerido": 2238.16,
     "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
-    "timestamp_utc": "2026-11-08T01:53:42+00:00",
+    "timestamp_utc": "2026-11-08T08:39:10+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -22,19 +22,19 @@
   "SOLUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 80,
-    "precio_entrada_sugerido": 89.14,
+    "precio_entrada_sugerido": 89.22,
     "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
-    "timestamp_utc": "2026-11-08T01:53:42+00:00",
+    "timestamp_utc": "2026-11-08T08:39:10+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
   },
   "SUIUSDT": {
-    "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 0.8716,
-    "razonamiento": "Short extendido -2.6% bajo EMA21. Esperar rebote correctivo a 0.8716 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-08T01:53:42+00:00",
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 80,
+    "precio_entrada_sugerido": 0.8527,
+    "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
+    "timestamp_utc": "2026-11-08T08:39:10+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
