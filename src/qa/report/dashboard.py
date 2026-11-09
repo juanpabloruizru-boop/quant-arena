@@ -480,10 +480,46 @@ footer{max-width:1600px;margin:0 auto;padding:30px 20px 40px;color:var(--mut);fo
 .drawer-badge{font-size:11px;font-weight:700;color:var(--cyan);background:var(--cyan-d);border:1px solid rgba(47,212,255,.35);border-radius:999px;padding:4px 12px}
 details[open] .drawer-summary{border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
 .technical-audit-body{padding:10px 0 20px}
-body:not([data-view=all]) .technical-drawer-sec{display:block!important}
+/* ───────── Aislamiento Visual y Pestañas Dedicadas ───────── */
+.isolated-sec{display:block}
+body[data-view=all] .isolated-sec{display:none!important}
 body:not([data-view=all]) .dummy-view{display:none!important}
+body:not([data-view=all]) .technical-drawer-sec{display:block!important}
 body:not([data-view=all]) .technical-audit-drawer{border:none;background:transparent;box-shadow:none}
 body:not([data-view=all]) .drawer-summary{display:none}
+.isolated-container{max-width:1600px;margin:0 auto;padding:16px 20px 0}
+
+/* Consolidated Hero Banner */
+.consolidated-hero{background:linear-gradient(160deg,#0f172a 0%,#090d1a 100%);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:22px 26px;margin-bottom:20px;box-shadow:0 12px 36px rgba(0,0,0,.4);position:relative;overflow:hidden}
+.consolidated-hero::after{content:"";position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(47,212,255,.12),transparent 70%);pointer-events:none}
+.consolidated-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:18px}
+@media(max-width:960px){.consolidated-top{flex-direction:column}}
+.consolidated-label{font-size:11px;font-weight:800;letter-spacing:.09em;color:var(--cyan);text-transform:uppercase;margin-bottom:6px}
+.consolidated-val{font:800 36px/1.1 var(--mono);color:#fff;letter-spacing:-.04em}
+.consolidated-pnl{font:700 13.5px var(--mono);margin-top:6px;display:flex;align-items:center;gap:8px}
+.consolidated-weather{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 16px;max-width:440px}
+.weather-title{font-size:13px;font-weight:700;color:#fff;margin:6px 0 3px}
+.weather-desc{font-size:11.5px;color:var(--tx2);line-height:1.4}
+.consolidated-pills{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px}
+@media(max-width:800px){.consolidated-pills{grid-template-columns:1fr}}
+.cons-pill{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 14px}
+.pill-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pill-dot.p-4h{background:#2fd4ff;box-shadow:0 0 8px rgba(47,212,255,.6)}
+.pill-dot.p-1h{background:#ff9f43;box-shadow:0 0 8px rgba(255,159,67,.6)}
+.pill-dot.p-spot{background:#1dd1a1;box-shadow:0 0 8px rgba(29,209,161,.6)}
+.pill-title{font-size:12px;font-weight:700;color:#fff}
+.pill-sub{font-size:11px;color:var(--tx2);margin-top:1px}
+
+/* Audit Blocks in Unified View */
+.audit-blocks-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
+@media(max-width:1000px){.audit-blocks-grid{grid-template-columns:1fr}}
+.audit-method-card{background:linear-gradient(160deg,#0e172a,#080f1e);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.audit-method-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)}
+.audit-method-title{font-size:13.5px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px}
+.audit-stats-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.audit-stat-box{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:8px 10px;text-align:center}
+.audit-stat-box .lbl{font-size:9.5px;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:2px}
+.audit-stat-box .val{font:800 14px var(--mono);color:#fff}
 
 /* ───────── vistas ───────── */
 body[data-view=futures] .sec:not([data-sec=futures]),
@@ -937,14 +973,14 @@ def _header(
     p.append("</div></div>")
     p.append(
         "<div class='tools'><nav class='vtabs' role='tablist' aria-label='Vistas'>"
-        "<button class='vtab on' data-view='all' role='tab' aria-selected='true'>Vista unificada</button>"
-        "<button class='vtab' data-view='futures' role='tab'>⚡ Motor CRUISE PRO</button>"
-        "<button class='vtab' data-view='sniper' role='tab'>🎯 Motor SNIPER 1H</button>"
+        "<button class='vtab on' data-view='all' role='tab' aria-selected='true'>🌐 Vista Unificada ($3,000)</button>"
+        "<button class='vtab' data-view='futures' role='tab'>🚀 Motor 4H Tendencia ($1,000)</button>"
+        "<button class='vtab' data-view='sniper' role='tab'>🎯 Motor SNIPER 1H ($1,000)</button>"
+        "<button class='vtab' data-view='spot' role='tab'>🪙 Cartera Spot ($1,000)</button>"
         "<button class='vtab' data-view='kronos' role='tab'>🔮 Oráculo Kronos</button>"
-        "<button class='vtab' data-view='spot' role='tab'>🪙 Spot</button>"
-        "<button class='vtab' data-view='audit' role='tab'>📊 Auditoría</button>"
+        "<button class='vtab' data-view='audit' role='tab'>📊 Trade Audit Global</button>"
         "<button class='vtab' data-view='skills' role='tab'>📚 Trader Memory</button>"
-        "<button class='vtab' data-view='radar' role='tab'>🌍 Radar</button></nav>"
+        "<button class='vtab' data-view='radar' role='tab'>🌍 Radar y Noticias</button></nav>"
         "<div class='search'><input id='q' type='search' placeholder='Filtrar activos, estados, tesis…' autocomplete='off' aria-label='Filtro rápido'><kbd>/</kbd></div>"
         "<span class='qcount' id='qcount'></span></div></div>"
     )
@@ -2610,6 +2646,164 @@ def _clean_dummy_opinion(raw: str) -> str:
     return first
 
 
+def _render_clean_active_trades_table(
+    trades: list[dict[str, Any]],
+    prices: dict[str, float],
+    show_motor: bool = True,
+) -> list[str]:
+    """Genera la tabla limpia de operaciones activas con Entrada vs Hoy, SL explicativo, TP y Razonamiento."""
+    if not trades:
+        return [
+            "<div class='clean-empty-card'>"
+            "<div class='empty-icon'>🌱</div>"
+            "<div class='empty-title'>Sin operaciones abiertas en este momento</div>"
+            "<div class='empty-desc'>La IA está analizando los gráficos en tiempo real y protegiendo tu capital. "
+            "Próximo escaneo automático en 30 segundos.</div>"
+            "</div>"
+        ]
+
+    p: list[str] = []
+    p.append("<div class='clean-trades-container'>")
+    p.append("<table class='clean-trades-tbl'><thead><tr>")
+    p.append("<th>Moneda / Activo</th>")
+    p.append("<th>Dirección</th>")
+    p.append("<th>📍 Entrada vs Hoy</th>")
+    p.append("<th>🛡️ Freno de Seguridad (Stop Loss)</th>")
+    p.append("<th>🎯 Meta para Ganar (Take Profit)</th>")
+    p.append("<th>💰 Dinero Arriesgado y Ganancia</th>")
+    p.append("<th>🧠 Razonamiento del Modelo</th>")
+    p.append("</tr></thead><tbody>")
+
+    for tr in trades:
+        asset = str(tr.get("asset", ""))
+        motor = str(tr.get("_motor", "🚀 4H Tendencia" if tr.get("timeframe") == "4h" else "⚡ 1H Rápida"))
+        kind = str(tr.get("kind", "")).lower()
+        is_long = "long" in kind
+        bet_cls = "long" if is_long else "short"
+        bet_txt = "📈 Sube (LONG)" if is_long else "📉 Baja (SHORT)"
+        lev = tr.get("leverage", "1x")
+        risk_usd = float(tr.get("risk_usd", 0.0))
+        entry_px = float(tr.get("entry_price", 0.0))
+        live_px = float(prices.get(asset) or entry_px)
+        tp1_px = float(tr.get("tp1") or 0.0)
+        tp2_px = float(tr.get("tp2") or tr.get("tp") or 0.0)
+        sl_px = float(tr.get("sl") or tr.get("initial_sl") or 0.0)
+        size_usd = float(tr.get("size_usd", 0.0))
+        margin_usd = float(tr.get("margin_usd", size_usd / 4.0 if size_usd > 0 else 1.0))
+
+        if entry_px > 0:
+            diff = (live_px - entry_px) if is_long else (entry_px - live_px)
+            pnl_usd = (diff / entry_px) * size_usd
+            pnl_pct = (pnl_usd / margin_usd) * 100.0 if margin_usd > 0 else 0.0
+        else:
+            pnl_usd = 0.0
+            pnl_pct = 0.0
+
+        pnl_cls = "pos" if pnl_usd >= 0 else "neg"
+        pnl_sgn = "+" if pnl_usd >= 0 else ""
+        pnl_str = f"<span class='{pnl_cls} mono' style='font-size:13px;font-weight:800;'>{pnl_sgn}${pnl_usd:.2f} USD ({pnl_sgn}{pnl_pct:.1f}%)</span>"
+
+        nd = 4 if entry_px < 10 else 2
+        entry_fmt = f"${entry_px:,.{nd}f}"
+        live_fmt = f"${live_px:,.{nd}f}"
+        sl_fmt = f"${sl_px:,.{nd}f}" if sl_px > 0 else "Dinámico"
+
+        if tp1_px > 0 and tp2_px > 0 and abs(tp1_px - tp2_px) > 1e-4:
+            tp_fmt = f"TP1: ${tp1_px:,.{nd}f} · TP2: ${tp2_px:,.{nd}f}"
+            tp_explain = f"Cobro en TP1 (${tp1_px:,.{nd}f}) y salida total en TP2 (${tp2_px:,.{nd}f})"
+        elif tp2_px > 0:
+            tp_fmt = f"${tp2_px:,.{nd}f}"
+            tp_explain = f"Cobro de ganancia proyectado a ${tp2_px:,.{nd}f}"
+        elif tp1_px > 0:
+            tp_fmt = f"${tp1_px:,.{nd}f}"
+            tp_explain = f"Cobro de ganancia en ${tp1_px:,.{nd}f}"
+        else:
+            tp_fmt = "Trailing Dinámico"
+            tp_explain = "Cierre por seguimiento trailing del beneficio"
+
+        sl_dir = "cae" if is_long else "sube"
+        sl_explain = f"Cierre automático si el precio {sl_dir} a {sl_fmt} para limitar pérdida a ${risk_usd:.2f} USD"
+
+        # Razón limpia
+        ai_r = tr.get("ai_reasoning") or ""
+        if not ai_r:
+            th = tr.get("thesis") or ""
+            if "IA" in th and ":" in th:
+                ai_r = th.split(":", 1)[1].strip().rstrip("]")
+        why_clean = _clean_dummy_opinion(ai_r)
+
+        asset_col = f"<b style='font-size:13.5px;'>{_esc(asset)}</b>"
+        if show_motor:
+            asset_col += f"<br><span class='small' style='color:var(--cyan);'>{motor}</span>"
+
+        p.append(
+            f"<tr>"
+            f"<td>{asset_col}</td>"
+            f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt} {lev}</span></td>"
+            f"<td class='mono'><b>{entry_fmt}</b> → <b style='color:var(--cyan);'>{live_fmt}</b></td>"
+            f"<td><div class='mono neg' style='font-size:13px;font-weight:800;'>{sl_fmt}</div>"
+            f"<div style='font-size:10px;color:rgba(255,107,129,0.9);margin-top:2px;line-height:1.2;'>{sl_explain}</div></td>"
+            f"<td><div class='mono pos' style='font-size:13px;font-weight:800;'>{tp_fmt}</div>"
+            f"<div style='font-size:10px;color:rgba(46,204,113,0.9);margin-top:2px;line-height:1.2;'>{tp_explain}</div></td>"
+            f"<td><div style='font-size:10.5px;color:var(--mut);'>Riesgo: <b class='mono' style='color:#fff;'>${risk_usd:.2f} USD</b></div>"
+            f"<div style='margin-top:3px;'>{pnl_str}</div></td>"
+            f"<td style='max-width:280px;font-size:11.5px;color:var(--tx2);line-height:1.45;'>“{_esc(why_clean)}”</td>"
+            f"</tr>"
+        )
+    p.append("</tbody></table></div>")
+    return p
+
+
+def _render_clean_closed_trades_table(
+    closed_trades: list[dict[str, Any]],
+    empty_msg: str,
+) -> list[str]:
+    """Genera la tabla limpia de operaciones cerradas para el Trade Audit."""
+    if not closed_trades:
+        return [
+            f"<div class='clean-empty-card' style='padding:20px 14px;'>"
+            f"<div class='empty-icon'>🛡️</div>"
+            f"<div class='empty-title'>Sin operaciones cerradas aún</div>"
+            f"<div class='empty-desc'>{empty_msg}</div>"
+            f"</div>"
+        ]
+
+    p: list[str] = []
+    p.append("<div class='clean-trades-container' style='padding:10px 14px;'>")
+    p.append("<table class='clean-trades-tbl'><thead><tr>")
+    p.append("<th>Activo</th><th>Dirección</th><th>Entrada</th><th>Salida</th><th>PnL Neto</th><th>R</th><th>Cierre</th><th>Razón</th>")
+    p.append("</tr></thead><tbody>")
+    for tr in closed_trades:
+        asset = tr.get("asset", "")
+        kind = str(tr.get("kind", "")).lower()
+        is_long = "long" in kind
+        bet_cls = "long" if is_long else "short"
+        bet_txt = "LONG" if is_long else "SHORT"
+        entry_px = float(tr.get("entry_price") or tr.get("entry", 0.0))
+        exit_px = float(tr.get("exit_price") or tr.get("exit", 0.0))
+        pnl = float(tr.get("pnl_neto_usd", tr.get("pnl_usd", tr.get("realized_pnl_usd", 0.0))))
+        r_mult = tr.get("r_multiplo", tr.get("r_mult", "—"))
+        pnl_cls = "pos" if pnl >= 0 else "neg"
+        pnl_sgn = "+" if pnl >= 0 else ""
+        close_ts = str(tr.get("closed_at", tr.get("ts_utc", "")))[:16]
+        reason = tr.get("close_reason", tr.get("exit_reason", tr.get("thesis", "")))
+        nd = 4 if entry_px < 10 else 2
+        p.append(
+            f"<tr>"
+            f"<td><b>{_esc(asset)}</b></td>"
+            f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt}</span></td>"
+            f"<td class='mono'>${entry_px:,.{nd}f}</td>"
+            f"<td class='mono'>${exit_px:,.{nd}f}</td>"
+            f"<td class='mono {pnl_cls}'><b>{pnl_sgn}${pnl:.2f} USD</b></td>"
+            f"<td class='mono'><b>{_esc(str(r_mult))}</b></td>"
+            f"<td class='mono small'>{_esc(close_ts)}</td>"
+            f"<td class='small' style='color:var(--tx2);max-width:240px;'>{_esc(_clean_dummy_opinion(reason))}</td>"
+            f"</tr>"
+        )
+    p.append("</tbody></table></div>")
+    return p
+
+
 def _bloque_dummies(
     states: dict[str, Any],
     capital: dict[str, Any] | None,
@@ -2617,7 +2811,7 @@ def _bloque_dummies(
     spot_plans: list[dict[str, Any]] | None,
     sniper_data: dict[str, Any] | None,
 ) -> list[str]:
-    """Genera la interfaz visual minimalista estilo Apple / Robinhood ('Para Dummies')."""
+    """Genera la interfaz visual minimalista estilo Apple / Robinhood ('Para Dummies' - Vista Unificada $3,000)."""
     from qa.agent.brain import load_brain_state
     from qa.agent.sniper import compute_sniper_equity, load_sniper_trades
     from qa.data.paths import get_root
@@ -2631,14 +2825,18 @@ def _bloque_dummies(
             raw_sniper = load_sniper_trades(root)
             sniper_eq = compute_sniper_equity(raw_sniper, prices, starting_capital=1000.0)
             open_1h = [t for t in raw_sniper if t.get("status") == "open"]
+            closed_1h = [t for t in raw_sniper if t.get("status") == "closed"]
         except Exception:
             sniper_eq = {}
             open_1h = []
+            closed_1h = []
     else:
         sniper_eq = sniper_data.get("equity_status") or {}
         open_1h = sniper_data.get("open_trades") or []
+        closed_1h = sniper_data.get("closed_trades") or []
 
     open_4h = [t for t in (trades_diag or []) if t.get("status") == "open"]
+    closed_4h = [t for t in (trades_diag or []) if t.get("status") == "closed" or t.get("order_state") == "CLOSED"]
 
     p: list[str] = []
     p.append("<section class='sec dummy-view' data-sec='all'>")
@@ -2647,8 +2845,8 @@ def _bloque_dummies(
     p.append(
         "<div class='dummy-sec-title' style='margin-top:6px;'>"
         "<div>"
-        "<h2><span>⚡</span> Centro de Mando Visual · Resumen Simple</h2>"
-        "<div class='dummy-subtitle'>Control proactivo de tu dinero en español cotidiano, sin jerga cuantitativa abrumadora</div>"
+        "<h2><span>⚡</span> Centro de Mando Visual · Vista Unificada</h2>"
+        "<div class='dummy-subtitle'>Control proactivo de tu dinero en español cotidiano ($1,000 4H + $1,000 1H + $1,000 Spot = $3,000 USD)</div>"
         "</div>"
         "<div style='display:flex;gap:8px;align-items:center;'>"
         "<span class='badge b-instante'>🍎 Modo Simple 'Para Dummies'</span>"
@@ -2658,34 +2856,33 @@ def _bloque_dummies(
     )
 
     # ──────────────────────────────────────────────────────────
-    # BLOQUE 1: RESUMEN EN 3 SEGUNDOS (HERO CARDS ALTO IMPACTO)
+    # HERO CONSOLIDADO: $3,000.00 USD + 3 PASTILLAS + CLIMA
     # ──────────────────────────────────────────────────────────
     c = capital or {}
     patrimonio_4h = _f(c.get("patrimonio_total"), 1000.0)
     flotante_4h = _f(c.get("pnl_flotante_usd"), 0.0)
     realizado_4h = _f(c.get("pnl_realizado_usd"), 0.0)
     pnl_4h = flotante_4h + realizado_4h
-    pnl_4h_pct = (pnl_4h / 1000.0) * 100.0
-    cls_4h = "pos" if pnl_4h >= 0 else "neg"
     sgn_4h = "+" if pnl_4h >= 0 else ""
-    st_4h = (
-        f"<span class='hero-badge b-ok'>🟢 Operando activa ({len(open_4h)} posición{'es' if len(open_4h) != 1 else ''})</span>"
-        if open_4h
-        else "<span class='hero-badge b-warn'>🟡 Esperando setup</span>"
-    )
 
     patrimonio_1h = float(sniper_eq.get("total_equity", 1000.0))
     flotante_1h = float(sniper_eq.get("floating_pnl", 0.0))
     realizado_1h = float(sniper_eq.get("realized_pnl", 0.0))
     pnl_1h = flotante_1h + realizado_1h
-    pnl_1h_pct = (pnl_1h / 1000.0) * 100.0
-    cls_1h = "pos" if pnl_1h >= 0 else "neg"
     sgn_1h = "+" if pnl_1h >= 0 else ""
-    st_1h = (
-        f"<span class='hero-badge b-ok'>🟢 Operando activa ({len(open_1h)} posición{'es' if len(open_1h) != 1 else ''})</span>"
-        if open_1h
-        else "<span class='hero-badge b-warn'>🟡 Esperando setup</span>"
-    )
+
+    plans = spot_plans or []
+    flotante_spot = sum(float(pl.get("pnl_usd", 0.0)) for pl in plans)
+    patrimonio_spot = 1000.0 + flotante_spot
+    pnl_spot = flotante_spot
+    sgn_spot = "+" if pnl_spot >= 0 else ""
+
+    # Consolidado total
+    patrimonio_cons = patrimonio_4h + patrimonio_1h + patrimonio_spot
+    pnl_cons = pnl_4h + pnl_1h + pnl_spot
+    pnl_cons_pct = (pnl_cons / 3000.0) * 100.0
+    cls_cons = "pos" if pnl_cons >= 0 else "neg"
+    sgn_cons = "+" if pnl_cons >= 0 else ""
 
     mac = _btc_macro(states)
     if mac.get("state") == "bear":
@@ -2710,33 +2907,48 @@ def _bloque_dummies(
             "(LONG y SHORT) de forma quirúrgica con riesgo controlado."
         )
 
-    p.append("<div class='hero-grid'>")
     p.append(
-        f"<div class='hero-card'>"
-        f"<div class='hero-head'><span class='hero-label'>🚀 Cuenta Tendencia (4H — Cruise PRO)</span>{st_4h}</div>"
-        f"<div class='hero-val'>${_fmt(patrimonio_4h)} USD</div>"
-        f"<div class='hero-pnl'><span class='{cls_4h}'>{sgn_4h}${pnl_4h:.2f} USD ({sgn_4h}{pnl_4h_pct:.1f}%)</span>"
-        f"<span class='mut'>· flotante {sgn_4h}${flotante_4h:.2f}</span></div>"
-        f"<div class='hero-desc'>Estrategia de mediano plazo para capturar grandes movimientos y tendencias sostenidas de 4 horas.</div>"
-        f"</div>"
+        "<div class='consolidated-hero'>"
+        "<div class='consolidated-top'>"
+        "<div>"
+        "<div class='consolidated-label'>🏛️ PATRIMONIO TOTAL CONSOLIDADO (CUENTA GLOBAL)</div>"
+        f"<div class='consolidated-val'>${patrimonio_cons:,.2f} USD</div>"
+        f"<div class='consolidated-pnl {cls_cons}'>"
+        f"<span>{sgn_cons}${pnl_cons:.2f} USD ({sgn_cons}{pnl_cons_pct:.2f}%) en vivo</span>"
+        "<span class='mut' style='font-size:12px;color:var(--tx2);'>· Base aportada: $3,000.00 USD</span>"
+        "</div>"
+        "</div>"
+        "<div class='consolidated-weather'>"
+        f"<div>{clima_badge}</div>"
+        f"<div class='weather-title'>{clima_title}</div>"
+        f"<div class='weather-desc'>{clima_desc}</div>"
+        "</div>"
+        "</div>"
+        "<div class='consolidated-pills'>"
+        "<div class='cons-pill'>"
+        "<span class='pill-dot p-4h'></span>"
+        "<div>"
+        "<div class='pill-title'>🚀 Motor 4H Tendencia</div>"
+        f"<div class='pill-sub'><b>${patrimonio_4h:,.2f} USD</b> ({sgn_4h}${pnl_4h:.2f}) · {len(open_4h)} posición{'es' if len(open_4h) != 1 else ''}</div>"
+        "</div>"
+        "</div>"
+        "<div class='cons-pill'>"
+        "<span class='pill-dot p-1h'></span>"
+        "<div>"
+        "<div class='pill-title'>🎯 Motor 1H Sniper</div>"
+        f"<div class='pill-sub'><b>${patrimonio_1h:,.2f} USD</b> ({sgn_1h}${pnl_1h:.2f}) · {len(open_1h)}/3 cupos</div>"
+        "</div>"
+        "</div>"
+        "<div class='cons-pill'>"
+        "<span class='pill-dot p-spot'></span>"
+        "<div>"
+        "<div class='pill-title'>🪙 Cartera Spot Alcancía</div>"
+        f"<div class='pill-sub'><b>${patrimonio_spot:,.2f} USD</b> ({sgn_spot}${pnl_spot:.2f}) · $250.00 c/u</div>"
+        "</div>"
+        "</div>"
+        "</div>"
+        "</div>"
     )
-    p.append(
-        f"<div class='hero-card'>"
-        f"<div class='hero-head'><span class='hero-label'>⚡ Cuenta Rápida (1H — Sniper Intradía)</span>{st_1h}</div>"
-        f"<div class='hero-val'>${_fmt(patrimonio_1h)} USD</div>"
-        f"<div class='hero-pnl'><span class='{cls_1h}'>{sgn_1h}${pnl_1h:.2f} USD ({sgn_1h}{pnl_1h_pct:.1f}%)</span>"
-        f"<span class='mut'>· flotante {sgn_1h}${flotante_1h:.2f}</span></div>"
-        f"<div class='hero-desc'>Estrategia rápida intradía para cazar impulsos de mechas y contracción VCP en velas de 1 hora.</div>"
-        f"</div>"
-    )
-    p.append(
-        f"<div class='hero-card'>"
-        f"<div class='hero-head'><span class='hero-label'>🌤️ Clima del Mercado Hoy</span>{clima_badge}</div>"
-        f"<div class='hero-val' style='font-size:20px;letter-spacing:0;'>{clima_title}</div>"
-        f"<div class='hero-desc' style='margin-top:12px;border-top:none;padding-top:0;'>{clima_desc}</div>"
-        f"</div>"
-    )
-    p.append("</div>")  # .hero-grid
 
     # ──────────────────────────────────────────────────────────
     # BLOQUE 2: ¿QUÉ PIENSA LA IA DE CADA MONEDA? (BTC, ETH, SOL, SUI)
@@ -2816,13 +3028,13 @@ def _bloque_dummies(
     p.append("</div>")  # .coin-grid
 
     # ──────────────────────────────────────────────────────────
-    # BLOQUE 3: OPERACIONES ABIERTAS AHORA MISMO
+    # BLOQUE 3: OPERACIONES ABIERTAS AHORA MISMO (CON FRENOS Y METAS)
     # ──────────────────────────────────────────────────────────
     p.append(
         "<div class='dummy-sec-title'>"
         "<div>"
         "<h2><span>🎯</span> Operaciones Abiertas Ahora Mismo</h2>"
-        "<div class='dummy-subtitle'>Transparencia total: entradas en vivo, freno de seguridad y ganancias en tiempo real</div>"
+        "<div class='dummy-subtitle'>Transparencia total: entradas en vivo, freno de seguridad y metas para ganar en tiempo real</div>"
         "</div>"
         "</div>"
     )
@@ -2833,106 +3045,19 @@ def _bloque_dummies(
     for t in open_1h:
         all_open.append({**t, "_motor": "⚡ 1H Rápida"})
 
-    if not all_open:
-        p.append(
-            "<div class='clean-empty-card'>"
-            "<div class='empty-icon'>🌱</div>"
-            "<div class='empty-title'>Sin operaciones abiertas en este momento</div>"
-            "<div class='empty-desc'>La IA está analizando los gráficos en tiempo real y protegiendo tu capital. "
-            "Próximo escaneo automático en 30 segundos.</div>"
-            "</div>"
-        )
-    else:
-        p.append("<div class='clean-trades-container'>")
-        p.append("<table class='clean-trades-tbl'><thead><tr>")
-        p.append("<th>Moneda / Activo</th>")
-        p.append("<th>Apuesta</th>")
-        p.append("<th>Dinero Arriesgado</th>")
-        p.append("<th>Entrada vs Hoy</th>")
-        p.append("<th>🎯 Meta Ganar</th>")
-        p.append("<th>🛡️ Freno Seguridad</th>")
-        p.append("<th>💰 Ganancia / Pérdida Hoy</th>")
-        p.append("<th>¿Por qué entró el bot?</th>")
-        p.append("</tr></thead><tbody>")
-
-        for tr in all_open:
-            asset = tr.get("asset", "")
-            motor = tr.get("_motor", "")
-            kind = str(tr.get("kind", "")).lower()
-            is_long = "long" in kind
-            bet_cls = "long" if is_long else "short"
-            bet_txt = "📈 SUBIDA (LONG)" if is_long else "📉 BAJADA (SHORT)"
-            lev = tr.get("leverage", "1x")
-            risk_usd = float(tr.get("risk_usd", 0.0))
-            entry_px = float(tr.get("entry_price", 0.0))
-            live_px = float(prices.get(asset) or entry_px)
-            tp_px = float(tr.get("tp") or tr.get("tp1") or 0.0)
-            sl_px = float(tr.get("sl") or tr.get("initial_sl") or 0.0)
-            size_usd = float(tr.get("size_usd", 0.0))
-            margin_usd = float(tr.get("margin_usd", size_usd / 4.0 if size_usd > 0 else 1.0))
-
-            if entry_px > 0:
-                diff = (live_px - entry_px) if is_long else (entry_px - live_px)
-                pnl_usd = (diff / entry_px) * size_usd
-                pnl_pct = (pnl_usd / margin_usd) * 100.0 if margin_usd > 0 else 0.0
-            else:
-                pnl_usd = 0.0
-                pnl_pct = 0.0
-
-            pnl_cls = "pos" if pnl_usd >= 0 else "neg"
-            pnl_sgn = "+" if pnl_usd >= 0 else ""
-            pnl_str = f"<span class='{pnl_cls} mono' style='font-size:13px;font-weight:800;'>{pnl_sgn}${pnl_usd:.2f} USD ({pnl_sgn}{pnl_pct:.1f}%)</span>"
-
-            # Formato de precios
-            nd = 4 if entry_px < 10 else 2
-            entry_fmt = f"${entry_px:,.{nd}f}"
-            live_fmt = f"${live_px:,.{nd}f}"
-            tp_fmt = f"${tp_px:,.{nd}f}" if tp_px > 0 else "Trailing"
-            sl_fmt = f"${sl_px:,.{nd}f}" if sl_px > 0 else "Dinámico"
-
-            # Razón limpia de entrada
-            ai_r = tr.get("ai_reasoning") or ""
-            if not ai_r:
-                th = tr.get("thesis") or ""
-                if "IA" in th and ":" in th:
-                    ai_r = th.split(":", 1)[1].strip().rstrip("]")
-            why_clean = _clean_dummy_opinion(ai_r)
-
-            p.append(
-                f"<tr>"
-                f"<td><b style='font-size:13.5px;'>{_esc(asset)}</b><br><span class='small' style='color:var(--cyan);'>{motor}</span></td>"
-                f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt} {lev}</span></td>"
-                f"<td class='mono'><b>${risk_usd:.2f} USD</b></td>"
-                f"<td class='mono'>{entry_fmt} → <b>{live_fmt}</b></td>"
-                f"<td class='mono' style='color:var(--ok);'><b>{tp_fmt}</b></td>"
-                f"<td class='mono' style='color:var(--bad);'><b>{sl_fmt}</b></td>"
-                f"<td>{pnl_str}</td>"
-                f"<td style='max-width:280px;font-size:11.5px;color:var(--tx2);line-height:1.4;'>“{_esc(why_clean)}”</td>"
-                f"</tr>"
-            )
-        p.append("</tbody></table></div>")
+    p.extend(_render_clean_active_trades_table(all_open, prices, show_motor=True))
 
     # ──────────────────────────────────────────────────────────
-    # BLOQUE 4: ALCANCÍA SPOT (COMPRAR BARATO PARA EL FUTURO)
+    # BLOQUE 4: ALCANCÍA SPOT (4 ACTIVOS DE $250 C/U = $1,000 USD)
     # ──────────────────────────────────────────────────────────
     p.append(
         "<div class='dummy-sec-title'>"
         "<div>"
-        "<h2><span>🏦</span> Alcancía Spot · Comprar Barato para el Futuro</h2>"
-        "<div class='dummy-subtitle'>Inversión 1x sin apalancamiento: semáforo de compra en rebaja y 3 metas escalonadas de venta</div>"
+        "<h2><span>🏦</span> Alcancía Spot · Comprar Barato para el Futuro ($1,000 USD)</h2>"
+        "<div class='dummy-subtitle'>Inversión 1x sin apalancamiento: exactamente $250.00 USD asignados por activo en BTC, ETH, SOL y SUI</div>"
         "</div>"
         "</div>"
     )
-
-    plans = spot_plans or []
-    if not plans:
-        # Generar planes de referencia por defecto si no vinieron en inputs
-        plans = [
-            {"symbol": "BTCUSDT", "price": float(prices.get("BTCUSDT") or 74700.0), "buying_zone_min": 68000.0, "buying_zone_max": 73000.0, "in_buy_zone": False, "tp1": 85000.0, "tp2": 95000.0, "tp3": 110000.0},
-            {"symbol": "ETHUSDT", "price": float(prices.get("ETHUSDT") or 2125.0), "buying_zone_min": 1950.0, "buying_zone_max": 2100.0, "in_buy_zone": False, "tp1": 2600.0, "tp2": 3100.0, "tp3": 3800.0},
-            {"symbol": "SOLUSDT", "price": float(prices.get("SOLUSDT") or 87.0), "buying_zone_min": 75.0, "buying_zone_max": 85.0, "in_buy_zone": False, "tp1": 115.0, "tp2": 140.0, "tp3": 180.0},
-            {"symbol": "SUIUSDT", "price": float(prices.get("SUIUSDT") or 0.85), "buying_zone_min": 0.70, "buying_zone_max": 0.82, "in_buy_zone": False, "tp1": 1.20, "tp2": 1.60, "tp3": 2.20},
-        ]
 
     p.append("<div class='spot-cards-grid'>")
     for pl in plans:
@@ -2947,6 +3072,7 @@ def _bloque_dummies(
         tp1 = float(pl.get("tp1") or pl.get("tp1_zone_low") or 0.0)
         tp2 = float(pl.get("tp2") or pl.get("tp2_zone_low") or 0.0)
         tp3 = float(pl.get("tp3") or pl.get("tp3_price") or (tp2 * 1.45 if tp2 > 0 else 0.0))
+        alloc = float(pl.get("allocated_usd", 250.0))
 
         nd = 4 if cur_px < 10 else 2
         cur_fmt = f"${cur_px:,.{nd}f}"
@@ -2972,7 +3098,7 @@ def _bloque_dummies(
             f"<div class='coin-card-top'>"
             f"<div class='coin-name-group'>"
             f"<span class='coin-icon'>{icon}</span>"
-            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code} · Spot 1x</div></div>"
+            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code} · Asignado: ${alloc:.2f} USD</div></div>"
             f"</div>"
             f"</div>"
             f"<div class='coin-price'>{cur_fmt}</div>"
@@ -2980,20 +3106,394 @@ def _bloque_dummies(
             f"<div class='small' style='margin-bottom:12px;color:var(--tx2);'>{zone_desc}</div>"
             f"</div>"
             f"<div class='spot-tp-list'>"
-            f"<div style='font-size:10px;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:4px;'>Metas de Venta a Largo Plazo</div>"
-            f"<div class='spot-tp-item'><span>🎯 TP1 (Recuperar base)</span><b class='mono pos'>{_tp_str(tp1)}</b></div>"
-            f"<div class='spot-tp-item'><span>🎯 TP2 (Ganancia fuerte)</span><b class='mono pos'>{_tp_str(tp2)}</b></div>"
-            f"<div class='spot-tp-item'><span>🎯 TP3 (Gran ciclo)</span><b class='mono pos'>{_tp_str(tp3)}</b></div>"
+            f"<div style='font-size:10px;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:4px;'>Metas de Salida Escalonada</div>"
+            f"<div class='spot-tp-item'><span>🎯 TP1 (Recuperar base 30%)</span><b class='mono pos'>{_tp_str(tp1)}</b></div>"
+            f"<div class='spot-tp-item'><span>🎯 TP2 (Ganancia fuerte 40%)</span><b class='mono pos'>{_tp_str(tp2)}</b></div>"
+            f"<div class='spot-tp-item'><span>🎯 TP3 (Gran ciclo 30%)</span><b class='mono pos'>{_tp_str(tp3)}</b></div>"
             f"</div>"
             f"</div>"
         )
     p.append("</div>")  # .spot-cards-grid
 
+    # ──────────────────────────────────────────────────────────
+    # BLOQUE 5: 3 TRADE AUDITS SEPARADOS POR METODOLOGÍA
+    # ──────────────────────────────────────────────────────────
+    p.append(
+        "<div class='dummy-sec-title'>"
+        "<div>"
+        "<h2><span>📊</span> 3 Trade Audits Separados por Metodología</h2>"
+        "<div class='dummy-subtitle'>Auditoría contable independiente para cada uno de los 3 motores ($1,000 + $1,000 + $1,000 = $3,000 USD)</div>"
+        "</div>"
+        "</div>"
+    )
+
+    win_4h = sum(1 for t in closed_4h if float(t.get("pnl_usd", t.get("realized_pnl_usd", 0.0))) > 0)
+    win_rate_4h = (win_4h / len(closed_4h) * 100.0) if closed_4h else 0.0
+    win_1h = sum(1 for t in closed_1h if float(t.get("pnl_usd", t.get("realized_pnl_usd", 0.0))) > 0)
+    win_rate_1h = (win_1h / len(closed_1h) * 100.0) if closed_1h else 0.0
+    compradas_cnt = len([pl for pl in plans if "COMPRADA" in str(pl.get("status", "")) or "TP1" in str(pl.get("status", "")) or "TP2" in str(pl.get("status", ""))])
+
+    p.append("<div class='audit-blocks-grid'>")
+
+    # Tarjeta Audit 1: Tendencia 4H
+    p.append(
+        "<div class='audit-method-card'>"
+        "<div class='audit-method-head'>"
+        "<div class='audit-method-title'><span>🚀</span> Motor 4H Tendencia (Cruise PRO)</div>"
+        "<span class='badge b-ok'>$1,000.00 Base</span>"
+        "</div>"
+        "<div class='audit-stats-row'>"
+        f"<div class='audit-stat-box'><div class='lbl'>Vivas</div><div class='val'>{len(open_4h)}</div></div>"
+        f"<div class='audit-stat-box'><div class='lbl'>Win Rate</div><div class='val'>{f'{win_rate_4h:.0f}%' if closed_4h else '—'}</div></div>"
+        f"<div class='audit-stat-box'><div class='lbl'>PnL Realizado</div><div class='val'>${realizado_4h:.2f}</div></div>"
+        "</div>"
+        f"<div class='small' style='color:var(--tx2);margin-bottom:8px;'>Flotante vivo: <b>{sgn_4h}${flotante_4h:.2f} USD</b> · {len(closed_4h)} cerrada(s)</div>"
+        "<div style='font-size:11px;color:var(--mut);line-height:1.4;'>Auditoría criptográfica append-only en <code>ledger/user_trades.jsonl</code>.</div>"
+        "</div>"
+    )
+
+    # Tarjeta Audit 2: Sniper 1H
+    p.append(
+        "<div class='audit-method-card'>"
+        "<div class='audit-method-head'>"
+        "<div class='audit-method-title'><span>🎯</span> Motor 1H Sniper (Stockbee / VCP)</div>"
+        "<span class='badge b-ok'>$1,000.00 Base</span>"
+        "</div>"
+        "<div class='audit-stats-row'>"
+        f"<div class='audit-stat-box'><div class='lbl'>Cupos</div><div class='val'>{len(open_1h)}/3</div></div>"
+        f"<div class='audit-stat-box'><div class='lbl'>Win Rate</div><div class='val'>{f'{win_rate_1h:.0f}%' if closed_1h else '—'}</div></div>"
+        f"<div class='audit-stat-box'><div class='lbl'>PnL Realizado</div><div class='val'>${realizado_1h:.2f}</div></div>"
+        "</div>"
+        f"<div class='small' style='color:var(--tx2);margin-bottom:8px;'>Flotante vivo: <b>{sgn_1h}${flotante_1h:.2f} USD</b> · {len(closed_1h)} cerrada(s)</div>"
+        "<div style='font-size:11px;color:var(--mut);line-height:1.4;'>Auditoría criptográfica append-only en <code>ledger/user_sniper.jsonl</code>.</div>"
+        "</div>"
+    )
+
+    # Tarjeta Audit 3: Alcancía Spot
+    p.append(
+        "<div class='audit-method-card'>"
+        "<div class='audit-method-head'>"
+        "<div class='audit-method-title'><span>🪙</span> Cartera Spot Alcancía (1x)</div>"
+        "<span class='badge b-ok'>$1,000.00 Base</span>"
+        "</div>"
+        "<div class='audit-stats-row'>"
+        f"<div class='audit-stat-box'><div class='lbl'>Asignado</div><div class='val'>$250 c/u</div></div>"
+        f"<div class='audit-stat-box'><div class='lbl'>Compradas</div><div class='val'>{compradas_cnt}/4</div></div>"
+        f"<div class='audit-stat-box'><div class='lbl'>PnL Flotante</div><div class='val'>${flotante_spot:.2f}</div></div>"
+        "</div>"
+        f"<div class='small' style='color:var(--tx2);margin-bottom:8px;'>Patrimonio Spot: <b>${patrimonio_spot:,.2f} USD</b> · 0 liquidaciones</div>"
+        "<div style='font-size:11px;color:var(--mut);line-height:1.4;'>Auditoría criptográfica inmutable en <code>ledger/user_spot.jsonl</code>.</div>"
+        "</div>"
+    )
+
+    p.append("</div>")  # .audit-blocks-grid
+
     p.append("</section>")  # .dummy-view
     return p
 
 
-# ── Render principal ──
+def _bloque_isolated_futures(
+    states: dict[str, Any],
+    capital: dict[str, Any] | None,
+    trades_diag: list[dict[str, Any]],
+) -> list[str]:
+    """Genera la vista aislada para la pestaña 🚀 Motor 4H Tendencia ($1,000 USD)."""
+    c = capital or {}
+    patrimonio_4h = _f(c.get("patrimonio_total"), 1000.0)
+    flotante_4h = _f(c.get("pnl_flotante_usd"), 0.0)
+    realizado_4h = _f(c.get("pnl_realizado_usd"), 0.0)
+    pnl_4h = flotante_4h + realizado_4h
+    pnl_4h_pct = (pnl_4h / 1000.0) * 100.0
+    cls_4h = "pos" if pnl_4h >= 0 else "neg"
+    sgn_4h = "+" if pnl_4h >= 0 else ""
+    heat_pct = _num(c.get("portfolio_heat_pct_patrimonio"))
+    heat_usd = _num(c.get("portfolio_heat_usd"))
+    heat_str = f"{heat_pct:.1f}% (${heat_usd:.2f} USD)" if heat_pct is not None and heat_usd is not None else "0.0%"
+
+    open_4h = [t for t in (trades_diag or []) if t.get("status") == "open"]
+    closed_4h = [t for t in (trades_diag or []) if t.get("status") == "closed" or t.get("order_state") == "CLOSED"]
+    win_4h = sum(1 for t in closed_4h if float(t.get("pnl_usd", t.get("realized_pnl_usd", 0.0))) > 0)
+    win_rate_4h = (win_4h / len(closed_4h) * 100.0) if closed_4h else 0.0
+
+    prices = states.get("prices") or {}
+
+    p: list[str] = []
+    p.append("<section class='sec isolated-sec' data-sec='futures'>")
+    p.append("<div class='isolated-container'>")
+
+    # Header Card 4H
+    p.append(
+        "<div class='hero-card' style='margin-bottom:20px;'>"
+        "<div class='hero-head'>"
+        "<span class='hero-label'>🚀 MOTOR 1 · TENDENCIA 4H (CRUISE PRO) · CUENTA AISLADA</span>"
+        f"<span class='hero-badge b-ok'>🟢 Operando activa ({len(open_4h)} posición{'es' if len(open_4h) != 1 else ''})</span>"
+        "</div>"
+        f"<div class='hero-val'>${patrimonio_4h:,.2f} USD</div>"
+        f"<div class='hero-pnl'><span class='{cls_4h}'>{sgn_4h}${pnl_4h:.2f} USD ({sgn_4h}{pnl_4h_pct:.1f}%)</span>"
+        f"<span class='mut'>· Flotante: {sgn_4h}${flotante_4h:.2f} | Realizado: ${realizado_4h:.2f} | Riesgo en Mesa (Heat): {heat_str}</span></div>"
+        "<div class='hero-desc'>Estrategia de mediano plazo en velas de 4 horas. Capital exclusivo asignado de $1,000.00 USD. "
+        "Captura tendencias sostenidas con trailing stops, protección Anti-Wick y libro segregado en <code>ledger/user_trades.jsonl</code>.</div>"
+        "</div>"
+    )
+
+    # Operaciones activas 4H
+    p.append(
+        "<div class='dummy-sec-title' style='margin-top:20px;'>"
+        "<div><h2><span>🎯</span> Operaciones Activas de 4H (Cruise PRO)</h2>"
+        "<div class='dummy-subtitle'>Posiciones vivas gestionadas con frenos de seguridad automáticos y objetivos de ganancia</div></div>"
+        "</div>"
+    )
+    p.extend(_render_clean_active_trades_table(open_4h, prices, show_motor=False))
+
+    # Trade Audit Exclusivo 4H
+    p.append(
+        "<div class='dummy-sec-title' style='margin-top:28px;'>"
+        "<div><h2><span>📊</span> Trade Audit Exclusivo · Motor 4H Tendencia</h2>"
+        "<div class='dummy-subtitle'>Historial contable y métricas de rendimiento segregadas para la cuenta de $1,000 USD de 4H</div></div>"
+        "</div>"
+    )
+    p.append("<div class='audit-stats-row' style='grid-template-columns:repeat(5,minmax(0,1fr));margin-bottom:14px;'>")
+    p.append("<div class='audit-stat-box'><div class='lbl'>Capital Base</div><div class='val'>$1,000.00</div></div>")
+    p.append(f"<div class='audit-stat-box'><div class='lbl'>Posiciones Vivas</div><div class='val'>{len(open_4h)}</div></div>")
+    p.append(f"<div class='audit-stat-box'><div class='lbl'>Operaciones Cerradas</div><div class='val'>{len(closed_4h)}</div></div>")
+    p.append(f"<div class='audit-stat-box'><div class='lbl'>Win Rate</div><div class='val'>{f'{win_rate_4h:.1f}%' if closed_4h else '—'}</div></div>")
+    p.append(f"<div class='audit-stat-box'><div class='lbl'>PnL Neto Realizado</div><div class='val {cls_4h}'>${realizado_4h:.2f}</div></div>")
+    p.append("</div>")
+
+    p.extend(_render_clean_closed_trades_table(
+        closed_4h,
+        "Las operaciones activas están operando y protegiendo el capital. Cada cierre de 4H quedará auditado con hash criptográfico SHA-256 en ledger/user_trades.jsonl."
+    ))
+
+    p.append("</div></section>")
+    return p
+
+
+def _bloque_isolated_sniper(
+    states: dict[str, Any],
+    sniper_data: dict[str, Any] | None,
+) -> list[str]:
+    """Genera la vista aislada para la pestaña 🎯 Motor SNIPER 1H ($1,000 USD)."""
+    from qa.agent.sniper import compute_sniper_equity, load_sniper_trades
+    from qa.data.paths import get_root
+
+    root = get_root()
+    prices = states.get("prices") or {}
+
+    if sniper_data is None:
+        try:
+            raw_sniper = load_sniper_trades(root)
+            sniper_eq = compute_sniper_equity(raw_sniper, prices, starting_capital=1000.0)
+            open_1h = [t for t in raw_sniper if t.get("status") == "open"]
+            closed_1h = [t for t in raw_sniper if t.get("status") == "closed"]
+        except Exception:
+            sniper_eq = {}
+            open_1h = []
+            closed_1h = []
+    else:
+        sniper_eq = sniper_data.get("equity_status") or {}
+        open_1h = sniper_data.get("open_trades") or []
+        closed_1h = sniper_data.get("closed_trades") or []
+
+    patrimonio_1h = float(sniper_eq.get("total_equity", 1000.0))
+    flotante_1h = float(sniper_eq.get("floating_pnl", 0.0))
+    realizado_1h = float(sniper_eq.get("realized_pnl", 0.0))
+    pnl_1h = flotante_1h + realizado_1h
+    pnl_1h_pct = (pnl_1h / 1000.0) * 100.0
+    cls_1h = "pos" if pnl_1h >= 0 else "neg"
+    sgn_1h = "+" if pnl_1h >= 0 else ""
+
+    win_1h = sum(1 for t in closed_1h if float(t.get("pnl_usd", t.get("realized_pnl_usd", 0.0))) > 0)
+    win_rate_1h = (win_1h / len(closed_1h) * 100.0) if closed_1h else 0.0
+
+    p: list[str] = []
+    p.append("<section class='sec isolated-sec' data-sec='sniper'>")
+    p.append("<div class='isolated-container'>")
+
+    # Header Card 1H
+    p.append(
+        "<div class='hero-card' style='margin-bottom:20px;'>"
+        "<div class='hero-head'>"
+        "<span class='hero-label'>🎯 MOTOR 2 · RÁPIDO SNIPER 1H (STOCKBEE / VCP) · CUENTA AISLADA</span>"
+        f"<span class='hero-badge b-ok'>🟢 Operando activa ({len(open_1h)}/3 cupos)</span>"
+        "</div>"
+        f"<div class='hero-val'>${patrimonio_1h:,.2f} USD</div>"
+        f"<div class='hero-pnl'><span class='{cls_1h}'>{sgn_1h}${pnl_1h:.2f} USD ({sgn_1h}{pnl_1h_pct:.1f}%)</span>"
+        f"<span class='mut'>· Flotante: {sgn_1h}${flotante_1h:.2f} | Realizado: ${realizado_1h:.2f} | Cupos: {len(open_1h)}/3</span></div>"
+        "<div class='hero-desc'>Estrategia rápida intradía en velas de 1 hora. Capital exclusivo asignado de $1,000.00 USD. "
+        "Caza rupturas de volatilidad, mechas de absorción y contracciones VCP con libro segregado en <code>ledger/user_sniper.jsonl</code>.</div>"
+        "</div>"
+    )
+
+    # Operaciones activas 1H
+    p.append(
+        "<div class='dummy-sec-title' style='margin-top:20px;'>"
+        "<div><h2><span>🎯</span> Operaciones Activas de 1H (Sniper Intradía)</h2>"
+        "<div class='dummy-subtitle'>Posiciones rápidas intradía con Take Profit escalonado (TP1 y TP2)</div></div>"
+        "</div>"
+    )
+    p.extend(_render_clean_active_trades_table(open_1h, prices, show_motor=False))
+
+    # Trade Audit Exclusivo 1H
+    p.append(
+        "<div class='dummy-sec-title' style='margin-top:28px;'>"
+        "<div><h2><span>📊</span> Trade Audit Exclusivo · Motor SNIPER 1H</h2>"
+        "<div class='dummy-subtitle'>Historial contable y métricas segregadas para la cuenta de $1,000 USD de Sniper 1H</div></div>"
+        "</div>"
+    )
+    p.append("<div class='audit-stats-row' style='grid-template-columns:repeat(5,minmax(0,1fr));margin-bottom:14px;'>")
+    p.append("<div class='audit-stat-box'><div class='lbl'>Capital Base</div><div class='val'>$1,000.00</div></div>")
+    p.append(f"<div class='audit-stat-box'><div class='lbl'>Cupos en Uso</div><div class='val'>{len(open_1h)} / 3</div></div>")
+    p.append(f"<div class='audit-stat-box'><div class='lbl'>Operaciones Cerradas</div><div class='val'>{len(closed_1h)}</div></div>")
+    p.append(f"<div class='audit-stat-box'><div class='lbl'>Win Rate</div><div class='val'>{f'{win_rate_1h:.1f}%' if closed_1h else '—'}</div></div>")
+    p.append(f"<div class='audit-stat-box'><div class='lbl'>PnL Neto Realizado</div><div class='val {cls_1h}'>${realizado_1h:.2f}</div></div>")
+    p.append("</div>")
+
+    p.extend(_render_clean_closed_trades_table(
+        closed_1h,
+        "El motor rápido intradía está vigilando y gestionando las órdenes activas. Cada cierre quedará auditado con hash criptográfico SHA-256 en ledger/user_sniper.jsonl."
+    ))
+
+    p.append("</div></section>")
+    return p
+
+
+def _bloque_isolated_spot(
+    states: dict[str, Any],
+    spot_plans: list[dict[str, Any]] | None,
+) -> list[str]:
+    """Genera la vista aislada para la pestaña 🪙 Cartera Spot ($1,000 USD)."""
+    prices = states.get("prices") or {}
+    plans = spot_plans or []
+
+    flotante_spot = sum(float(p.get("pnl_usd", 0.0)) for p in plans)
+    patrimonio_spot = 1000.0 + flotante_spot
+    cls_spot = "pos" if flotante_spot >= 0 else "neg"
+    sgn_spot = "+" if flotante_spot >= 0 else ""
+
+    compradas_cnt = len([p for p in plans if "COMPRADA" in str(p.get("status", "")) or "TP1" in str(p.get("status", "")) or "TP2" in str(p.get("status", ""))])
+    esperando_cnt = len([p for p in plans if "ESPERANDO" in str(p.get("status", "")) or "PENDING" in str(p.get("status", ""))])
+
+    p: list[str] = []
+    p.append("<section class='sec isolated-sec' data-sec='spot'>")
+    p.append("<div class='isolated-container'>")
+
+    # Header Card Spot
+    p.append(
+        "<div class='hero-card' style='margin-bottom:20px;'>"
+        "<div class='hero-head'>"
+        "<span class='hero-label'>🪙 MOTOR 3 · CARTERA SPOT ALCANCÍA (1X SIN APALANCAMIENTO) · CUENTA AISLADA</span>"
+        "<span class='hero-badge b-ok'>🛡️ Protección 1x Sin Liquidación</span>"
+        "</div>"
+        f"<div class='hero-val'>${patrimonio_spot:,.2f} USD</div>"
+        f"<div class='hero-pnl'><span class='{cls_spot}'>{sgn_spot}${flotante_spot:.2f} USD</span>"
+        f"<span class='mut'>· Capital base: $1,000.00 USD ($250.00 c/u) | {compradas_cnt} Compradas · {esperando_cnt} en Espera</span></div>"
+        "<div class='hero-desc'>Inversión patrimonial a precio razonable. Asignación equitativa de exactamente $250.00 USD en los 4 activos de la Cesta Élite (BTC, ETH, SOL, SUI). "
+        "Cero apalancamiento, cero riesgo de liquidación y 3 metas escalonadas de toma de ganancias (TP1 30%, TP2 40%, TP3 30%). Libro segregado en <code>ledger/user_spot.jsonl</code>.</div>"
+        "</div>"
+    )
+
+    # 4 Spot Cards
+    p.append(
+        "<div class='dummy-sec-title' style='margin-top:20px;'>"
+        "<div><h2><span>🏦</span> Activos de la Cartera Spot ($250 USD Asignados Cada Uno)</h2>"
+        "<div class='dummy-subtitle'>Zonas de compra fijas inmutables y 3 metas cuantitativas de salida</div></div>"
+        "</div>"
+    )
+
+    p.append("<div class='spot-cards-grid'>")
+    for pl in plans:
+        sym = str(pl.get("asset") or pl.get("symbol") or "")
+        name, code, icon = _COIN_META.get(sym, (sym, sym, "🪙"))
+        cur_px = float(prices.get(sym) or pl.get("price") or pl.get("current_price") or pl.get("buy_ref_price") or 0.0)
+        b_min = float(pl.get("buying_zone_min") or pl.get("buy_zone_low") or 0.0)
+        b_max = float(pl.get("buying_zone_max") or pl.get("buy_zone_high") or 0.0)
+        in_zone = bool(pl.get("in_buy_zone", False)) or (b_min > 0 and b_min <= cur_px <= b_max)
+        tp1 = float(pl.get("tp1") or pl.get("tp1_zone_low") or 0.0)
+        tp2 = float(pl.get("tp2") or pl.get("tp2_zone_low") or 0.0)
+        tp3 = float(pl.get("tp3") or pl.get("tp3_price") or (tp2 * 1.45 if tp2 > 0 else 0.0))
+        alloc = float(pl.get("allocated_usd", 250.0))
+
+        nd = 4 if cur_px < 10 else 2
+        cur_fmt = f"${cur_px:,.{nd}f}"
+        bmin_fmt = f"${b_min:,.{nd}f}"
+        bmax_fmt = f"${b_max:,.{nd}f}"
+
+        if in_zone:
+            verdict_badge = "<div class='spot-cheap-verdict yes'>🟢 ¡SÍ, ESTÁ EN PRECIO DE OFERTA!</div>"
+            zone_desc = f"Zona de compra barata: <b>{bmin_fmt} – {bmax_fmt}</b>"
+        else:
+            verdict_badge = "<div class='spot-cheap-verdict wait'>⏳ Todavía cara · Esperando rebaja</div>"
+            zone_desc = f"Esperando descuento hacia <b>{bmax_fmt}</b>"
+
+        def _tp_str(target: float, px_val: float = cur_px, digits: int = nd) -> str:
+            if target <= 0 or px_val <= 0:
+                return "-"
+            pct = ((target / px_val) - 1.0) * 100.0
+            return f"${target:,.{digits}f} (+{pct:.0f}%)"
+
+        p.append(
+            f"<div class='spot-simple-card'>"
+            f"<div>"
+            f"<div class='coin-card-top'>"
+            f"<div class='coin-name-group'>"
+            f"<span class='coin-icon'>{icon}</span>"
+            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code} · Asignado: ${alloc:.2f} USD</div></div>"
+            f"</div>"
+            f"</div>"
+            f"<div class='coin-price'>{cur_fmt}</div>"
+            f"{verdict_badge}"
+            f"<div class='small' style='margin-bottom:12px;color:var(--tx2);'>{zone_desc}</div>"
+            f"</div>"
+            f"<div class='spot-tp-list'>"
+            f"<div style='font-size:10px;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:4px;'>Metas de Salida Escalonada</div>"
+            f"<div class='spot-tp-item'><span>🎯 TP1 (Recuperar base 30%)</span><b class='mono pos'>{_tp_str(tp1)}</b></div>"
+            f"<div class='spot-tp-item'><span>🎯 TP2 (Ganancia fuerte 40%)</span><b class='mono pos'>{_tp_str(tp2)}</b></div>"
+            f"<div class='spot-tp-item'><span>🎯 TP3 (Gran ciclo 30%)</span><b class='mono pos'>{_tp_str(tp3)}</b></div>"
+            f"</div>"
+            f"</div>"
+        )
+    p.append("</div>")
+
+    # Trade Audit Exclusivo Spot
+    p.append(
+        "<div class='dummy-sec-title' style='margin-top:28px;'>"
+        "<div><h2><span>📊</span> Trade Audit Exclusivo · Cartera Spot</h2>"
+        "<div class='dummy-subtitle'>Estado contable detallado de cada uno de los 4 planes de $250.00 USD</div></div>"
+        "</div>"
+    )
+    p.append("<div class='clean-trades-container' style='padding:10px 14px;'>")
+    p.append("<table class='clean-trades-tbl'><thead><tr>")
+    p.append("<th>Activo</th><th>Asignación</th><th>Estado</th><th>Zona de Compra Fija</th><th>Precio Vivo</th><th>PnL Flotante</th><th>Tesis</th>")
+    p.append("</tr></thead><tbody>")
+    for pl in plans:
+        sym = str(pl.get("asset") or pl.get("symbol") or "")
+        alloc = float(pl.get("allocated_usd", 250.0))
+        cur_px = float(prices.get(sym) or pl.get("price") or pl.get("current_price") or 0.0)
+        pnl_u = float(pl.get("pnl_usd", 0.0))
+        pnl_p = float(pl.get("pnl_pct", 0.0))
+        pnl_cls = "pos" if pnl_u >= 0 else "neg"
+        pnl_sgn = "+" if pnl_u >= 0 else ""
+        b_min = float(pl.get("buying_zone_min") or pl.get("buy_zone_low") or 0.0)
+        b_max = float(pl.get("buying_zone_max") or pl.get("buy_zone_high") or 0.0)
+        nd = 4 if cur_px < 10 else 2
+        p.append(
+            f"<tr>"
+            f"<td><b>{_esc(sym)}</b></td>"
+            f"<td class='mono'>${alloc:.2f} USD</td>"
+            f"<td class='small'>{_esc(str(pl.get('status', '🎯 ESPERANDO')))}</td>"
+            f"<td class='mono'>${b_min:,.{nd}f} – ${b_max:,.{nd}f}</td>"
+            f"<td class='mono'><b>${cur_px:,.{nd}f}</b></td>"
+            f"<td class='mono {pnl_cls}'><b>{pnl_sgn}${pnl_u:.2f} USD ({pnl_sgn}{pnl_p:.1f}%)</b></td>"
+            f"<td class='small' style='color:var(--tx2);max-width:260px;'>{_esc(_clean_dummy_opinion(str(pl.get('thesis', ''))))}</td>"
+            f"</tr>"
+        )
+    p.append("</tbody></table></div>")
+
+    p.append("</div></section>")
+    return p
+
+
 def render_dashboard(
     states: dict[str, Any],
     trades_diag: list[dict[str, Any]],
@@ -3033,8 +3533,13 @@ def render_dashboard(
         )
 
     p.append("<main>")
-    # Bloques Principales Apple / Robinhood ("Para Dummies")
+    # Bloques Principales Apple / Robinhood ("Para Dummies" - Vista Unificada $3,000)
     p.extend(_bloque_dummies(states, capital, trades_diag, spot_plans, sniper_data))
+
+    # Vistas Aisladas por Motor ($1,000 USD cada una)
+    p.extend(_bloque_isolated_futures(states, capital, trades_diag))
+    p.extend(_bloque_isolated_sniper(states, sniper_data))
+    p.extend(_bloque_isolated_spot(states, spot_plans))
 
     # Vista Técnica Avanzada y Auditoría Cuantitativa (Drawer colapsable)
     p.append("<section class='sec technical-drawer-sec' data-sec='all'>")

@@ -293,7 +293,7 @@ def evaluar_y_gestionar_spot(
             asset="ETHUSDT",
             timeframe="1d",
             horizon_label="🌊 1D · Swing Spot",
-            allocated_usd=200.0,
+            allocated_usd=250.0,
             buy_zone_low=z_eth["buy_zone_min"],
             buy_zone_high=z_eth["buy_zone_max"],
             buy_ref_price=px_eth,
@@ -317,7 +317,7 @@ def evaluar_y_gestionar_spot(
             asset="SOLUSDT",
             timeframe="1d",
             horizon_label="🌊 1D · Spot",
-            allocated_usd=200.0,
+            allocated_usd=250.0,
             buy_zone_low=z_sol["buy_zone_min"],
             buy_zone_high=z_sol["buy_zone_max"],
             buy_ref_price=px_sol,
@@ -339,7 +339,7 @@ def evaluar_y_gestionar_spot(
             asset="SUIUSDT",
             timeframe="1w",
             horizon_label="🏛️ 1W · Ciclo Alpha",
-            allocated_usd=150.0,
+            allocated_usd=250.0,
             buy_zone_low=z_sui["buy_zone_min"],
             buy_zone_high=z_sui["buy_zone_max"],
             buy_ref_price=px_sui,
@@ -352,28 +352,6 @@ def evaluar_y_gestionar_spot(
             thesis=(
                 "Motor alfa primario de ciclo. Banda cuantitativa calculada para expansión 3x-8x."
             ),
-            ts_utc=now_utc_str,
-        )
-
-        # 5. BNBUSDT (1D Swing Spot)
-        px_bnb = live_prices.get("BNBUSDT", 700.0)
-        z_bnb = calcular_zona_razonable_y_3_tps("BNBUSDT", live_klines.get("BNBUSDT", {}), px_bnb)
-        create_spot_plan(
-            root,
-            asset="BNBUSDT",
-            timeframe="1d",
-            horizon_label="🌊 1D · Swing Spot",
-            allocated_usd=100.0,
-            buy_zone_low=z_bnb["buy_zone_min"],
-            buy_zone_high=z_bnb["buy_zone_max"],
-            buy_ref_price=px_bnb,
-            tp1_zone_low=z_bnb["tp1"],
-            tp1_zone_high=round(z_bnb["tp1"] * 1.05, 2),
-            tp2_zone_low=z_bnb["tp2"],
-            tp2_zone_high=round(z_bnb["tp2"] * 1.08, 2),
-            tp3_price=z_bnb["tp3"],
-            sl_spot=z_bnb["sl_ciclo"],
-            thesis="Ancla de consistencia en soporte macro con alta resiliencia.",
             ts_utc=now_utc_str,
         )
         plans = load_spot_plans(root)
