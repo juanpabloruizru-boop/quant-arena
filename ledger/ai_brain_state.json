@@ -1,42 +1,42 @@
 {
   "BTCUSDT": {
-    "veredicto": "VETAR_TRAMPA",
-    "confianza": 88,
-    "precio_entrada_sugerido": 74992.01,
-    "razonamiento": "Rechazo masivo en 73.5k (Vela 11) y recuperación sólida. Oráculo Kronos proyecta 100% de probabilidad alcista y el régimen macro es Bullish. Vender tras esta absorción de compras en soporte es altamente riesgoso.",
-    "timestamp_utc": "2026-11-09T16:52:41+00:00",
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 82,
+    "precio_entrada_sugerido": 75037.54,
+    "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
+    "timestamp_utc": "2026-11-09T21:58:30+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3-flash-preview"
+    "model_used": "local_heuristics"
   },
   "ETHUSDT": {
-    "veredicto": "VETAR_TRAMPA",
-    "confianza": 85,
-    "precio_entrada_sugerido": 2205.46,
-    "razonamiento": "RSI en 30.4 (sobreventa extrema), rebote alcista en soporte de 2060 y proyección de Kronos alcista. Riesgo alto de trampa bajista para continuar en corto.",
-    "timestamp_utc": "2026-11-09T16:52:51+00:00",
+    "veredicto": "ORDEN_LIMITE_PULLBACK",
+    "confianza": 78,
+    "precio_entrada_sugerido": 2194.1,
+    "razonamiento": "Venta corta extendida -3.1% bajo EMA21. Esperar retroceso correctivo a 2194.1 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-09T21:58:30+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3.5-flash-lite"
+    "model_used": "local_heuristics"
   },
   "SOLUSDT": {
-    "veredicto": "ORDEN_LIMITE_PULLBACK",
+    "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 89.09,
-    "razonamiento": "Tendencia bajista confirmada bajo EMA21 con ADX fuerte. El precio rebota desde el swing low tras fuerte volatilidad; se busca venta corta en pullback hacia la resistencia de la EMA21 (89.09).",
-    "timestamp_utc": "2026-11-09T16:53:09+00:00",
+    "precio_entrada_sugerido": 86.46,
+    "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
+    "timestamp_utc": "2026-11-09T21:58:30+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3.5-flash-lite"
+    "model_used": "local_heuristics"
   },
   "SUIUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 85,
-    "precio_entrada_sugerido": 0.8521,
-    "razonamiento": "El precio ha retrocedido hasta la EMA21 (0.85) tras una vela impulsiva alcista, eliminando la extensión. Con ADX > 36 y BTC en régimen alcista, el soporte dinámico ofrece un R/R óptimo hacia el objetivo de Kronos (0.89).",
-    "timestamp_utc": "2026-11-09T16:53:18+00:00",
+    "precio_entrada_sugerido": 0.8451,
+    "razonamiento": "Setup de impulso/rebote alcista validado. Entrada activa recomendada.",
+    "timestamp_utc": "2026-11-09T21:58:30+00:00",
     "symbol": "SUIUSDT",
     "direction": "LONG",
-    "model_used": "gemini-3-flash-preview"
+    "model_used": "local_heuristics"
   }
 }
