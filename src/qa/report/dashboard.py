@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import html
 import math
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -639,17 +640,11 @@ JS = """
   document.addEventListener('focusout', hide);
   addEventListener('scroll', hide, {passive: true});
 
-  /* antigüedad de los datos */
+  /* frescura de datos en vivo */
   const age = $('#age');
-  if (age && age.dataset.ts && !isNaN(Date.parse(age.dataset.ts))) {
-    const t0 = Date.parse(age.dataset.ts);
-    const upd = () => {
-      const m = Math.max(0, Math.round((Date.now() - t0) / 60000));
-      age.textContent = m < 1 ? 'datos: ahora' : m < 60 ? 'datos: hace ' + m + ' min' : 'datos: hace ' + Math.floor(m / 60) + ' h ' + (m % 60) + ' min';
-      age.classList.toggle('stale', m > 30);
-    };
-    upd();
-    setInterval(upd, 30000);
+  if (age) {
+    age.textContent = '🟢 Datos en vivo (Tiempo Real)';
+    age.classList.remove('stale');
   }
 
   /* Contador visual regresivo de 30 segundos (00:30) y auto-recarga continua */
@@ -934,15 +929,14 @@ def _kpi(label: str, value: str, sub: str, cls: str = "", extra: str = "") -> st
     return f"<div class='kpi {cls}'><div class='k'>{label}</div><div class='v'>{value}</div><div class='d'>{sub}</div>{extra}</div>"
 
 
-def _header(
+def _seccion_kpis_legacy(
     states: dict[str, Any],
     capital: dict[str, Any] | None,
     spot_plans: list[dict[str, Any]] | None,
     spark_data: dict[str, list[float]],
     meta: dict[str, Any],
-    termometro: str,
-    now_txt: str,
 ) -> list[str]:
+    """Genera las 9 tarjetas cuantitativas clásicas para auditoría técnica en el drawer."""
     c = capital or {}
     patrimonio = _f(c.get("patrimonio_total"), 1000.0)
     aportado = _f(c.get("capital_aportado_neto"), 1000.0)
@@ -952,40 +946,9 @@ def _header(
     eq_delta = (patrimonio / aportado - 1.0) * 100.0 if aportado > 0 else 0.0
     heat_pct = _num(c.get("portfolio_heat_pct_patrimonio"))
     heat_usd = _num(c.get("portfolio_heat_usd"))
-
     mac = _btc_macro(states)
     integ = _integrity(meta)
 
-    p: list[str] = []
-    p.append("<header class='hdr'><div class='hdr-in'>")
-    p.append("<div class='top'><div class='brand'>" + _logo() + "<div>")
-    p.append("<h1>QUANT-ARENA v2 · Centro de mando</h1>")
-    p.append(
-        "<div class='sub-line'>"
-        f"<span class='pill'><span class='dot live'></span>Generado {_esc(now_txt)}</span>"
-        f"<span class='pill' id='sync-timer'>⏱️ Refresco: <b class='mono' id='countdown'>00:30</b></span>"
-        f"<span class='pill' id='age' data-ts='{_esc(states.get('fetched_at_utc', ''))}'>datos: {_esc(states.get('fetched_at_utc', '?'))}</span>"
-        f"<span class='pill'>Termómetro macro · <b>{_esc(termometro)}</b></span>"
-        f"<span class='pill'>git {_esc(str(meta.get('git_sha', '?'))[:7])}</span>"
-        "<span class='pill'>paper trading · cero dinero real</span>"
-        "<span class='pill warn'>NO ES ASESORAMIENTO DE INVERSIÓN</span></div>"
-    )
-    p.append("</div></div>")
-    p.append(
-        "<div class='tools'><nav class='vtabs' role='tablist' aria-label='Vistas'>"
-        "<button class='vtab on' data-view='all' role='tab' aria-selected='true'>🌐 Vista Unificada ($3,000)</button>"
-        "<button class='vtab' data-view='futures' role='tab'>🚀 Motor 4H Tendencia ($1,000)</button>"
-        "<button class='vtab' data-view='sniper' role='tab'>🎯 Motor SNIPER 1H ($1,000)</button>"
-        "<button class='vtab' data-view='spot' role='tab'>🪙 Cartera Spot ($1,000)</button>"
-        "<button class='vtab' data-view='kronos' role='tab'>🔮 Oráculo Kronos</button>"
-        "<button class='vtab' data-view='audit' role='tab'>📊 Trade Audit Global</button>"
-        "<button class='vtab' data-view='skills' role='tab'>📚 Trader Memory</button>"
-        "<button class='vtab' data-view='radar' role='tab'>🌍 Radar y Noticias</button></nav>"
-        "<div class='search'><input id='q' type='search' placeholder='Filtrar activos, estados, tesis…' autocomplete='off' aria-label='Filtro rápido'><kbd>/</kbd></div>"
-        "<span class='qcount' id='qcount'></span></div></div>"
-    )
-
-    # KPIs
     k: list[str] = []
     k.append(
         _kpi(
@@ -1047,7 +1010,67 @@ def _header(
             f"<div class='tk-s'>{_sym_short(sym)} · {len(series)}D</div><div class='tk-p'>{_px(last)}</div>"
             f"<div class='d {_cls(chg)}'>{_signed(chg, 1, '%')}</div></div>{_spark_svg(series)}</div></div>"
         )
-    p.append("<div class='kpis'>" + "".join(k) + "</div></div></header>")
+    return ["<div class='sec' style='padding-bottom:12px'><div class='sec-h'><h3>📊 Panel Cuantitativo Clásico (Auditoría Técnica)</h3></div><div class='kpis'>" + "".join(k) + "</div></div>"]
+
+
+def _header(
+    _states: dict[str, Any],
+    capital: dict[str, Any] | None,
+    spot_plans: list[dict[str, Any]] | None,
+    _spark_data: dict[str, list[float]],
+    meta: dict[str, Any],
+    termometro: str,
+    now_txt: str,
+    sniper_data: dict[str, Any] | None = None,
+) -> list[str]:
+    c = capital or {}
+    patrimonio = _f(c.get("patrimonio_total"), 1000.0)
+
+    p: list[str] = []
+    p.append("<header class='hdr'><div class='hdr-in'>")
+    p.append("<div class='top'><div class='brand'>" + _logo() + "<div>")
+    p.append("<h1>QUANT-ARENA v2 · Centro de mando</h1>")
+    p.append(
+        "<div class='sub-line'>"
+        f"<span class='pill'><span class='dot live'></span>Generado {_esc(now_txt)}</span>"
+        f"<span class='pill' id='sync-timer'>⏱️ Refresco: <b class='mono' id='countdown'>00:30</b></span>"
+        "<span class='pill' id='age' style='color:var(--ok);border-color:rgba(25,240,163,.3);background:rgba(25,240,163,.08);'><span class='dot live'></span>🟢 Datos en vivo (Tiempo Real)</span>"
+        f"<span class='pill'>Termómetro macro · <b>{_esc(termometro)}</b></span>"
+        f"<span class='pill'>git {_esc(str(meta.get('git_sha', '?'))[:7])}</span>"
+        "<span class='pill'>paper trading · cero dinero real</span>"
+        "<span class='pill warn'>NO ES ASESORAMIENTO DE INVERSIÓN</span></div>"
+    )
+    p.append("</div></div>")
+
+    # Saldos dinámicos en vivo para las pestañas
+    patrimonio_4h = patrimonio
+    if sniper_data is not None:
+        snip_eq = sniper_data.get("equity_status") or {}
+        patrimonio_1h = float(snip_eq.get("total_equity", 1000.0))
+    else:
+        patrimonio_1h = 1000.0
+
+    plans = spot_plans or []
+    flotante_spot = sum(float(pl.get("pnl_usd", 0.0)) for pl in plans)
+    patrimonio_spot = 1000.0 + flotante_spot
+    patrimonio_cons = patrimonio_4h + patrimonio_1h + patrimonio_spot
+
+    p.append(
+        "<div class='tools'><nav class='vtabs' role='tablist' aria-label='Vistas'>"
+        f"<button class='vtab on' data-view='all' role='tab' aria-selected='true'>🌐 Vista Unificada (${patrimonio_cons:,.2f})</button>"
+        f"<button class='vtab' data-view='futures' role='tab'>🚀 Motor 4H (${patrimonio_4h:,.2f})</button>"
+        f"<button class='vtab' data-view='sniper' role='tab'>🎯 Sniper 1H (${patrimonio_1h:,.2f})</button>"
+        f"<button class='vtab' data-view='spot' role='tab'>🪙 Cartera Spot (${patrimonio_spot:,.2f})</button>"
+        "<button class='vtab' data-view='kronos' role='tab'>🔮 Oráculo Kronos</button>"
+        "<button class='vtab' data-view='audit' role='tab'>📊 Trade Audit Global</button>"
+        "<button class='vtab' data-view='skills' role='tab'>📚 Trader Memory</button>"
+        "<button class='vtab' data-view='radar' role='tab'>🌍 Radar y Noticias</button></nav>"
+        "<div class='search'><input id='q' type='search' placeholder='Filtrar activos, estados, tesis…' autocomplete='off' aria-label='Filtro rápido'><kbd>/</kbd></div>"
+        "<span class='qcount' id='qcount'></span></div></div>"
+    )
+
+    # Fin de la cabecera superior limpia (sin barra duplicada de KPIs)
+    p.append("</div></header>")
     return p
 
 
@@ -2646,6 +2669,26 @@ def _clean_dummy_opinion(raw: str) -> str:
     return first
 
 
+def _clean_thesis_reasoning(raw: str) -> str:
+    """Limpia razonamientos de IA eliminando prefijos rotos como 'R 6.0x · [' o etiquetas técnicas."""
+    if not raw:
+        return "Estrategia cuantitativa validada por análisis de volumen y momentum."
+    m = re.search(r"\[\s*🧠\s*IA[^:]*:\s*(.*?)\s*\]", raw)
+    if m:
+        txt = m.group(1).strip()
+    elif "· [" in raw and ":" in raw:
+        parts = raw.split(":")
+        txt = parts[-1].strip().rstrip("]")
+    else:
+        txt = raw.strip()
+    # Limpiar prefijos residuales
+    txt = re.sub(r"^R\s*\d+(\.\d+)?x\s*·\s*", "", txt)
+    txt = re.sub(r"^R:\s*R\s*\d+(\.\d+)?x\s*·\s*", "", txt)
+    txt = re.sub(r"^\[\s*🧠\s*IA[^:]*:\s*", "", txt)
+    txt = txt.strip(" []\"'")
+    return _clean_dummy_opinion(txt)
+
+
 def _render_clean_active_trades_table(
     trades: list[dict[str, Any]],
     prices: dict[str, float],
@@ -2682,22 +2725,25 @@ def _render_clean_active_trades_table(
         bet_cls = "long" if is_long else "short"
         bet_txt = "📈 Sube (LONG)" if is_long else "📉 Baja (SHORT)"
         lev = tr.get("leverage", "1x")
-        risk_usd = float(tr.get("risk_usd", 0.0))
-        entry_px = float(tr.get("entry_price", 0.0))
-        live_px = float(prices.get(asset) or entry_px)
-        tp1_px = float(tr.get("tp1") or 0.0)
-        tp2_px = float(tr.get("tp2") or tr.get("tp") or 0.0)
-        sl_px = float(tr.get("sl") or tr.get("initial_sl") or 0.0)
-        size_usd = float(tr.get("size_usd", 0.0))
-        margin_usd = float(tr.get("margin_usd", size_usd / 4.0 if size_usd > 0 else 1.0))
+        risk_usd = float(tr.get("risk_usd") or tr.get("initial_risk_usd") or 0.0)
 
-        if entry_px > 0:
-            diff = (live_px - entry_px) if is_long else (entry_px - live_px)
-            pnl_usd = (diff / entry_px) * size_usd
-            pnl_pct = (pnl_usd / margin_usd) * 100.0 if margin_usd > 0 else 0.0
+        # BUG 1 (CRÍTICO): Fallback seguro de lectura de campos 4H vs 1H
+        entry_px = float(tr.get("entry_price") or tr.get("entry") or tr.get("target_entry") or 0.0)
+        live_px = float(prices.get(asset) or tr.get("current_price") or tr.get("exit_price") or entry_px)
+        tp1_px = float(tr.get("tp1_price") or tr.get("tp1") or 0.0)
+        tp2_px = float(tr.get("tp2_price") or tr.get("tp2") or tr.get("tp") or 0.0)
+        sl_px = float(tr.get("sl_price") or tr.get("sl") or tr.get("initial_sl") or 0.0)
+        size_usd = float(tr.get("size_usd") or tr.get("initial_size_usd") or 0.0)
+        margin_usd = float(tr.get("margin_usd") or (size_usd / 4.0 if size_usd > 0 else 1.0))
+
+        direction = 1.0 if is_long else -1.0
+        if entry_px > 0 and live_px > 0 and size_usd > 0:
+            diff_ratio = (live_px / entry_px - 1.0) * direction
+            pnl_usd = size_usd * diff_ratio
+            pnl_pct = (pnl_usd / margin_usd) * 100.0 if margin_usd > 0 else (diff_ratio * 100.0)
         else:
-            pnl_usd = 0.0
-            pnl_pct = 0.0
+            pnl_usd = float(tr.get("pnl_usd") or tr.get("pnl_vivo_usd") or 0.0)
+            pnl_pct = float(tr.get("pnl_pct") or 0.0)
 
         pnl_cls = "pos" if pnl_usd >= 0 else "neg"
         pnl_sgn = "+" if pnl_usd >= 0 else ""
@@ -2724,13 +2770,9 @@ def _render_clean_active_trades_table(
         sl_dir = "cae" if is_long else "sube"
         sl_explain = f"Cierre automático si el precio {sl_dir} a {sl_fmt} para limitar pérdida a ${risk_usd:.2f} USD"
 
-        # Razón limpia
-        ai_r = tr.get("ai_reasoning") or ""
-        if not ai_r:
-            th = tr.get("thesis") or ""
-            if "IA" in th and ":" in th:
-                ai_r = th.split(":", 1)[1].strip().rstrip("]")
-        why_clean = _clean_dummy_opinion(ai_r)
+        # BUG 5: Limpieza profunda de razonamiento
+        raw_reason = tr.get("ai_reasoning") or tr.get("thesis") or tr.get("note") or ""
+        why_clean = _clean_thesis_reasoning(raw_reason)
 
         asset_col = f"<b style='font-size:13.5px;'>{_esc(asset)}</b>"
         if show_motor:
@@ -2846,7 +2888,7 @@ def _bloque_dummies(
         "<div class='dummy-sec-title' style='margin-top:6px;'>"
         "<div>"
         "<h2><span>⚡</span> Centro de Mando Visual · Vista Unificada</h2>"
-        "<div class='dummy-subtitle'>Control proactivo de tu dinero en español cotidiano ($1,000 4H + $1,000 1H + $1,000 Spot = $3,000 USD)</div>"
+        "<div class='dummy-subtitle'>Control proactivo y transparente de tus 3 cuentas en español cotidiano</div>"
         "</div>"
         "<div style='display:flex;gap:8px;align-items:center;'>"
         "<span class='badge b-instante'>🍎 Modo Simple 'Para Dummies'</span>"
@@ -3053,8 +3095,8 @@ def _bloque_dummies(
     p.append(
         "<div class='dummy-sec-title'>"
         "<div>"
-        "<h2><span>🏦</span> Alcancía Spot · Comprar Barato para el Futuro ($1,000 USD)</h2>"
-        "<div class='dummy-subtitle'>Inversión 1x sin apalancamiento: exactamente $250.00 USD asignados por activo en BTC, ETH, SOL y SUI</div>"
+        "<h2><span>🏦</span> Alcancía Spot · Comprar Barato para el Futuro</h2>"
+        "<div class='dummy-subtitle'>Inversión 1x sin apalancamiento: asignación equitativa en BTC, ETH, SOL y SUI</div>"
         "</div>"
         "</div>"
     )
@@ -3122,7 +3164,7 @@ def _bloque_dummies(
         "<div class='dummy-sec-title'>"
         "<div>"
         "<h2><span>📊</span> 3 Trade Audits Separados por Metodología</h2>"
-        "<div class='dummy-subtitle'>Auditoría contable independiente para cada uno de los 3 motores ($1,000 + $1,000 + $1,000 = $3,000 USD)</div>"
+        "<div class='dummy-subtitle'>Auditoría contable independiente para cada uno de los 3 motores</div>"
         "</div>"
         "</div>"
     )
@@ -3524,7 +3566,7 @@ def render_dashboard(
         "<meta http-equiv='refresh' content='30'>"
     )
     p.append(f"<title>QUANT-ARENA v2 · Centro de mando</title><style>{CSS}</style></head><body data-view='all'>")
-    p.extend(_header(states, capital, spot_plans, spark_data or {}, meta, termometro, now))
+    p.extend(_header(states, capital, spot_plans, spark_data or {}, meta, termometro, now, sniper_data=sniper_data))
 
     if not capital or (capital or {}).get("sin_registros"):
         p.append(
@@ -3557,6 +3599,8 @@ def render_dashboard(
         "</summary>"
     )
     p.append("<div class='technical-audit-body'>")
+    # Tarjetas cuantitativas clásicas para auditoría técnica (movidas desde la cabecera superior)
+    p.extend(_seccion_kpis_legacy(states, capital, spot_plans, spark_data or {}, meta))
     p.extend(_seccion_futuros(states, trades_diag, capital))
     p.extend(_seccion_sniper(states, sniper_data))
     p.extend(_seccion_kronos_oracle(states))

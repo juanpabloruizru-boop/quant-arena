@@ -733,6 +733,18 @@ def evaluar_y_gestionar_sniper(
             if combined_conviction < 55:
                 continue
 
+            # Prohibir abrir posición si la IA dictamina veto o advierte sobreventa extrema / rebote
+            ai_verd_snip = ai_eval.get("veredicto", "EJECUTAR_AHORA")
+            ai_raz_snip = str(ai_eval.get("razonamiento", "")).lower()
+            if ai_verd_snip == "VETAR_TRAMPA":
+                continue
+            if dir_c == "SHORT" and (
+                "sobreventa extrema" in ai_raz_snip
+                or "rebote" in ai_raz_snip
+                or "agotamiento" in ai_raz_snip
+            ):
+                continue
+
             # Sizing exacto: $20.00 USD de riesgo con 5x apalancamiento
             risk_usd = SNIPER_BASE_RISK_USD
             dist_sl_pct = dist_sl / (entry_px + 1e-9)

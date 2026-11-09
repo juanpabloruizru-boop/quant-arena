@@ -984,6 +984,20 @@ def gestionar_y_ejecutar(
             if score < 55:
                 continue
 
+            # Prohibir abrir SHORT si la IA advierte trampa, rebote alcista o sobreventa extrema
+            if direction == "SHORT":
+                r_low = ai_razon.lower()
+                if (
+                    ai_verdict_tipo == "VETAR_TRAMPA"
+                    or "sobreventa extrema" in r_low
+                    or "rebote" in r_low
+                    or "agotamiento" in r_low
+                ):
+                    continue
+            elif direction == "LONG":
+                if ai_verdict_tipo == "VETAR_TRAMPA":
+                    continue
+
             model_lbl = ai_eval.get("model_used", "Gemini")
 
             # 3. EJECUCIÓN DIRECTA SIN PARÁLISIS (INSTANTE vs LÍMITE CERCANA 0.25x ATR)
@@ -1094,6 +1108,7 @@ def gestionar_y_ejecutar(
                 tp1=tp1,
                 tp2=tp2,
                 thesis=thesis_txt,
+                ai_reasoning=ai_razon,
             )
             trade_rec["tp1"] = tp1
             trade_rec["tp2"] = tp2

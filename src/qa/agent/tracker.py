@@ -64,6 +64,7 @@ def open_trade(
     tp1: float | None = None,
     tp2: float | None = None,
     thesis: str = "",
+    ai_reasoning: str = "",
 ) -> dict[str, Any]:
     """Registra una operación abierta POR EL USUARIO o AUTOPILOT (tag/ts opcionales, M6.3).
 
@@ -102,6 +103,7 @@ def open_trade(
         "tp1": None if tp1 is None else float(tp1),
         "tp2": None if tp2 is None else float(tp2),
         "thesis": thesis,
+        "ai_reasoning": ai_reasoning,
     }
     return _append(root, rec)
 

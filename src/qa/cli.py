@@ -505,10 +505,17 @@ def agent_run() -> None:
         d["example"] = t.get("example", False)
         d["status"] = "open"
         # Propagar campos clave del trade a diagnose para el Dashboard M6.3
-        d["entry"] = t.get("entry_price")
-        d["sl"] = t.get("sl")
-        d["tp"] = t.get("tp")
-        d["size_usd"] = t.get("size_usd")
+        d["entry"] = t.get("entry_price") or t.get("entry")
+        d["entry_price"] = d["entry"]
+        d["sl"] = t.get("sl") or t.get("sl_price")
+        d["sl_price"] = d["sl"]
+        d["tp"] = t.get("tp") or t.get("tp2") or t.get("tp2_price")
+        d["tp_price"] = d["tp"]
+        d["tp1"] = t.get("tp1") or t.get("tp1_price")
+        d["tp1_price"] = d["tp1"]
+        d["tp2"] = t.get("tp2") or t.get("tp2_price") or d["tp"]
+        d["tp2_price"] = d["tp2"]
+        d["size_usd"] = t.get("size_usd") or t.get("initial_size_usd")
         d["note"] = t.get("note")
         d["rr_neto_inicial"] = t.get("rr_neto_inicial")
         d["leverage"] = t.get("leverage") or "4x"
@@ -520,6 +527,7 @@ def agent_run() -> None:
         d["thesis"] = t.get("thesis") or t.get("note", "")
         d["margin_usd"] = t.get("margin_usd")
         d["risk_usd"] = t.get("risk_usd")
+        d["ai_reasoning"] = t.get("ai_reasoning", "")
         diags.append(d)
 
     # Auditorías M6.3: Futuros (Pestaña 1) y Spot & Ciclos (Pestaña 2)

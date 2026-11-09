@@ -183,15 +183,15 @@ def _local_heuristics_verdict(
             }
     else:
         dist_ema21_pct = (ema21 - current_price) / (ema21 + 1e-9) * 100.0
-        if dist_ema21_pct > 2.2 or rsi < 30:
+        if dist_ema21_pct > 3.0 or rsi < 25:
             suggested = round(ema21 * 0.998, nd)
             return {
                 "veredicto": "ORDEN_LIMITE_PULLBACK",
                 "confianza": 78,
                 "precio_entrada_sugerido": suggested,
                 "razonamiento": (
-                    f"Short extendido -{dist_ema21_pct:.1f}% bajo EMA21. "
-                    f"Esperar rebote correctivo a {suggested} para entrar con mejor R:R."
+                    f"Venta corta extendida -{dist_ema21_pct:.1f}% bajo EMA21. "
+                    f"Esperar retroceso correctivo a {suggested} para entrar con mejor R:R."
                 )[:240],
                 "timestamp_utc": datetime.now(UTC).isoformat(timespec="seconds"),
                 "symbol": symbol,
@@ -201,9 +201,9 @@ def _local_heuristics_verdict(
         else:
             return {
                 "veredicto": "EJECUTAR_AHORA",
-                "confianza": 80,
+                "confianza": 82,
                 "precio_entrada_sugerido": current_price,
-                "razonamiento": "Presión bajista regular bajo EMA21 con espacio a soporte.",
+                "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
                 "timestamp_utc": datetime.now(UTC).isoformat(timespec="seconds"),
                 "symbol": symbol,
                 "direction": direction,
@@ -309,13 +309,33 @@ def evaluar_setup_con_ia(
         '}'
     )
 
-    system_instruction = (
-        "Eres el Director de Riesgo y Jefe de Mesa de un fondo cuantitativo de criptoactivos. "
-        "Tu trabajo es evitar que el bot entre tarde ('chasing' tras varias velas verdes), "
-        "evitar compras pegadas a resistencias o con mechas de rechazo (bull traps), "
-        "y priorizar entradas limpias. Analiza las últimas 15 velas y el macro, "
-        f"y responde en JSON:\n{schema_json}"
-    )
+    if direction == "SHORT":
+        system_instruction = (
+            "Eres el Director de Riesgo y Jefe de Mesa de un fondo cuantitativo de criptoactivos. "
+            "Tu trabajo es evaluar una orden de VENTA CORTA (SHORT). "
+            "Valida la continuación de la tendencia bajista y vigila soportes clave. "
+            "Evita vender si hay sobreventa extrema o rebotes en soportes mayores. "
+            f"Analiza las velas y el contexto, y responde en JSON:\n{schema_json}"
+        )
+        criteria_txt = (
+            "Criterios cuantitativos para SHORT:\n"
+            f"1. Continuación bajista bajo EMA21 ({ema21:.2f}): 'EJECUTAR_AHORA' (>=75).\n"
+            f"2. Rebote a EMA21: 'ORDEN_LIMITE_PULLBACK' para vender a {ema21:.2f}.\n"
+            "3. Absorción alcista en soporte mayor o agotamiento: 'VETAR_TRAMPA'."
+        )
+    else:
+        system_instruction = (
+            "Eres el Director de Riesgo y Jefe de Mesa de un fondo cuantitativo de criptoactivos. "
+            "Tu trabajo es evaluar una orden de COMPRA (LONG). "
+            "Evita compras tardías ('chasing' tras velas verdes) y trampas en resistencia. "
+            f"Analiza las velas y el contexto, y responde en JSON:\n{schema_json}"
+        )
+        criteria_txt = (
+            "Criterios cuantitativos para LONG:\n"
+            f"1. Extendido sobre EMA21 ({ema21:.2f}): 'ORDEN_LIMITE_PULLBACK' a EMA21.\n"
+            "2. Mecha superior larga en resistencia: 'VETAR_TRAMPA'.\n"
+            "3. Estructura apoya sobre EMA21 con absorción: 'EJECUTAR_AHORA' (>=75)."
+        )
 
     macro_txt = (
         "ALCISTA (BTC >= SMA200 1D)"
@@ -342,11 +362,7 @@ def evaluar_setup_con_ia(
         f"{lessons_txt}\n\n"
         f"--- PROYECCIÓN ORÁCULO K-LINE KRONOS (PRÓXIMAS 6 VELAS) ---\n"
         f"{kronos_txt}\n\n"
-        f"Criterios cuantitativos obligatorios:\n"
-        f"1. Si el precio está extendido sobre EMA21, dictamina 'ORDEN_LIMITE_PULLBACK' "
-        f"sugiriendo entrada cerca de EMA21 ({ema21:.2f}).\n"
-        f"2. Si la vela presenta mecha superior larga en resistencia, dictamina 'VETAR_TRAMPA'.\n"
-        f"3. Si la estructura apoya sobre EMA21 con absorción, dictamina 'EJECUTAR_AHORA' (>=75)."
+        f"{criteria_txt}"
     )
 
     # 3. Lista de modelos con fallback en cascada

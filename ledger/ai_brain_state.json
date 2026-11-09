@@ -1,42 +1,42 @@
 {
   "BTCUSDT": {
     "veredicto": "VETAR_TRAMPA",
-    "confianza": 92,
-    "precio_entrada_sugerido": 75528.5,
-    "razonamiento": "RSI en sobreventa extrema (28.6) y macro alcista invalidan SHORT. Kronos proyecta reversión alcista inminente. Riesgo de rebote violento tras absorción en 73.5k; entrar corto aquí es vender el suelo. Priorizamos preservación de capital.",
-    "timestamp_utc": "2026-11-09T15:53:21+00:00",
+    "confianza": 88,
+    "precio_entrada_sugerido": 74992.01,
+    "razonamiento": "Rechazo masivo en 73.5k (Vela 11) y recuperación sólida. Oráculo Kronos proyecta 100% de probabilidad alcista y el régimen macro es Bullish. Vender tras esta absorción de compras en soporte es altamente riesgoso.",
+    "timestamp_utc": "2026-11-09T16:52:41+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
     "model_used": "gemini-3-flash-preview"
   },
   "ETHUSDT": {
-    "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 88,
-    "precio_entrada_sugerido": 2211.25,
-    "razonamiento": "Precio extendido por debajo de EMA21 con RSI en sobreventa extrema (19.7). Kronos predice rebote (100% prob). Vetamos entrada a mercado por riesgo de reversión. Solo se acepta SHORT tras pullback a EMA21 (2211.25) para mejorar R/R.",
-    "timestamp_utc": "2026-11-09T15:53:34+00:00",
+    "veredicto": "VETAR_TRAMPA",
+    "confianza": 85,
+    "precio_entrada_sugerido": 2205.46,
+    "razonamiento": "RSI en 30.4 (sobreventa extrema), rebote alcista en soporte de 2060 y proyección de Kronos alcista. Riesgo alto de trampa bajista para continuar en corto.",
+    "timestamp_utc": "2026-11-09T16:52:51+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
-    "model_used": "gemini-3-flash-preview"
+    "model_used": "gemini-3.5-flash-lite"
   },
   "SOLUSDT": {
-    "veredicto": "VETAR_TRAMPA",
+    "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 82,
-    "precio_entrada_sugerido": 89.2,
-    "razonamiento": "RSI sobrevendido (26.8) y fuerte mecha superior en la vela 15 sugieren rebote alcista inminente. Veto el Short actual para evitar bull trap y mecha de rechazo en soporte.",
-    "timestamp_utc": "2026-11-09T15:53:51+00:00",
+    "precio_entrada_sugerido": 89.09,
+    "razonamiento": "Tendencia bajista confirmada bajo EMA21 con ADX fuerte. El precio rebota desde el swing low tras fuerte volatilidad; se busca venta corta en pullback hacia la resistencia de la EMA21 (89.09).",
+    "timestamp_utc": "2026-11-09T16:53:09+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "gemini-3.5-flash-lite"
   },
   "SUIUSDT": {
-    "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 82,
-    "precio_entrada_sugerido": 0.85,
-    "razonamiento": "El precio rebotó desde mínimos hacia la EMA21 en 0.85. Dado que buscamos un SHORT y la macro de BTC es alcista, exigimos un pullback limpio a resistencia en lugar de perseguir la caída actual.",
-    "timestamp_utc": "2026-11-09T15:54:08+00:00",
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 85,
+    "precio_entrada_sugerido": 0.8521,
+    "razonamiento": "El precio ha retrocedido hasta la EMA21 (0.85) tras una vela impulsiva alcista, eliminando la extensión. Con ADX > 36 y BTC en régimen alcista, el soporte dinámico ofrece un R/R óptimo hacia el objetivo de Kronos (0.89).",
+    "timestamp_utc": "2026-11-09T16:53:18+00:00",
     "symbol": "SUIUSDT",
-    "direction": "SHORT",
-    "model_used": "gemini-3.5-flash-lite"
+    "direction": "LONG",
+    "model_used": "gemini-3-flash-preview"
   }
 }
