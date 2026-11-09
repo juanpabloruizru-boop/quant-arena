@@ -328,14 +328,14 @@ def score_symbol(
         score_short += 10
         reasons_short.append(f"RSI {rsi_val:.1f} agotamiento techo")
 
-    # 4. Confirmación Volumétrica RVOL (hasta 15 pts)
+    # 4. Confirmación Volumétrica RVOL (hasta 15 pts) - Umbral ágil flexibilizado >= 1.05
     rvol_val = tf_data.get("rvol", 1.0)
-    if rvol_val >= 1.2:
+    if rvol_val >= 1.05:
         score_long += 15
         score_short += 15
-        reasons_long.append(f"RVOL {rvol_val:.1f}x (volumen expansivo)")
-        reasons_short.append(f"RVOL {rvol_val:.1f}x (volumen expansivo)")
-    elif rvol_val >= 0.9:
+        reasons_long.append(f"RVOL {rvol_val:.2f}x (volumen activo)")
+        reasons_short.append(f"RVOL {rvol_val:.2f}x (volumen activo)")
+    elif rvol_val >= 0.90:
         score_long += 10
         score_short += 10
     else:
@@ -357,48 +357,52 @@ def score_symbol(
 
     # 6. Filtro Direccional de Funding Rate (Futuros USD-M)
     if funding_rate is not None:
-        if funding_rate > 0.0003:  # > +32.8% anualizado (euforia compradora, crowded long)
+        if funding_rate > 0.00035:
             score_long -= 25
             f_txt = f"{funding_rate*100:.3f}%/8h"
             reasons_long.append(f"Funding alcista extremo ({f_txt}) Penalización LONG")
-        elif funding_rate < -0.0002:  # < -21.9% anualizado (pánico vendedor, crowded short)
+            reasons_short.append(f"Funding alcista extremo ({f_txt})")
+        elif funding_rate < -0.00025:
             score_short -= 25
             f_txt = f"{funding_rate*100:.3f}%/8h"
             reasons_short.append(f"Funding bajista extremo ({f_txt}) Penalización SHORT")
+            reasons_long.append(f"Funding bajista extremo ({f_txt})")
 
-    # 7. Filtro de Fuerza Tendencial ADX / DMI y Bloqueo de Régimen Lateral
+    # 7. Filtro de Fuerza Tendencial ADX / DMI
     adx_val = tf_data.get("adx14", 25.0)
     adx_slope = tf_data.get("adx_slope", 0.0)
     if adx_val < 22.0:
-        # Mercado lateral / compresión sucia: bloquear nuevas aperturas direccionales
         score_long = min(score_long, 35)
         score_short = min(score_short, 35)
-        reasons_long.append(f"Bloqueo Régimen Lateral ADX {adx_val:.1f}<22")
-        reasons_short.append(f"Bloqueo Régimen Lateral ADX {adx_val:.1f}<22")
-    elif adx_val >= 22.0 and adx_slope > 0:
+        reasons_long.append(f"Bloqueo Régimen Lateral ADX ({adx_val:.1f} < 22)")
+        reasons_short.append(f"Bloqueo Régimen Lateral ADX ({adx_val:.1f} < 22)")
+    else:
         score_long += 15
         score_short += 15
-        reasons_long.append(f"Fuerza Tendencial ADX {adx_val:.1f} (pendiente +)")
-        reasons_short.append(f"Fuerza Tendencial ADX {adx_val:.1f} (pendiente +)")
+        reasons_long.append(f"Fuerza Tendencial ADX {adx_val:.1f}")
+        reasons_short.append(f"Fuerza Tendencial ADX {adx_val:.1f}")
 
     # 8. Filtro de Fuerza Relativa frente a Bitcoin (RS Spread vs BTC)
     if sym != "BTCUSDT" and rs_ratio_above_sma is not None:
         if not rs_ratio_above_sma:
             score_long = 0
-            reasons_long.append("Veto RS vs BTC < SMA20 (Debilidad Relativa frente a Bitcoin)")
-            reasons_short.append("Veto RS vs BTC < SMA20 (Debilidad Relativa)")
+            score_short += 20
+            reasons_short.append("Veto RS vs BTC < SMA20 (Debilidad Altcoin -> Sesgo SHORT)")
+            reasons_long.append("Veto RS vs BTC < SMA20")
         else:
-            score_long += 10
+            score_long += 15
             reasons_long.append("Fuerza Relativa RS vs BTC > SMA20")
 
     # 9. Filtro Macro de Régimen Bitcoin: Close_BTC_1D vs SMA200(1D)
     if sym != "BTCUSDT" and btc_macro_bullish is not None:
         if not btc_macro_bullish:
             score_long = 0
-            reasons_long.append("Veto Macro: BTC < SMA200(1D) (Invierno Cripto / Veto Total LONGs)")
-            reasons_short.append("Confirmación Macro: BTC < SMA200(1D) (Sesgo Bajista)")
+            score_short += 20
+            reasons_short.append("BTC < SMA200(1D) Confirmación Macro (Impulso SHORT)")
+            reasons_long.append("BTC < SMA200(1D) (Veto Long Altcoin)")
         else:
-            reasons_long.append("Macro Alcista: BTC >= SMA200(1D)")
+            score_long += 15
+            reasons_long.append("Macro Alcista BTC >= SMA200")
 
     # Acotar scores al rango 0..100
     final_score_long = max(0, min(100, score_long))
@@ -946,72 +950,62 @@ def gestionar_y_ejecutar(
             if not cand:
                 cand = scores_dict.get(sym, {})
 
-            direction = cand.get("direction", "NEUTRAL")
-            score = cand.get("score", 0)
-            adx_val = cand.get("adx14", 25.0)
-            reason = cand.get("reason", "Alineación de tendencia multi-indicador")
-            atr14 = cand.get("atr14", px * 0.02)
-            atr_mean = cand.get("atr_mean", atr14)
+            direction = cand.get("direction", "LONG")
+            if direction == "NEUTRAL":
+                direction = "SHORT" if not btc_macro_bull else "LONG"
+            tech_score = float(cand.get("score", 50.0))
+            reason = cand.get("reason", "Alineación cuantitativa multi-indicador")
+            atr14 = float(cand.get("atr14", px * 0.02))
+            atr_mean = float(cand.get("atr_mean", atr14))
             nd = 4 if px < 10 else 2
+            ema21_val = float(cand.get("ema21", px))
 
-            # Filtros de disciplina: descarte por mercado lateral o score bajo
-            if direction == "NEUTRAL" or score < 60 or adx_val < 22.0:
-                continue
-
-            ema21_val = cand.get("ema21", px)
-
-            # 1. AUTORIZACIÓN OBLIGATORIA DEL JEFE DE MESA IA
+            # 1. EVALUACIÓN Y PONDERACIÓN DEL JEFE DE MESA IA
             ai_eval = cand.get("ai_verdict") or scores_dict.get(sym, {}).get("ai_verdict") or {}
-            ai_verdict_tipo = ai_eval.get("veredicto", "ORDEN_LIMITE_PULLBACK")
-            ai_confianza = int(ai_eval.get("confianza", 75))
+            ai_verdict_tipo = ai_eval.get("veredicto", "EJECUTAR_AHORA")
+            ai_confianza = int(ai_eval.get("confianza", 78))
             ai_razon = str(ai_eval.get("razonamiento", ""))
-            ai_sugg_px = float(ai_eval.get("precio_entrada_sugerido") or px)
 
-            # Si el Jefe de Mesa IA veta el setup por trampa alcista/bajista, bloquear
-            if ai_verdict_tipo == "VETAR_TRAMPA":
-                continue
+            kronos_fc = cand.get("kronos_4h") or scores_dict.get(sym, {}).get("kronos_4h") or {}
+            k_bull_prob = float(kronos_fc.get("bullish_prob", 50.0))
+            kronos_dir_prob = k_bull_prob if direction == "LONG" else (100.0 - k_bull_prob)
 
-            # 2. FILTRO ANTI-LLEGAR-TARDE (ANTI-CHASING)
-            # Si el precio actual está extendido sobre la EMA21(4H) (> 1.8% o sobrecompra)
-            # se prohíbe la compra a mercado para no entrar tarde en movimientos agotados
-            is_chasing = False
-            if direction == "LONG":
-                dist_ema21 = (px - ema21_val) / (ema21_val + 1e-9)
-                if (
-                    dist_ema21 > 0.018
-                    or cand.get("atr_extended", False)
-                    or cand.get("rsi", 50.0) > 70.0
-                ):
-                    is_chasing = True
-            else:
-                dist_ema21 = (ema21_val - px) / (ema21_val + 1e-9)
-                if (
-                    dist_ema21 > 0.018
-                    or cand.get("atr_extended", False)
-                    or cand.get("rsi", 50.0) < 30.0
-                ):
-                    is_chasing = True
-
-            # 3. DETERMINACIÓN DE MODO Y ORDEN: INSTANTE vs PULLBACK MAKER
-            # Entrada de mercado inmediata SOLO con triple confirmación:
-            # - Score >= 85
-            # - ADX > 30.0
-            # - Jefe de Mesa IA == 'EJECUTAR_AHORA' con confianza >= 75
-            # - NO extendido (no chasing)
-            can_instant = (
-                score >= 85
-                and adx_val > 30.0
-                and ai_verdict_tipo == "EJECUTAR_AHORA"
-                and ai_confianza >= 75
-                and not is_chasing
+            # 2. PUNTAJE DE SINERGIA ACTIVA UNIFICADA (0-100)
+            # 35% Oráculo Kronos + 35% Estructura Técnica + 30% Gemini IA
+            ai_weight_val = float(ai_confianza)
+            combined_score = round(
+                0.35 * kronos_dir_prob + 0.35 * tech_score + 0.30 * ai_weight_val, 1
             )
+            cand["combined_conviction_score"] = combined_score
+            cand["score"] = combined_score
+            score = combined_score
+
+            # Umbral de disparo ágil reducido a Score >= 55
+            if score < 55:
+                continue
 
             model_lbl = ai_eval.get("model_used", "Gemini")
-            kronos_fc = cand.get("kronos_4h") or scores_dict.get(sym, {}).get("kronos_4h") or {}
-            k_low = float(kronos_fc.get("forecast_low") or 0.0)
-            k_high = float(kronos_fc.get("forecast_high") or 0.0)
 
-            if can_instant:
+            # 3. EJECUCIÓN DIRECTA SIN PARÁLISIS (INSTANTE vs LÍMITE CERCANA 0.25x ATR)
+            # Preferir siempre apertura activa de inmediato (OPEN / ⚡ AL INSTANTE)
+            dist_ema21 = abs(px - ema21_val) / (ema21_val + 1e-9)
+            if dist_ema21 > 0.05:
+                # Si está sobre-extendido > 5%, orden límite a solo 0.25x ATR para llenado veloz
+                mode = "FUTURO"
+                order_state = "PENDING_FUTURE"
+                offset_atr = 0.25 * atr14
+                target_px = round(px - offset_atr if direction == "LONG" else px + offset_atr, nd)
+                entry_px = target_px
+                target_entry = target_px
+                geom = calcular_niveles_rr(target_px, atr14, direction)
+                rr_n = geom["rr_neto"]
+                thesis_txt = (
+                    f"🎯 PROGRAMADA {direction} {lev} ({tf.upper()}) · Pullback a 0.25x ATR "
+                    f"({target_px}) · Score {score:.0f}/100 [Kronos {kronos_dir_prob:.0f}% · "
+                    f"Tech {tech_score:.0f} · IA {ai_confianza}%] · R:R {rr_n}x · "
+                    f"[🧠 IA {model_lbl}: {ai_razon}]"
+                )
+            else:
                 mode = "INSTANTE"
                 entry_px = px
                 order_state = "ACTIVE"
@@ -1019,41 +1013,10 @@ def gestionar_y_ejecutar(
                 geom = calcular_niveles_rr(entry_px, atr14, direction)
                 rr_n = geom["rr_neto"]
                 thesis_txt = (
-                    f"⚡ AL INSTANTE {direction} {lev} ({tf.upper()}) · Convicción Extrema "
-                    f"Score {score}/100 · ADX {adx_val:.1f} · {reason} · R:R {rr_n}x (Taker) "
-                    f"· [🧠 IA {model_lbl}: {ai_razon}]"
-                )
-            else:
-                # ORDEN LÍMITE PULLBACK (Maker Fee 0.02% + Afinado por Banda Kronos)
-                mode = "FUTURO"
-                order_state = "PENDING_FUTURE"
-                if direction == "LONG":
-                    if 0 < ai_sugg_px < px:
-                        target_px = ai_sugg_px
-                    elif ema21_val < px:
-                        target_px = round(max(ema21_val, px * 0.98), nd)
-                    else:
-                        target_px = round(px * 0.985, nd)
-                    if 0 < k_low < px and k_low >= px * 0.96:
-                        target_px = round(0.65 * target_px + 0.35 * k_low, nd)
-                else:
-                    if ai_sugg_px > px:
-                        target_px = ai_sugg_px
-                    elif ema21_val > px:
-                        target_px = round(min(ema21_val, px * 1.02), nd)
-                    else:
-                        target_px = round(px * 1.015, nd)
-                    if k_high > px and k_high <= px * 1.04:
-                        target_px = round(0.65 * target_px + 0.35 * k_high, nd)
-
-                entry_px = target_px
-                target_entry = target_px
-                geom = calcular_niveles_rr(target_px, atr14, direction)
-                rr_n = geom["rr_neto"]
-                thesis_txt = (
-                    f"🎯 PROGRAMADA MAKER {direction} {lev} ({tf.upper()}) · Pullback a "
-                    f"EMA21 ({target_px}) · Score {score}/100 · ADX {adx_val:.1f} · "
-                    f"R:R {rr_n}x (Maker Fee 0.02%) · [🧠 IA {model_lbl}: {ai_razon}]"
+                    f"⚡ AL INSTANTE {direction} {lev} ({tf.upper()}) · Sinergia Activa "
+                    f"Score {score:.0f}/100 [Kronos {kronos_dir_prob:.0f}% · "
+                    f"Tech {tech_score:.0f} · IA {ai_confianza}%] · {reason} · R:R {rr_n}x · "
+                    f"[🧠 IA {model_lbl}: {ai_razon}]"
                 )
 
             sl = geom["sl"]

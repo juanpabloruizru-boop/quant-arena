@@ -249,10 +249,10 @@ def detect_undercut_and_reclaim(
     df_1h: pd.DataFrame,
     df_4h: pd.DataFrame | None = None,
 ) -> dict[str, Any] | None:
-    """Stockbee Exhaustion Hammer:
+    """Stockbee Exhaustion Hammer & Rejection (Bilateral: LONG y SHORT).
 
-    Barrido de liquidez bajo el mínimo de 5 velas de 1H con mecha de rechazo
-    inferior >= 40% del rango total de la vela y cierre recuperador con volumen.
+    Barrido de liquidez bajo soporte (LONG) o sobre resistencia (SHORT)
+    con mecha de rechazo >= 35% del rango de la vela y RVOL >= 1.05.
     """
     if df_1h is None or len(df_1h) < 10:
         return None
@@ -273,47 +273,60 @@ def detect_undercut_and_reclaim(
     h_last = float(h.iloc[last_idx])
     l_last = float(low_px.iloc[last_idx])
 
-    # Mínimo de las 5 velas anteriores (t-5 a t-1)
+    # Extremos de las 5 velas anteriores (t-5 a t-1)
     min_low_5 = float(low_px.iloc[last_idx - 5 : last_idx].min())
+    max_high_5 = float(h.iloc[last_idx - 5 : last_idx].max())
 
-    # 1. Condición de barrido: el mínimo perforó el soporte anterior
-    swept_liquidity = l_last < min_low_5
-
-    # 2. Mecha inferior de absorción >= 40% del rango
     candle_range = h_last - l_last
     if candle_range <= 0:
         return None
-    lower_wick = min(o_last, c_last) - l_last
-    wick_ratio = lower_wick / (candle_range + 1e-9)
-    strong_rejection = wick_ratio >= 0.40
 
-    # 3. Cierre recuperador sobre el mínimo previo y vela de absorción
-    reclaimed = c_last >= min_low_5 and c_last >= o_last
-
-    # 4. Volumen RVOL >= 1.15
     v_mean_20 = float(v.iloc[max(0, last_idx - 20) : last_idx].mean())
     rvol = float(v.iloc[last_idx] / (v_mean_20 + 1e-9)) if v_mean_20 > 0 else 1.0
 
-    if swept_liquidity and strong_rejection and reclaimed and rvol >= 1.10:
+    # 1. Setup LONG: Barrido de soporte con mecha inferior de absorción
+    lower_wick = min(o_last, c_last) - l_last
+    wick_ratio_low = lower_wick / (candle_range + 1e-9)
+    if l_last < min_low_5 and wick_ratio_low >= 0.35 and c_last >= min_low_5 and rvol >= 1.05:
         sl = round(l_last * 0.998, 4 if c_last < 10 else 2)
-        dist_sl = abs(c_last - sl)
-        tp1 = round(c_last + 1.8 * dist_sl, 4 if c_last < 10 else 2)
-        tp2 = round(c_last + 3.0 * dist_sl, 4 if c_last < 10 else 2)
-
+        dist_sl = max(c_last * 0.008, abs(c_last - sl))
         return {
             "pattern": "UNDERCUT_AND_RECLAIM",
             "direction": "LONG",
             "entry_price": c_last,
             "sl": sl,
-            "tp1": tp1,
-            "tp2": tp2,
+            "tp1": round(c_last + 1.8 * dist_sl, 4 if c_last < 10 else 2),
+            "tp2": round(c_last + 3.0 * dist_sl, 4 if c_last < 10 else 2),
             "dist_sl": dist_sl,
             "rvol": round(rvol, 2),
-            "wick_ratio": round(wick_ratio * 100.0, 1),
-            "swept_level": min_low_5,
+            "wick_ratio": round(wick_ratio_low * 100.0, 1),
+            "tech_score": 75.0,
             "reason": (
-                f"Stockbee Undercut: Barrido de soporte {min_low_5:.2f} con mecha "
-                f"de rechazo del {wick_ratio*100:.0f}% y RVOL {rvol:.2f}x"
+                f"Stockbee Undercut: Barrido de soporte {min_low_5:.2f} con rechazo "
+                f"{wick_ratio_low*100:.0f}% y RVOL {rvol:.2f}x"
+            ),
+        }
+
+    # 2. Setup SHORT: Barrido de resistencia con mecha superior de rechazo
+    upper_wick = h_last - max(o_last, c_last)
+    wick_ratio_high = upper_wick / (candle_range + 1e-9)
+    if h_last > max_high_5 and wick_ratio_high >= 0.35 and c_last <= max_high_5 and rvol >= 1.05:
+        sl = round(h_last * 1.002, 4 if c_last < 10 else 2)
+        dist_sl = max(c_last * 0.008, abs(sl - c_last))
+        return {
+            "pattern": "UNDERCUT_AND_RECLAIM",
+            "direction": "SHORT",
+            "entry_price": c_last,
+            "sl": sl,
+            "tp1": round(c_last - 1.8 * dist_sl, 4 if c_last < 10 else 2),
+            "tp2": round(c_last - 3.0 * dist_sl, 4 if c_last < 10 else 2),
+            "dist_sl": dist_sl,
+            "rvol": round(rvol, 2),
+            "wick_ratio": round(wick_ratio_high * 100.0, 1),
+            "tech_score": 75.0,
+            "reason": (
+                f"Stockbee Top Rejection: Rechazo de techo {max_high_5:.2f} con mecha "
+                f"{wick_ratio_high*100:.0f}% y RVOL {rvol:.2f}x"
             ),
         }
 
@@ -324,10 +337,9 @@ def detect_vcp_momentum_burst(
     df_1h: pd.DataFrame,
     df_4h: pd.DataFrame | None = None,
 ) -> dict[str, Any] | None:
-    """Minervini Volatility Contraction Pattern:
+    """Minervini Volatility Contraction Pattern Flexibilizado:
 
-    Contracción del rango en 4 velas (< 0.70x ATR14) seguida de vela de ruptura expansiva
-    con RVOL >= 1.35x a favor de la tendencia de 4H.
+    Contracción del rango (< 0.85x ATR14) con RVOL >= 1.05x o impulso expansivo.
     """
     if df_1h is None or len(df_1h) < 22:
         return None
@@ -353,17 +365,13 @@ def detect_vcp_momentum_burst(
     # Contracción previa en velas t-4 a t-1
     ranges_4 = h.iloc[last_idx - 4 : last_idx] - low_px.iloc[last_idx - 4 : last_idx]
     avg_prev_range = float(ranges_4.mean())
-    contraction_confirmed = avg_prev_range < (0.70 * curr_atr)
+    contraction_confirmed = avg_prev_range < (0.90 * curr_atr)
 
-    # Vela actual t: expansión
-    burst_range = float(h.iloc[last_idx] - low_px.iloc[last_idx])
-    is_expanding = burst_range >= (1.10 * curr_atr)
-
-    # RVOL >= 1.35
+    # RVOL >= 1.05
     v_mean = float(v.iloc[max(0, last_idx - 20) : last_idx].mean())
     rvol = float(v.iloc[last_idx] / (v_mean + 1e-9)) if v_mean > 0 else 1.0
 
-    # Tendencia de 4H
+    # Tendencia de 4H o EMA de 1H
     trend_long = True
     if df_4h is not None and len(df_4h) >= 21:
         c4 = df_4h["close"].astype(float)
@@ -375,10 +383,10 @@ def detect_vcp_momentum_burst(
     prior_high_4 = float(h.iloc[last_idx - 4 : last_idx].max())
     prior_low_4 = float(low_px.iloc[last_idx - 4 : last_idx].min())
 
-    if contraction_confirmed and is_expanding and rvol >= 1.30:
-        if trend_long and c_last > prior_high_4:
+    if (contraction_confirmed or rvol >= 1.05) and rvol >= 1.0:
+        if trend_long and c_last >= prior_high_4 * 0.998:
             sl = round(c_last - 1.2 * curr_atr, 4 if c_last < 10 else 2)
-            dist_sl = abs(c_last - sl)
+            dist_sl = max(c_last * 0.008, abs(c_last - sl))
             return {
                 "pattern": "VCP_MOMENTUM_BURST",
                 "direction": "LONG",
@@ -389,14 +397,15 @@ def detect_vcp_momentum_burst(
                 "dist_sl": dist_sl,
                 "rvol": round(rvol, 2),
                 "atr14": curr_atr,
+                "tech_score": 75.0,
                 "reason": (
-                    f"Minervini VCP: Contracción {avg_prev_range:.2f} < 0.70*ATR con "
+                    f"Minervini VCP: Contracción {avg_prev_range:.2f} < 0.90*ATR con "
                     f"ruptura alcista expansiva y RVOL {rvol:.2f}x"
                 ),
             }
-        elif not trend_long and c_last < prior_low_4:
+        elif not trend_long and c_last <= prior_low_4 * 1.002:
             sl = round(c_last + 1.2 * curr_atr, 4 if c_last < 10 else 2)
-            dist_sl = abs(c_last - sl)
+            dist_sl = max(c_last * 0.008, abs(c_last - sl))
             return {
                 "pattern": "VCP_MOMENTUM_BURST",
                 "direction": "SHORT",
@@ -407,11 +416,38 @@ def detect_vcp_momentum_burst(
                 "dist_sl": dist_sl,
                 "rvol": round(rvol, 2),
                 "atr14": curr_atr,
+                "tech_score": 75.0,
                 "reason": (
-                    f"Minervini VCP: Contracción {avg_prev_range:.2f} < 0.70*ATR con "
+                    f"Minervini VCP: Contracción {avg_prev_range:.2f} < 0.90*ATR con "
                     f"ruptura bajista expansiva y RVOL {rvol:.2f}x"
                 ),
             }
+
+    # 3. Setup de Impulso y Cruce de Medias en 1H (Fallback Ágil)
+    c1 = df_1h["close"].astype(float)
+    if len(c1) >= 21:
+        e9 = float(c1.ewm(span=9, adjust=False).mean().iloc[-1])
+        e21 = float(c1.ewm(span=21, adjust=False).mean().iloc[-1])
+        dir_imp = "LONG" if e9 >= e21 else "SHORT"
+        nd = 4 if c_last < 10 else 2
+        dist_sl = max(curr_atr * 1.1, c_last * 0.01)
+        sl_val = c_last - dist_sl if dir_imp == "LONG" else c_last + dist_sl
+        tp1_val = c_last + 1.8 * dist_sl if dir_imp == "LONG" else c_last - 1.8 * dist_sl
+        tp2_val = c_last + 3.0 * dist_sl if dir_imp == "LONG" else c_last - 3.0 * dist_sl
+        rel_pos = "por encima" if dir_imp == "LONG" else "por debajo"
+        return {
+            "pattern": "IMPULSO_INTRADIA_1H",
+            "direction": dir_imp,
+            "entry_price": c_last,
+            "sl": round(sl_val, nd),
+            "tp1": round(tp1_val, nd),
+            "tp2": round(tp2_val, nd),
+            "dist_sl": dist_sl,
+            "rvol": round(rvol, 2),
+            "atr14": curr_atr,
+            "tech_score": 70.0,
+            "reason": f"Impulso 1H: EMA9 {rel_pos} de EMA21 con RVOL {rvol:.2f}x",
+        }
 
     return None
 
@@ -684,7 +720,17 @@ def evaluar_y_gestionar_sniper(
                 kronos_forecast=kronos_1h,
             )
 
-            if ai_eval.get("veredicto") == "VETAR_TRAMPA":
+            # Sinergia Activa Unificada Sniper (35% Kronos + 35% Técnica 1H + 30% Gemini)
+            tech_sc = float(setup.get("tech_score", 70.0))
+            k_bull_prob = float(kronos_1h.get("bullish_prob", 50.0))
+            kronos_dir = k_bull_prob if dir_c == "LONG" else (100.0 - k_bull_prob)
+            ai_conf = int(ai_eval.get("confianza", 80))
+            combined_conviction = round(
+                0.35 * kronos_dir + 0.35 * tech_sc + 0.30 * float(ai_conf), 1
+            )
+
+            # Umbral de disparo ágil reducido a Score >= 55
+            if combined_conviction < 55:
                 continue
 
             # Sizing exacto: $20.00 USD de riesgo con 5x apalancamiento
@@ -694,10 +740,12 @@ def evaluar_y_gestionar_sniper(
                 dist_sl_pct = 0.015
             size_usd = round(risk_usd / max(0.005, dist_sl_pct), 2)
 
+            ai_mod = ai_eval.get("model_used", "Gemini")
+            ai_r = ai_eval.get("razonamiento", "")
             thesis = (
-                f"🎯 SNIPER INTRADÍA (1H) · {pattern_name} · {dir_c} {SNIPER_LEVERAGE} · "
-                f"{reason_txt} · [🧠 IA {ai_eval.get('model_used', 'Gemini')}: "
-                f"{ai_eval.get('razonamiento', '')}]"
+                f"⚡ SNIPER ACTIVO (1H) · {pattern_name} · {dir_c} {SNIPER_LEVERAGE} · "
+                f"Score {combined_conviction:.0f}/100 [Kronos {kronos_dir:.0f}% · "
+                f"Tech {tech_sc:.0f} · IA {ai_conf}%] · {reason_txt} · [🧠 IA {ai_mod}: {ai_r}]"
             )
 
             trade_rec = open_sniper_trade(
@@ -714,7 +762,7 @@ def evaluar_y_gestionar_sniper(
                 pattern=pattern_name,
                 thesis=thesis,
                 ai_verdict=ai_eval.get("veredicto", "EJECUTAR_AHORA"),
-                ai_confidence=int(ai_eval.get("confianza", 80)),
+                ai_confidence=int(combined_conviction),
                 ai_reasoning=str(ai_eval.get("razonamiento", "")),
             )
             nuevas_sniper.append(trade_rec)

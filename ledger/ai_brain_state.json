@@ -1,42 +1,42 @@
 {
   "BTCUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 75756.63,
-    "razonamiento": "Short extendido -1.8% bajo EMA21. Esperar rebote correctivo a 75756.63 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-09T11:52:27+00:00",
+    "confianza": 75,
+    "precio_entrada_sugerido": 75768.77,
+    "razonamiento": "RSI en sobreventa (28.6) indica agotamiento bajista extremo. Entrar SHORT ahora es 'chasing' el suelo local. Se requiere pullback a la EMA21 para mejorar el R/R y mitigar riesgo de rebote por régimen macro alcista.",
+    "timestamp_utc": "2026-11-09T14:44:39+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
-    "model_used": "local_heuristics"
+    "model_used": "gemini-3-flash-preview"
   },
   "ETHUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 2216.6,
-    "razonamiento": "Short extendido -4.7% bajo EMA21. Esperar rebote correctivo a 2216.6 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-09T11:52:27+00:00",
+    "confianza": 65,
+    "precio_entrada_sugerido": 2211.25,
+    "razonamiento": "RSI en 19.7 indica sobreventa extrema; entrar SHORT ahora es 'chasing' el suelo. Kronos predice rebote (100% Bull). Según criterio 1, esperamos pullback a la EMA21 para mejorar R/R y evitar squeeze ante un macro de BTC alcista.",
+    "timestamp_utc": "2026-11-09T14:44:48+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
-    "model_used": "local_heuristics"
+    "model_used": "gemini-3-flash-preview"
   },
   "SOLUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 89.33,
-    "razonamiento": "Short extendido -3.6% bajo EMA21. Esperar rebote correctivo a 89.33 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-09T11:52:27+00:00",
+    "precio_entrada_sugerido": 89.2,
+    "razonamiento": "RSI en sobreventa (26.8) y extensión bajo EMA21 indican riesgo de reversión técnica. Evitamos 'chasing' en mínimos. Colocamos orden en EMA21 para capturar continuación bajista tras pullback necesario en un macro BTC alcista.",
+    "timestamp_utc": "2026-11-09T14:44:58+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
-    "model_used": "local_heuristics"
+    "model_used": "gemini-3-flash-preview"
   },
   "SUIUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 0.8526,
-    "razonamiento": "Short extendido -3.4% bajo EMA21. Esperar rebote correctivo a 0.8526 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-09T11:52:27+00:00",
+    "confianza": 82,
+    "precio_entrada_sugerido": 0.85,
+    "razonamiento": "Macro alcista en BTC pero SUI muestra tendencia bajista estructural. RSI en 32.2 y ADX fuerte (37.7). Buscamos venta en resistencia o pullback a EMA21 para evitar entrar tarde tras velas verdes recientes.",
+    "timestamp_utc": "2026-11-09T14:45:04+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
-    "model_used": "local_heuristics"
+    "model_used": "gemini-3.5-flash-lite"
   }
 }

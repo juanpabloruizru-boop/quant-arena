@@ -408,6 +408,83 @@ footer{max-width:1600px;margin:0 auto;padding:30px 20px 40px;color:var(--mut);fo
 .kronos-mini-tbl th{text-align:left;color:var(--mut);font-weight:600;padding:3px 4px;border-bottom:1px solid var(--ln)}
 .kronos-mini-tbl td{padding:3px 4px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--tx2)}
 
+/* ───────── Apple / Robinhood "Para Dummies" Interface ───────── */
+.dummy-view{max-width:1600px;margin:0 auto;padding:16px 20px 0}
+.dummy-sec-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 14px}
+.dummy-sec-title h2{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--tx);margin:0;display:flex;align-items:center;gap:9px}
+.dummy-subtitle{font-size:12px;color:var(--tx2);margin-top:2px}
+.hero-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
+@media(max-width:960px){.hero-grid{grid-template-columns:1fr}}
+.hero-card{background:linear-gradient(160deg,#0f192f,#091020);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:20px 22px;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.35);transition:border-color .18s,transform .18s}
+.hero-card:hover{border-color:rgba(47,212,255,.4);transform:translateY(-2px)}
+.hero-card::after{content:"";position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(47,212,255,.09),transparent 70%);pointer-events:none}
+.hero-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.hero-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--mut)}
+.hero-val{font:800 28px/1.2 var(--mono);letter-spacing:-.04em;color:#fff;margin-bottom:4px}
+.hero-pnl{font:700 12.5px var(--mono);display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.hero-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.hero-card .hero-desc{font-size:11.5px;color:var(--tx2);line-height:1.45;margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:10px}
+.coin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+@media(max-width:1150px){.coin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.coin-grid{grid-template-columns:1fr}}
+.coin-card{background:linear-gradient(160deg,#0e172a,#080f1e);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:transform .18s,border-color .18s}
+.coin-card:hover{border-color:rgba(155,123,255,.35);transform:translateY(-2px)}
+.coin-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.coin-name-group{display:flex;align-items:center;gap:8px}
+.coin-icon{font-size:22px}
+.coin-title{font-size:14px;font-weight:800;letter-spacing:-.02em;color:#fff}
+.coin-sym{font-size:10.5px;color:var(--mut);text-transform:uppercase}
+.coin-price{font:800 19px var(--mono);letter-spacing:-.03em;color:#fff;margin-bottom:12px}
+.coin-pred-wrap{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:11px;padding:9px 11px;margin-bottom:11px}
+.coin-pred-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:5px;font-weight:600}
+.coin-pred-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+.coin-pred-fill{height:100%;border-radius:99px;transition:width .6s ease}
+.coin-opinion{font-size:11px;line-height:1.45;color:var(--tx2);background:rgba(47,212,255,.04);border-left:3px solid var(--cyan);padding:7px 9px;border-radius:0 8px 8px 0;margin-bottom:12px;flex:1}
+.coin-status-btn{border-radius:11px;padding:9px 12px;font-size:11.5px;font-weight:800;letter-spacing:.03em;text-align:center;text-transform:uppercase}
+.coin-status-btn.st-long{background:rgba(25,240,163,.15);color:var(--ok);border:1px solid rgba(25,240,163,.45);box-shadow:0 0 14px rgba(25,240,163,.15)}
+.coin-status-btn.st-short{background:rgba(255,77,109,.15);color:var(--bad);border:1px solid rgba(255,77,109,.45);box-shadow:0 0 14px rgba(255,77,109,.15)}
+.coin-status-btn.st-watch{background:rgba(255,255,255,.04);color:var(--tx2);border:1px solid rgba(255,255,255,.08)}
+.clean-trades-container{background:linear-gradient(160deg,#0e172a,#080f1e);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px 20px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,.35);overflow-x:auto}
+.clean-trades-tbl{width:100%;border-collapse:separate;border-spacing:0 6px}
+.clean-trades-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap}
+.clean-trades-tbl td{padding:11px 12px;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;font-size:12px}
+.clean-trades-tbl tr td:first-child{border-top-left-radius:11px;border-bottom-left-radius:11px;border-left:1px solid rgba(255,255,255,.04)}
+.clean-trades-tbl tr td:last-child{border-top-right-radius:11px;border-bottom-right-radius:11px;border-right:1px solid rgba(255,255,255,.04)}
+.clean-trades-tbl tr:hover td{background:rgba(255,255,255,.045)}
+.trade-bet-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap}
+.trade-bet-badge.long{background:rgba(25,240,163,.14);color:var(--ok);border:1px solid rgba(25,240,163,.3)}
+.trade-bet-badge.short{background:rgba(255,77,109,.14);color:var(--bad);border:1px solid rgba(255,77,109,.3)}
+.clean-empty-card{text-align:center;padding:34px 20px;border:1px dashed rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.015)}
+.clean-empty-card .empty-icon{font-size:30px;margin-bottom:8px}
+.clean-empty-card .empty-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
+.clean-empty-card .empty-desc{font-size:12px;color:var(--tx2);max-width:520px;margin:0 auto;line-height:1.5}
+.spot-cards-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+@media(max-width:1150px){.spot-cards-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.spot-cards-grid{grid-template-columns:1fr}}
+.spot-simple-card{background:linear-gradient(160deg,#0e172a,#080f1e);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.spot-cheap-verdict{padding:7px 11px;border-radius:10px;font-size:11px;font-weight:700;margin-bottom:11px;text-align:center}
+.spot-cheap-verdict.yes{background:rgba(25,240,163,.12);color:var(--ok);border:1px solid rgba(25,240,163,.35)}
+.spot-cheap-verdict.wait{background:rgba(255,176,32,.12);color:var(--warn);border:1px solid rgba(255,176,32,.35)}
+.spot-tp-list{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:7px 10px;font-size:11px}
+.spot-tp-item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.spot-tp-item:last-child{border-bottom:none}
+.technical-drawer-sec{padding-top:10px;margin-top:20px}
+.technical-audit-drawer{background:#080d1a;border:1px solid rgba(255,255,255,.12);border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.drawer-summary{padding:15px 22px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.02);transition:background .18s;user-select:none;list-style:none}
+.drawer-summary::-webkit-details-marker{display:none}
+.drawer-summary:hover{background:rgba(255,255,255,.05)}
+.drawer-summary-left{display:flex;align-items:center;gap:12px}
+.drawer-icon{font-size:22px}
+.drawer-title{font-size:13.5px;font-weight:700;color:var(--tx)}
+.drawer-sub{font-size:11px;color:var(--tx2);margin-top:2px}
+.drawer-badge{font-size:11px;font-weight:700;color:var(--cyan);background:var(--cyan-d);border:1px solid rgba(47,212,255,.35);border-radius:999px;padding:4px 12px}
+details[open] .drawer-summary{border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
+.technical-audit-body{padding:10px 0 20px}
+body:not([data-view=all]) .technical-drawer-sec{display:block!important}
+body:not([data-view=all]) .dummy-view{display:none!important}
+body:not([data-view=all]) .technical-audit-drawer{border:none;background:transparent;box-shadow:none}
+body:not([data-view=all]) .drawer-summary{display:none}
+
 /* ───────── vistas ───────── */
 body[data-view=futures] .sec:not([data-sec=futures]),
 body[data-view=sniper] .sec:not([data-sec=sniper]),
@@ -447,6 +524,10 @@ JS = """
     if (VIEWS.indexOf(v) === -1) v = 'all';
     body.dataset.view = v;
     $$('.vtab').forEach(b => { const on = b.dataset.view === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    const drawer = document.querySelector('.technical-audit-drawer');
+    if (drawer && v !== 'all') {
+      drawer.open = true;
+    }
     try { history.replaceState(null, '', '#' + v); } catch (e) { /* file:// restringido */ }
     if (scroll) window.scrollTo({top: 0});
   };
@@ -2510,6 +2591,408 @@ def _seccion_kronos_oracle(states: dict[str, Any]) -> list[str]:
     return p
 
 
+# ── Apple / Robinhood "Para Dummies" Generadores ──
+_COIN_META: dict[str, tuple[str, str, str]] = {
+    "BTCUSDT": ("Bitcoin", "BTC", "🪙"),
+    "ETHUSDT": ("Ethereum", "ETH", "🔷"),
+    "SOLUSDT": ("Solana", "SOL", "🟣"),
+    "SUIUSDT": ("Sui", "SUI", "💧"),
+}
+
+
+def _clean_dummy_opinion(raw: str) -> str:
+    """Extrae 1 frase limpia y entendible sin jerga para dummies."""
+    if not raw:
+        return "Analizando velas, volumen y mechas para confirmar oportunidad con alta fiabilidad..."
+    first = raw.split(". ")[0].strip()
+    if not first.endswith("."):
+        first += "."
+    return first
+
+
+def _bloque_dummies(
+    states: dict[str, Any],
+    capital: dict[str, Any] | None,
+    trades_diag: list[dict[str, Any]],
+    spot_plans: list[dict[str, Any]] | None,
+    sniper_data: dict[str, Any] | None,
+) -> list[str]:
+    """Genera la interfaz visual minimalista estilo Apple / Robinhood ('Para Dummies')."""
+    from qa.agent.brain import load_brain_state
+    from qa.agent.sniper import compute_sniper_equity, load_sniper_trades
+    from qa.data.paths import get_root
+
+    root = get_root()
+    prices = states.get("prices") or {}
+
+    # Cargar trades y estado Sniper
+    if sniper_data is None:
+        try:
+            raw_sniper = load_sniper_trades(root)
+            sniper_eq = compute_sniper_equity(raw_sniper, prices, starting_capital=1000.0)
+            open_1h = [t for t in raw_sniper if t.get("status") == "open"]
+        except Exception:
+            sniper_eq = {}
+            open_1h = []
+    else:
+        sniper_eq = sniper_data.get("equity_status") or {}
+        open_1h = sniper_data.get("open_trades") or []
+
+    open_4h = [t for t in (trades_diag or []) if t.get("status") == "open"]
+
+    p: list[str] = []
+    p.append("<section class='sec dummy-view' data-sec='all'>")
+
+    # Encabezado visual
+    p.append(
+        "<div class='dummy-sec-title' style='margin-top:6px;'>"
+        "<div>"
+        "<h2><span>⚡</span> Centro de Mando Visual · Resumen Simple</h2>"
+        "<div class='dummy-subtitle'>Control proactivo de tu dinero en español cotidiano, sin jerga cuantitativa abrumadora</div>"
+        "</div>"
+        "<div style='display:flex;gap:8px;align-items:center;'>"
+        "<span class='badge b-instante'>🍎 Modo Simple 'Para Dummies'</span>"
+        "<span class='badge b-ok'>● Sistema Operando en Vivo</span>"
+        "</div>"
+        "</div>"
+    )
+
+    # ──────────────────────────────────────────────────────────
+    # BLOQUE 1: RESUMEN EN 3 SEGUNDOS (HERO CARDS ALTO IMPACTO)
+    # ──────────────────────────────────────────────────────────
+    c = capital or {}
+    patrimonio_4h = _f(c.get("patrimonio_total"), 1000.0)
+    flotante_4h = _f(c.get("pnl_flotante_usd"), 0.0)
+    realizado_4h = _f(c.get("pnl_realizado_usd"), 0.0)
+    pnl_4h = flotante_4h + realizado_4h
+    pnl_4h_pct = (pnl_4h / 1000.0) * 100.0
+    cls_4h = "pos" if pnl_4h >= 0 else "neg"
+    sgn_4h = "+" if pnl_4h >= 0 else ""
+    st_4h = (
+        f"<span class='hero-badge b-ok'>🟢 Operando activa ({len(open_4h)} posición{'es' if len(open_4h) != 1 else ''})</span>"
+        if open_4h
+        else "<span class='hero-badge b-warn'>🟡 Esperando setup</span>"
+    )
+
+    patrimonio_1h = float(sniper_eq.get("total_equity", 1000.0))
+    flotante_1h = float(sniper_eq.get("floating_pnl", 0.0))
+    realizado_1h = float(sniper_eq.get("realized_pnl", 0.0))
+    pnl_1h = flotante_1h + realizado_1h
+    pnl_1h_pct = (pnl_1h / 1000.0) * 100.0
+    cls_1h = "pos" if pnl_1h >= 0 else "neg"
+    sgn_1h = "+" if pnl_1h >= 0 else ""
+    st_1h = (
+        f"<span class='hero-badge b-ok'>🟢 Operando activa ({len(open_1h)} posición{'es' if len(open_1h) != 1 else ''})</span>"
+        if open_1h
+        else "<span class='hero-badge b-warn'>🟡 Esperando setup</span>"
+    )
+
+    mac = _btc_macro(states)
+    if mac.get("state") == "bear":
+        clima_badge = "<span class='hero-badge b-bad'>🌧️ Presión Bajista (SHORTs Activos)</span>"
+        clima_title = "Mercado bajista con rebotes rápidos"
+        clima_desc = (
+            "El mercado general muestra debilidad, pero la IA está cazando ventas cortas (SHORT) "
+            "con alta precisión para ganar dinero mientras el precio cae y proteger el capital."
+        )
+    elif mac.get("state") == "bull":
+        clima_badge = "<span class='hero-badge b-ok'>☀️ Expansión Alcista (Compras Activas)</span>"
+        clima_title = "Mercado en tendencia alcista macro"
+        clima_desc = (
+            "Bitcoin opera con solidez sobre su media móvil. La IA está cazando compras en rebote "
+            "y rupturas de momentum para aprovechar la expansión de capital."
+        )
+    else:
+        clima_badge = "<span class='hero-badge b-info'>⛅ Mercado Lateral y Selectivo</span>"
+        clima_title = "Consolidación y calma táctica"
+        clima_desc = (
+            "El mercado no muestra una dirección única. La IA evalúa oportunidades en ambos lados "
+            "(LONG y SHORT) de forma quirúrgica con riesgo controlado."
+        )
+
+    p.append("<div class='hero-grid'>")
+    p.append(
+        f"<div class='hero-card'>"
+        f"<div class='hero-head'><span class='hero-label'>🚀 Cuenta Tendencia (4H — Cruise PRO)</span>{st_4h}</div>"
+        f"<div class='hero-val'>${_fmt(patrimonio_4h)} USD</div>"
+        f"<div class='hero-pnl'><span class='{cls_4h}'>{sgn_4h}${pnl_4h:.2f} USD ({sgn_4h}{pnl_4h_pct:.1f}%)</span>"
+        f"<span class='mut'>· flotante {sgn_4h}${flotante_4h:.2f}</span></div>"
+        f"<div class='hero-desc'>Estrategia de mediano plazo para capturar grandes movimientos y tendencias sostenidas de 4 horas.</div>"
+        f"</div>"
+    )
+    p.append(
+        f"<div class='hero-card'>"
+        f"<div class='hero-head'><span class='hero-label'>⚡ Cuenta Rápida (1H — Sniper Intradía)</span>{st_1h}</div>"
+        f"<div class='hero-val'>${_fmt(patrimonio_1h)} USD</div>"
+        f"<div class='hero-pnl'><span class='{cls_1h}'>{sgn_1h}${pnl_1h:.2f} USD ({sgn_1h}{pnl_1h_pct:.1f}%)</span>"
+        f"<span class='mut'>· flotante {sgn_1h}${flotante_1h:.2f}</span></div>"
+        f"<div class='hero-desc'>Estrategia rápida intradía para cazar impulsos de mechas y contracción VCP en velas de 1 hora.</div>"
+        f"</div>"
+    )
+    p.append(
+        f"<div class='hero-card'>"
+        f"<div class='hero-head'><span class='hero-label'>🌤️ Clima del Mercado Hoy</span>{clima_badge}</div>"
+        f"<div class='hero-val' style='font-size:20px;letter-spacing:0;'>{clima_title}</div>"
+        f"<div class='hero-desc' style='margin-top:12px;border-top:none;padding-top:0;'>{clima_desc}</div>"
+        f"</div>"
+    )
+    p.append("</div>")  # .hero-grid
+
+    # ──────────────────────────────────────────────────────────
+    # BLOQUE 2: ¿QUÉ PIENSA LA IA DE CADA MONEDA? (BTC, ETH, SOL, SUI)
+    # ──────────────────────────────────────────────────────────
+    p.append(
+        "<div class='dummy-sec-title'>"
+        "<div>"
+        "<h2><span>🧠</span> ¿Qué piensa la IA de cada moneda?</h2>"
+        "<div class='dummy-subtitle'>Predicción del Oráculo de Velas Kronos + Razonamiento Cognitivo de Gemini en español claro</div>"
+        "</div>"
+        "</div>"
+    )
+
+    persisted_brain = load_brain_state(root)
+    live_brain = states.get("ai_brain") or {}
+    brain_data = {**persisted_brain, **live_brain}
+    kronos_data = states.get("kronos") or {}
+
+    p.append("<div class='coin-grid'>")
+    for sym in CRUISE_ELITE:
+        name, code, icon = _COIN_META.get(sym, (sym, sym, "🪙"))
+        px = float(prices.get(sym) or 0.0)
+        if px <= 0:
+            cell = (states.get("cells") or {}).get(f"H1_{sym}") or {}
+            px = float(cell.get("close") or 0.0)
+        px_fmt = f"${px:,.4f}" if px < 10 else f"${px:,.2f}"
+
+        # Kronos
+        sym_k = kronos_data.get(sym) or {}
+        fc_4h = sym_k.get("4h") or {}
+        bull_prob = float(fc_4h.get("bullish_prob", 50.0))
+        if bull_prob >= 50.0:
+            pred_txt = f"📈 {bull_prob:.0f}% Probabilidad de Subida"
+            bar_fill_w = min(100.0, max(0.0, bull_prob))
+            bar_style = "background:linear-gradient(90deg, #10b981, #0df0a3);"
+        else:
+            bear_prob = 100.0 - bull_prob
+            pred_txt = f"📉 {bear_prob:.0f}% Probabilidad de Caída"
+            bar_fill_w = min(100.0, max(0.0, bear_prob))
+            bar_style = "background:linear-gradient(90deg, #f43f5e, #ff4d6d);"
+
+        # Gemini
+        b_info = brain_data.get(sym) or {}
+        raw_reason = str(b_info.get("razonamiento") or "")
+        clean_op = _clean_dummy_opinion(raw_reason)
+
+        # Estado del Bot para este símbolo
+        open_sym = [t for t in (open_4h + open_1h) if t.get("asset") == sym]
+        if open_sym:
+            k_first = str(open_sym[0].get("kind", "")).lower()
+            if "short" in k_first:
+                st_btn = "<div class='coin-status-btn st-short'>🔴 OPERANDO A LA BAJA (SHORT)</div>"
+            else:
+                st_btn = "<div class='coin-status-btn st-long'>🟢 OPERANDO AL ALZA (LONG)</div>"
+        else:
+            st_btn = "<div class='coin-status-btn st-watch'>👀 VIGILANDO MERCADO</div>"
+
+        p.append(
+            f"<div class='coin-card'>"
+            f"<div>"
+            f"<div class='coin-card-top'>"
+            f"<div class='coin-name-group'>"
+            f"<span class='coin-icon'>{icon}</span>"
+            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code}</div></div>"
+            f"</div>"
+            f"</div>"
+            f"<div class='coin-price'>{px_fmt}</div>"
+            f"<div class='coin-pred-wrap'>"
+            f"<div class='coin-pred-head'><span>🔮 Oráculo Kronos</span><span>{pred_txt}</span></div>"
+            f"<div class='coin-pred-bar'><div class='coin-pred-fill' style='width:{bar_fill_w:.0f}%; {bar_style}'></div></div>"
+            f"</div>"
+            f"<div class='coin-opinion'>“{_esc(clean_op)}”</div>"
+            f"</div>"
+            f"{st_btn}"
+            f"</div>"
+        )
+    p.append("</div>")  # .coin-grid
+
+    # ──────────────────────────────────────────────────────────
+    # BLOQUE 3: OPERACIONES ABIERTAS AHORA MISMO
+    # ──────────────────────────────────────────────────────────
+    p.append(
+        "<div class='dummy-sec-title'>"
+        "<div>"
+        "<h2><span>🎯</span> Operaciones Abiertas Ahora Mismo</h2>"
+        "<div class='dummy-subtitle'>Transparencia total: entradas en vivo, freno de seguridad y ganancias en tiempo real</div>"
+        "</div>"
+        "</div>"
+    )
+
+    all_open: list[dict[str, Any]] = []
+    for t in open_4h:
+        all_open.append({**t, "_motor": "🚀 4H Tendencia"})
+    for t in open_1h:
+        all_open.append({**t, "_motor": "⚡ 1H Rápida"})
+
+    if not all_open:
+        p.append(
+            "<div class='clean-empty-card'>"
+            "<div class='empty-icon'>🌱</div>"
+            "<div class='empty-title'>Sin operaciones abiertas en este momento</div>"
+            "<div class='empty-desc'>La IA está analizando los gráficos en tiempo real y protegiendo tu capital. "
+            "Próximo escaneo automático en 30 segundos.</div>"
+            "</div>"
+        )
+    else:
+        p.append("<div class='clean-trades-container'>")
+        p.append("<table class='clean-trades-tbl'><thead><tr>")
+        p.append("<th>Moneda / Activo</th>")
+        p.append("<th>Apuesta</th>")
+        p.append("<th>Dinero Arriesgado</th>")
+        p.append("<th>Entrada vs Hoy</th>")
+        p.append("<th>🎯 Meta Ganar</th>")
+        p.append("<th>🛡️ Freno Seguridad</th>")
+        p.append("<th>💰 Ganancia / Pérdida Hoy</th>")
+        p.append("<th>¿Por qué entró el bot?</th>")
+        p.append("</tr></thead><tbody>")
+
+        for tr in all_open:
+            asset = tr.get("asset", "")
+            motor = tr.get("_motor", "")
+            kind = str(tr.get("kind", "")).lower()
+            is_long = "long" in kind
+            bet_cls = "long" if is_long else "short"
+            bet_txt = "📈 SUBIDA (LONG)" if is_long else "📉 BAJADA (SHORT)"
+            lev = tr.get("leverage", "1x")
+            risk_usd = float(tr.get("risk_usd", 0.0))
+            entry_px = float(tr.get("entry_price", 0.0))
+            live_px = float(prices.get(asset) or entry_px)
+            tp_px = float(tr.get("tp") or tr.get("tp1") or 0.0)
+            sl_px = float(tr.get("sl") or tr.get("initial_sl") or 0.0)
+            size_usd = float(tr.get("size_usd", 0.0))
+            margin_usd = float(tr.get("margin_usd", size_usd / 4.0 if size_usd > 0 else 1.0))
+
+            if entry_px > 0:
+                diff = (live_px - entry_px) if is_long else (entry_px - live_px)
+                pnl_usd = (diff / entry_px) * size_usd
+                pnl_pct = (pnl_usd / margin_usd) * 100.0 if margin_usd > 0 else 0.0
+            else:
+                pnl_usd = 0.0
+                pnl_pct = 0.0
+
+            pnl_cls = "pos" if pnl_usd >= 0 else "neg"
+            pnl_sgn = "+" if pnl_usd >= 0 else ""
+            pnl_str = f"<span class='{pnl_cls} mono' style='font-size:13px;font-weight:800;'>{pnl_sgn}${pnl_usd:.2f} USD ({pnl_sgn}{pnl_pct:.1f}%)</span>"
+
+            # Formato de precios
+            nd = 4 if entry_px < 10 else 2
+            entry_fmt = f"${entry_px:,.{nd}f}"
+            live_fmt = f"${live_px:,.{nd}f}"
+            tp_fmt = f"${tp_px:,.{nd}f}" if tp_px > 0 else "Trailing"
+            sl_fmt = f"${sl_px:,.{nd}f}" if sl_px > 0 else "Dinámico"
+
+            # Razón limpia de entrada
+            ai_r = tr.get("ai_reasoning") or ""
+            if not ai_r:
+                th = tr.get("thesis") or ""
+                if "IA" in th and ":" in th:
+                    ai_r = th.split(":", 1)[1].strip().rstrip("]")
+            why_clean = _clean_dummy_opinion(ai_r)
+
+            p.append(
+                f"<tr>"
+                f"<td><b style='font-size:13.5px;'>{_esc(asset)}</b><br><span class='small' style='color:var(--cyan);'>{motor}</span></td>"
+                f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt} {lev}</span></td>"
+                f"<td class='mono'><b>${risk_usd:.2f} USD</b></td>"
+                f"<td class='mono'>{entry_fmt} → <b>{live_fmt}</b></td>"
+                f"<td class='mono' style='color:var(--ok);'><b>{tp_fmt}</b></td>"
+                f"<td class='mono' style='color:var(--bad);'><b>{sl_fmt}</b></td>"
+                f"<td>{pnl_str}</td>"
+                f"<td style='max-width:280px;font-size:11.5px;color:var(--tx2);line-height:1.4;'>“{_esc(why_clean)}”</td>"
+                f"</tr>"
+            )
+        p.append("</tbody></table></div>")
+
+    # ──────────────────────────────────────────────────────────
+    # BLOQUE 4: ALCANCÍA SPOT (COMPRAR BARATO PARA EL FUTURO)
+    # ──────────────────────────────────────────────────────────
+    p.append(
+        "<div class='dummy-sec-title'>"
+        "<div>"
+        "<h2><span>🏦</span> Alcancía Spot · Comprar Barato para el Futuro</h2>"
+        "<div class='dummy-subtitle'>Inversión 1x sin apalancamiento: semáforo de compra en rebaja y 3 metas escalonadas de venta</div>"
+        "</div>"
+        "</div>"
+    )
+
+    plans = spot_plans or []
+    if not plans:
+        # Generar planes de referencia por defecto si no vinieron en inputs
+        plans = [
+            {"symbol": "BTCUSDT", "price": float(prices.get("BTCUSDT") or 74700.0), "buying_zone_min": 68000.0, "buying_zone_max": 73000.0, "in_buy_zone": False, "tp1": 85000.0, "tp2": 95000.0, "tp3": 110000.0},
+            {"symbol": "ETHUSDT", "price": float(prices.get("ETHUSDT") or 2125.0), "buying_zone_min": 1950.0, "buying_zone_max": 2100.0, "in_buy_zone": False, "tp1": 2600.0, "tp2": 3100.0, "tp3": 3800.0},
+            {"symbol": "SOLUSDT", "price": float(prices.get("SOLUSDT") or 87.0), "buying_zone_min": 75.0, "buying_zone_max": 85.0, "in_buy_zone": False, "tp1": 115.0, "tp2": 140.0, "tp3": 180.0},
+            {"symbol": "SUIUSDT", "price": float(prices.get("SUIUSDT") or 0.85), "buying_zone_min": 0.70, "buying_zone_max": 0.82, "in_buy_zone": False, "tp1": 1.20, "tp2": 1.60, "tp3": 2.20},
+        ]
+
+    p.append("<div class='spot-cards-grid'>")
+    for pl in plans:
+        sym = str(pl.get("asset") or pl.get("symbol") or "")
+        name, code, icon = _COIN_META.get(sym, (sym, sym, "🪙"))
+        cur_px = float(
+            prices.get(sym) or pl.get("price") or pl.get("current_price") or pl.get("buy_ref_price") or 0.0
+        )
+        b_min = float(pl.get("buying_zone_min") or pl.get("buy_zone_low") or 0.0)
+        b_max = float(pl.get("buying_zone_max") or pl.get("buy_zone_high") or 0.0)
+        in_zone = bool(pl.get("in_buy_zone", False)) or (b_min > 0 and b_min <= cur_px <= b_max)
+        tp1 = float(pl.get("tp1") or pl.get("tp1_zone_low") or 0.0)
+        tp2 = float(pl.get("tp2") or pl.get("tp2_zone_low") or 0.0)
+        tp3 = float(pl.get("tp3") or pl.get("tp3_price") or (tp2 * 1.45 if tp2 > 0 else 0.0))
+
+        nd = 4 if cur_px < 10 else 2
+        cur_fmt = f"${cur_px:,.{nd}f}"
+        bmin_fmt = f"${b_min:,.{nd}f}"
+        bmax_fmt = f"${b_max:,.{nd}f}"
+
+        if in_zone:
+            verdict_badge = "<div class='spot-cheap-verdict yes'>🟢 ¡SÍ, ESTÁ EN PRECIO DE OFERTA!</div>"
+            zone_desc = f"Zona de compra barata: <b>{bmin_fmt} – {bmax_fmt}</b>"
+        else:
+            verdict_badge = "<div class='spot-cheap-verdict wait'>⏳ Todavía cara · Esperando rebaja</div>"
+            zone_desc = f"Esperando descuento hacia <b>{bmax_fmt}</b>"
+
+        def _tp_str(target: float, px_val: float = cur_px, digits: int = nd) -> str:
+            if target <= 0 or px_val <= 0:
+                return "-"
+            pct = ((target / px_val) - 1.0) * 100.0
+            return f"${target:,.{digits}f} (+{pct:.0f}%)"
+
+        p.append(
+            f"<div class='spot-simple-card'>"
+            f"<div>"
+            f"<div class='coin-card-top'>"
+            f"<div class='coin-name-group'>"
+            f"<span class='coin-icon'>{icon}</span>"
+            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code} · Spot 1x</div></div>"
+            f"</div>"
+            f"</div>"
+            f"<div class='coin-price'>{cur_fmt}</div>"
+            f"{verdict_badge}"
+            f"<div class='small' style='margin-bottom:12px;color:var(--tx2);'>{zone_desc}</div>"
+            f"</div>"
+            f"<div class='spot-tp-list'>"
+            f"<div style='font-size:10px;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:4px;'>Metas de Venta a Largo Plazo</div>"
+            f"<div class='spot-tp-item'><span>🎯 TP1 (Recuperar base)</span><b class='mono pos'>{_tp_str(tp1)}</b></div>"
+            f"<div class='spot-tp-item'><span>🎯 TP2 (Ganancia fuerte)</span><b class='mono pos'>{_tp_str(tp2)}</b></div>"
+            f"<div class='spot-tp-item'><span>🎯 TP3 (Gran ciclo)</span><b class='mono pos'>{_tp_str(tp3)}</b></div>"
+            f"</div>"
+            f"</div>"
+        )
+    p.append("</div>")  # .spot-cards-grid
+
+    p.append("</section>")  # .dummy-view
+    return p
+
+
 # ── Render principal ──
 def render_dashboard(
     states: dict[str, Any],
@@ -2550,6 +3033,25 @@ def render_dashboard(
         )
 
     p.append("<main>")
+    # Bloques Principales Apple / Robinhood ("Para Dummies")
+    p.extend(_bloque_dummies(states, capital, trades_diag, spot_plans, sniper_data))
+
+    # Vista Técnica Avanzada y Auditoría Cuantitativa (Drawer colapsable)
+    p.append("<section class='sec technical-drawer-sec' data-sec='all'>")
+    p.append("<details class='technical-audit-drawer'>")
+    p.append(
+        "<summary class='drawer-summary'>"
+        "<div class='drawer-summary-left'>"
+        "<span class='drawer-icon'>🔬</span>"
+        "<div>"
+        "<div class='drawer-title'>🔬 Vista Técnica Avanzada y Auditoría Cuantitativa (Para Expertos)</div>"
+        "<div class='drawer-sub'>Desplegar paneles de CRUISE PRO 4H, Sniper 1H, Oráculo Kronos, Fórmulas R:R y Libros Contables</div>"
+        "</div>"
+        "</div>"
+        "<span class='drawer-badge'>Desplegar Paneles Técnicos ▼</span>"
+        "</summary>"
+    )
+    p.append("<div class='technical-audit-body'>")
     p.extend(_seccion_futuros(states, trades_diag, capital))
     p.extend(_seccion_sniper(states, sniper_data))
     p.extend(_seccion_kronos_oracle(states))
@@ -2559,6 +3061,9 @@ def render_dashboard(
     if calc:
         p.extend(_calc_panel(calc))
     p.extend(_seccion_macro_noticias(news, shocks, termometro=termometro, h1_levels=h1_levels, feed_status=feed_status))
+    p.append("</div>")  # .technical-audit-body
+    p.append("</details>")  # .technical-audit-drawer
+    p.append("</section>")  # .technical-drawer-sec
     p.append("</main>")
 
     p.append(

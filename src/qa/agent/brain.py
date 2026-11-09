@@ -135,44 +135,34 @@ def _local_heuristics_verdict(
     """Heurística cuantitativa causal de respaldo si la API externa no está disponible."""
     ema21 = float(indicators.get("ema21") or current_price)
     rsi = float(indicators.get("rsi") or indicators.get("rsi14") or 50.0)
-    adx_val = float(indicators.get("adx14") or 25.0)
     nd = 2 if current_price > 10 else 4
-
-    if symbol != "BTCUSDT" and not btc_macro_bullish and direction == "LONG":
-        return {
-            "veredicto": "VETAR_TRAMPA",
-            "confianza": 85,
-            "precio_entrada_sugerido": round(ema21 * 0.95, nd),
-            "razonamiento": "Macro bajista en BTC (<SMA200). Prohibido comprar en altcoins.",
-            "timestamp_utc": datetime.now(UTC).isoformat(timespec="seconds"),
-            "symbol": symbol,
-            "direction": direction,
-            "model_used": "local_heuristics",
-        }
 
     if direction == "LONG":
         dist_ema21_pct = (current_price - ema21) / (ema21 + 1e-9) * 100.0
-        if dist_ema21_pct > 2.2 or rsi > 70:
-            suggested = round(ema21 * 1.002, nd)
+        if not btc_macro_bullish and symbol != "BTCUSDT":
+            return {
+                "veredicto": "VETAR_TRAMPA",
+                "confianza": 85,
+                "precio_entrada_sugerido": round(ema21 * 0.98, nd),
+                "razonamiento": (
+                    "Veto macro bajista: BTC bajo SMA200 invalida compras "
+                    "en altcoins (riesgo de bull trap)."
+                ),
+                "timestamp_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+                "symbol": symbol,
+                "direction": direction,
+                "model_used": "local_heuristics",
+            }
+        elif dist_ema21_pct > 2.0 or rsi > 70:
+            suggested = round(ema21 * 1.005, nd)
             return {
                 "veredicto": "ORDEN_LIMITE_PULLBACK",
                 "confianza": 78,
                 "precio_entrada_sugerido": suggested,
                 "razonamiento": (
                     f"Precio extendido +{dist_ema21_pct:.1f}% sobre EMA21. "
-                    f"Esperar pullback hacia {suggested} para no perseguir el precio."
+                    f"Buscar entrada óptima cerca de {suggested}."
                 )[:240],
-                "timestamp_utc": datetime.now(UTC).isoformat(timespec="seconds"),
-                "symbol": symbol,
-                "direction": direction,
-                "model_used": "local_heuristics",
-            }
-        elif dist_ema21_pct < -3.0 and adx_val < 22:
-            return {
-                "veredicto": "VETAR_TRAMPA",
-                "confianza": 75,
-                "precio_entrada_sugerido": round(ema21, nd),
-                "razonamiento": "Pérdida de EMA21 con bajo momentum. Riesgo de trampa.",
                 "timestamp_utc": datetime.now(UTC).isoformat(timespec="seconds"),
                 "symbol": symbol,
                 "direction": direction,
@@ -181,9 +171,11 @@ def _local_heuristics_verdict(
         else:
             return {
                 "veredicto": "EJECUTAR_AHORA",
-                "confianza": 82,
+                "confianza": 85,
                 "precio_entrada_sugerido": current_price,
-                "razonamiento": "Estructura alcista sana apoyada sobre EMA21 sin sobrecompra.",
+                "razonamiento": (
+                    "Setup de impulso/rebote alcista validado. Entrada activa recomendada."
+                ),
                 "timestamp_utc": datetime.now(UTC).isoformat(timespec="seconds"),
                 "symbol": symbol,
                 "direction": direction,

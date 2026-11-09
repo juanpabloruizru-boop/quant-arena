@@ -113,23 +113,21 @@ def compute_market_health(
     total_health_score = int(round(score_macro + score_breadth + score_funding + score_vol))
     total_health_score = max(0, min(100, total_health_score))
 
-    # Determinar Postura del ExposureCoach y Techo de Portfolio Heat
-    if total_health_score >= 75:
+    # Determinar Postura del ExposureCoach y Techo de Portfolio Heat (Mínimo siempre 15% a 25%)
+    if total_health_score >= 70:
         posture = "FULL_OFFENSE"
         max_heat_pct = 25.0
-        desc = "Condiciones óptimas: macro alcista y amplitud amplia. Techo máximo de calor (25%)."
-    elif total_health_score >= 50:
-        posture = "SELECTIVE"
-        max_heat_pct = 16.0
-        desc = "Mercado moderado: operar con filtros selectivos y calor contenido al 16%."
-    elif total_health_score >= 30:
-        posture = "REDUCE_ONLY"
-        max_heat_pct = 8.0
-        desc = "Ambiente hostil o lateral: solo setups A+ confirmados y techo defensivo (8%)."
+        desc = "Condiciones óptimas: alta convicción y amplitud. Techo máximo de calor (25%)."
+    elif total_health_score >= 45:
+        posture = "PROACTIVE_BILATERAL"
+        max_heat_pct = 20.0
+        desc = "Mercado activo bilateral: buscando ganancias al alza y a la baja (20%)."
     else:
-        posture = "CASH_PRIORITY"
-        max_heat_pct = 0.0
-        desc = "Invierno o pánico extremo: veto preventivo a nuevas compras para preservar caja."
+        posture = "SELECTIVE_BILATERAL"
+        max_heat_pct = 15.0
+        desc = (
+            "Mercado selectivo: operando con disciplina y piso mínimo de calor garantizado (15%)."
+        )
 
     return {
         "market_health_score": total_health_score,
@@ -200,7 +198,7 @@ def check_circuit_breaker(
     if consecutive_losses >= 2:
         is_halted = True
         reasons.append(
-            f"{consecutive_losses} pérdidas consecutivas en <12h (Riesgo de sobreoperar en chop)"
+            f"{consecutive_losses} pérdidas consecutivas en <12h"
         )
 
     if dd_pct >= 4.0:
@@ -233,6 +231,7 @@ def evaluate_discipline_gate(
     news_items: list[Any] | None = None,
     funding_rate: float | None = None,
     kronos_forecast: dict[str, Any] | None = None,
+    max_extension_pct: float = 0.018,
 ) -> dict[str, Any]:
     """Checklist Determinista de Pre-Trade antes de abrir cualquier posición."""
     reasons: list[str] = []
@@ -250,34 +249,45 @@ def evaluate_discipline_gate(
     if not circuit_breaker_ok:
         reasons.append("Cortacircuitos activo (COOLDOWN_HALT por pérdidas recientes)")
 
-    # 3. Anti-Chasing (No comprar extendido sobre EMA21)
+    # 3. Anti-Chasing (No comprar sobre-extendido sobre EMA21)
     anti_chasing_ok = True
+    eff_limit = (
+        max(max_extension_pct, 0.045)
+        if (kronos_forecast and float(kronos_forecast.get("confidence_score", 0)) >= 70)
+        else max_extension_pct
+    )
     if ema21 > 0:
         if direction == "LONG":
             dist_pct = (current_price - ema21) / ema21
-            if dist_pct > 0.018:
+            if dist_pct > eff_limit:
                 anti_chasing_ok = False
-                reasons.append(f"Anti-Chasing: precio +{dist_pct*100:.1f}% sobre EMA21 (máx 1.8%)")
+                reasons.append(
+                    f"Anti-Chasing: precio +{dist_pct*100:.1f}% sobre EMA21 "
+                    f"(máx {eff_limit*100:.1f}%)"
+                )
         else:
             dist_pct = (ema21 - current_price) / ema21
-            if dist_pct > 0.018:
+            if dist_pct > eff_limit:
                 anti_chasing_ok = False
-                reasons.append(f"Anti-Chasing: precio -{dist_pct*100:.1f}% bajo EMA21 (máx 1.8%)")
+                reasons.append(
+                    f"Anti-Chasing: precio -{dist_pct*100:.1f}% bajo EMA21 "
+                    f"(máx {eff_limit*100:.1f}%)"
+                )
 
     # 4. News Reaction Failure (Buenas noticias + funding alto pero precio cayendo)
     news_reaction_ok = True
-    if news_items and funding_rate is not None and funding_rate > 0.00025:
+    if news_items and funding_rate is not None and funding_rate > 0.00035:
         base = symbol.replace("USDT", "").lower()
-        bull_words = ["rally", "surge", "etf", "ath"]
-        has_positive_news = any(
+        bull_words = ["hack", "insolvent", "lawsuit", "exploit"]
+        has_negative_news = any(
             base in str(getattr(n, "assets", "")).lower()
             and any(w in str(getattr(n, "title", "")).lower() for w in bull_words)
             for n in news_items
         )
-        if has_positive_news and current_price < ema21:
+        if has_negative_news and direction == "LONG":
             news_reaction_ok = False
             reasons.append(
-                "News Reaction Failure: Noticias alcistas y funding alto con precio bajo EMA21"
+                "News Reaction Veto: Noticias de riesgo detectadas para el activo en LONG"
             )
 
     # 5. Alineación con Oráculo K-Line Kronos (kronos_alignment_ok)
@@ -285,15 +295,15 @@ def evaluate_discipline_gate(
     if kronos_forecast:
         k_verdict = str(kronos_forecast.get("kronos_verdict", "KRONOS_NEUTRAL"))
         k_bull_prob = float(kronos_forecast.get("bullish_prob", 50.0))
-        if direction == "LONG" and k_verdict == "KRONOS_BEAR" and k_bull_prob <= 30.0:
+        if direction == "LONG" and k_verdict == "KRONOS_BEAR" and k_bull_prob <= 25.0:
             kronos_alignment_ok = False
             reasons.append(
-                f"Kronos K-Line Veto: Proyección bajista fuerte ({k_bull_prob:.1f}% <= 30%)"
+                f"Kronos K-Line Veto: Proyección bajista extrema ({k_bull_prob:.1f}% <= 25%)"
             )
-        elif direction == "SHORT" and k_verdict == "KRONOS_BULL" and k_bull_prob >= 70.0:
+        elif direction == "SHORT" and k_verdict == "KRONOS_BULL" and k_bull_prob >= 75.0:
             kronos_alignment_ok = False
             reasons.append(
-                f"Kronos K-Line Veto: Proyección alcista fuerte ({k_bull_prob:.1f}% >= 70%)"
+                f"Kronos K-Line Veto: Proyección alcista extrema ({k_bull_prob:.1f}% >= 75%)"
             )
 
     gate_passed = all(
