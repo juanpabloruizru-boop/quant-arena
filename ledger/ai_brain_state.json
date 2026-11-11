@@ -2,41 +2,41 @@
   "BTCUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 73588.25,
+    "precio_entrada_sugerido": 73577.82,
     "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
-    "timestamp_utc": "2026-11-11T07:15:38+00:00",
+    "timestamp_utc": "2026-11-11T15:28:08+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
   },
   "ETHUSDT": {
-    "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 2128.06,
-    "razonamiento": "Venta corta extendida -3.6% bajo EMA21. Esperar retroceso correctivo a 2128.06 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-11T07:15:38+00:00",
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 82,
+    "precio_entrada_sugerido": 2056.89,
+    "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
+    "timestamp_utc": "2026-11-11T15:28:09+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
   },
   "SOLUSDT": {
-    "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 86.17,
-    "razonamiento": "Venta corta extendida -4.5% bajo EMA21. Esperar retroceso correctivo a 86.17 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-11T07:15:38+00:00",
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 82,
+    "precio_entrada_sugerido": 83.93,
+    "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
+    "timestamp_utc": "2026-11-11T15:28:09+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
   },
   "SUIUSDT": {
     "veredicto": "EJECUTAR_AHORA",
-    "confianza": 82,
-    "precio_entrada_sugerido": 0.8177,
-    "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
-    "timestamp_utc": "2026-11-11T07:15:38+00:00",
+    "confianza": 85,
+    "precio_entrada_sugerido": 0.8312,
+    "razonamiento": "Setup de impulso/rebote alcista validado. Entrada activa recomendada.",
+    "timestamp_utc": "2026-11-11T15:28:09+00:00",
     "symbol": "SUIUSDT",
-    "direction": "SHORT",
+    "direction": "LONG",
     "model_used": "local_heuristics"
   }
 }
