@@ -1,20 +1,20 @@
 {
   "BTCUSDT": {
-    "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 73041.12,
-    "razonamiento": "Venta corta extendida -5.5% bajo EMA21. Esperar retroceso correctivo a 73041.12 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-13T07:24:32+00:00",
+    "veredicto": "EJECUTAR_AHORA",
+    "confianza": 85,
+    "precio_entrada_sugerido": 68464.42,
+    "razonamiento": "Setup de impulso/rebote alcista validado. Entrada activa recomendada.",
+    "timestamp_utc": "2026-11-13T15:35:26+00:00",
     "symbol": "BTCUSDT",
-    "direction": "SHORT",
+    "direction": "LONG",
     "model_used": "local_heuristics"
   },
   "ETHUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 2055.9,
-    "razonamiento": "Venta corta extendida -5.6% bajo EMA21. Esperar retroceso correctivo a 2055.9 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-13T07:24:32+00:00",
+    "precio_entrada_sugerido": 2036.41,
+    "razonamiento": "Venta corta extendida -5.7% bajo EMA21. Esperar retroceso correctivo a 2036.41 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-13T15:35:26+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -22,9 +22,9 @@
   "SOLUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 83.39,
-    "razonamiento": "Venta corta extendida -3.6% bajo EMA21. Esperar retroceso correctivo a 83.39 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-13T07:24:32+00:00",
+    "precio_entrada_sugerido": 82.81,
+    "razonamiento": "Venta corta extendida -4.3% bajo EMA21. Esperar retroceso correctivo a 82.81 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-13T15:35:26+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -32,9 +32,9 @@
   "SUIUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 0.8016,
+    "precio_entrada_sugerido": 0.8044,
     "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
-    "timestamp_utc": "2026-11-13T07:24:32+00:00",
+    "timestamp_utc": "2026-11-13T15:35:26+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
