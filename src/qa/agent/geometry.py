@@ -273,3 +273,59 @@ def rr_tendencia(
         "label": label,
         "min_rr": min_rr,
     }
+
+
+def cap_margin_and_size(
+    entry_px: float,
+    dist_sl_pct: float,
+    risk_usd: float,
+    leverage: float,
+    account_capital: float = 1000.0,
+    used_margin: float = 0.0,
+    max_trade_margin_pct: float = 0.25,
+    max_total_margin_pct: float = 0.85,
+    min_available_margin: float = 50.0,
+) -> dict[str, Any] | None:
+    """Calcula y acota estrictamente el margen y tamaño de posición al capital real.
+
+    Reglas de protección de capital:
+    1. Candado de margen total acumulado:
+       available_margin = max(0.0, (account_capital * max_total_margin_pct) - used_margin).
+       Si available_margin < min_available_margin ($50 USD), no abre la posición.
+    2. Límite de margen por operación individual:
+       max_trade_margin = account_capital * max_trade_margin_pct (25% = $250 USD en $1,000 base).
+       El margen se acota a min(raw_margin, max_trade_margin, available_margin).
+    3. Si se recorta el margen por estar cerca del Stop Loss o por disponibilidad,
+       se recalcula el size_usd = margin_usd * leverage y se reajusta hacia abajo
+       el risk_usd real para mantener coherencia matemática exacta.
+    """
+    if entry_px <= 0 or leverage <= 0 or account_capital <= 0:
+        return None
+
+    max_total_margin = account_capital * max_total_margin_pct
+    available_margin = max(0.0, max_total_margin - used_margin)
+    if available_margin < min_available_margin:
+        return None
+
+    dist_sl_pct_safe = max(0.005, abs(dist_sl_pct))
+    raw_size_usd = risk_usd / dist_sl_pct_safe
+    raw_margin_usd = raw_size_usd / leverage
+
+    max_trade_margin = account_capital * max_trade_margin_pct
+    capped_margin_usd = min(raw_margin_usd, max_trade_margin, available_margin)
+
+    if capped_margin_usd < min_available_margin and available_margin < min_available_margin:
+        return None
+
+    final_size_usd = round(capped_margin_usd * leverage, 2)
+    final_margin_usd = round(capped_margin_usd, 2)
+    final_risk_usd = round(final_size_usd * dist_sl_pct_safe, 2)
+
+    return {
+        "margin_usd": final_margin_usd,
+        "size_usd": final_size_usd,
+        "risk_usd": final_risk_usd,
+        "capped": capped_margin_usd < raw_margin_usd,
+        "available_margin_remaining": round(available_margin - final_margin_usd, 2),
+    }
+

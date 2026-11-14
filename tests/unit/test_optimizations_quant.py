@@ -29,7 +29,7 @@ from qa.agent.autopilot import (
     score_symbol,
 )
 from qa.agent.capital import compute_status, realized_pnl_usd
-from qa.agent.geometry import adaptive_risk_pct, anti_wick_trailing_sl
+from qa.agent.geometry import adaptive_risk_pct, anti_wick_trailing_sl, cap_margin_and_size
 from qa.agent.notifications import notify_event, send_discord_alert, send_telegram_alert
 from qa.agent.tracker import close_trade, load_trades, open_trade, update_trade
 from qa.features.indicators import adx, relative_strength_ratio, rs_is_above_sma
@@ -528,3 +528,79 @@ def test_notifications_silent_and_safe() -> None:
         },
     )
     notify_event("HEAT_WARNING", {"heat_usd": 220.0, "heat_pct": 22.0})
+
+
+# ---------------- 9. Techo Estricto de Margen Real y Candado de Cuenta ----------------
+def test_cap_margin_and_size_tight_sl() -> None:
+    """Verifica que con un Stop Loss muy estrecho (ej. 0.5%), el margen requerido
+
+    nunca supera el 25% del capital de la cuenta ($250 USD sobre base de $1,000 USD),
+    y que el tamaño de posición y el riesgo se reescalan coherentemente.
+    """
+    account_capital = 1000.0
+    entry_px = 100.0
+    dist_sl_pct = 0.005  # 0.5% SL muy ceñido
+    raw_risk_usd = 50.0  # Intentaría pedir $10,000 USD de posición ($2,500 de margen a 4x)
+    leverage = 4.0
+
+    res = cap_margin_and_size(
+        entry_px=entry_px,
+        dist_sl_pct=dist_sl_pct,
+        risk_usd=raw_risk_usd,
+        leverage=leverage,
+        account_capital=account_capital,
+        used_margin=0.0,
+        max_trade_margin_pct=0.25,
+        max_total_margin_pct=0.85,
+    )
+
+    assert res is not None
+    # Margen estrictamente acotado al 25% ($250.00 USD)
+    assert res["margin_usd"] == 250.0
+    # Tamaño de posición = 250 * 4 = 1,000.00 USD (no $10,000 USD)
+    assert res["size_usd"] == 1000.0
+    # Riesgo reescalado coherentemente hacia abajo = 1,000 * 0.005 = $5.00 USD
+    assert res["risk_usd"] == 5.0
+    assert res["capped"] is True
+    assert res["available_margin_remaining"] == 600.0  # 850 - 250 = 600 USD
+
+
+def test_cap_margin_and_size_cumulative_lock() -> None:
+    """Verifica el candado de margen total acumulado en cuenta (<= 85% de capital).
+
+    Si el margen disponible restante es < $50 USD, bloquea nuevas aperturas (retorna None).
+    """
+    account_capital = 1000.0
+    # Margen ya usado: $810 USD de $850 USD disponibles (quedan $40 USD < $50 USD mínimo)
+    res_blocked = cap_margin_and_size(
+        entry_px=50.0,
+        dist_sl_pct=0.02,
+        risk_usd=20.0,
+        leverage=5.0,
+        account_capital=account_capital,
+        used_margin=810.0,
+        max_trade_margin_pct=0.25,
+        max_total_margin_pct=0.85,
+        min_available_margin=50.0,
+    )
+    assert res_blocked is None
+
+    # Si hay $750 USD usados, available = 850 - 750 = $100 USD (>= $50 USD)
+    # Pide margen normal menor que $100 USD (ej. $50 USD)
+    res_allowed = cap_margin_and_size(
+        entry_px=100.0,
+        dist_sl_pct=0.04,  # 4% SL -> raw size = 20 / 0.04 = $500 USD -> margin a 5x = $100 USD
+        risk_usd=20.0,
+        leverage=5.0,
+        account_capital=account_capital,
+        used_margin=750.0,
+        max_trade_margin_pct=0.25,
+        max_total_margin_pct=0.85,
+        min_available_margin=50.0,
+    )
+    assert res_allowed is not None
+    assert res_allowed["margin_usd"] == 100.0
+    assert res_allowed["size_usd"] == 500.0
+    assert res_allowed["risk_usd"] == 20.0
+    assert res_allowed["available_margin_remaining"] == 0.0
+

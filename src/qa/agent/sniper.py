@@ -35,7 +35,7 @@ except ImportError:
 from qa.agent.brain import evaluar_setup_con_ia
 from qa.agent.capital import load_costs
 from qa.agent.chain import append_chained, read_records, verify_chain_file
-from qa.agent.geometry import fee_roundtrip
+from qa.agent.geometry import cap_margin_and_size, fee_roundtrip
 from qa.agent.kronos_oracle import predict_kline_horizon
 from qa.agent.notifications import notify_event
 from qa.agent.skills_engine import (
@@ -846,12 +846,33 @@ def evaluar_y_gestionar_sniper(
             ):
                 continue
 
-            # Sizing exacto: $20.00 USD de riesgo con 5x apalancamiento
+            # Sizing exacto y Techo de Margen Real (Máx 25% por operación, Acumulado <= 85%)
             risk_usd = SNIPER_BASE_RISK_USD
             dist_sl_pct = dist_sl / (entry_px + 1e-9)
             if dist_sl_pct <= 0:
                 dist_sl_pct = 0.015
-            size_usd = round(risk_usd / max(0.005, dist_sl_pct), 2)
+
+            used_margin_sniper = sum(
+                float(t.get("margin_usd") or (float(t.get("size_usd", 0.0)) / 5.0))
+                for t in open_trades
+            )
+            margin_sizing = cap_margin_and_size(
+                entry_px=entry_px,
+                dist_sl_pct=dist_sl_pct,
+                risk_usd=risk_usd,
+                leverage=5.0,
+                account_capital=starting_capital,
+                used_margin=used_margin_sniper,
+                max_trade_margin_pct=0.25,
+                max_total_margin_pct=0.85,
+                min_available_margin=50.0,
+            )
+            if not margin_sizing:
+                continue  # Candado de margen disponible
+
+            size_usd = margin_sizing["size_usd"]
+            margin_usd = margin_sizing["margin_usd"]
+            risk_usd = margin_sizing["risk_usd"]
 
             ai_mod = ai_eval.get("model_used", "Gemini")
             ai_r = ai_eval.get("razonamiento", "")
@@ -904,6 +925,8 @@ def evaluar_y_gestionar_sniper(
                     "timeframe": "1h",
                     "kind": trade_rec["kind"],
                     "leverage": SNIPER_LEVERAGE,
+                    "margin_usd": margin_usd,
+                    "size_usd": size_usd,
                     "entry_price": entry_px,
                     "sl": sl_px,
                     "tp1": tp1_px,
@@ -916,7 +939,7 @@ def evaluar_y_gestionar_sniper(
                     "rr": "3.0",
                     "score": 90,
                     "risk_usd": risk_usd,
-                    "risk_pct": 0.02,
+                    "risk_pct": round(risk_usd / starting_capital, 4),
                     "thesis": thesis,
                     "entry_mode": "INSTANTE",
                     "ai_reasoning": ai_eval.get("razonamiento"),

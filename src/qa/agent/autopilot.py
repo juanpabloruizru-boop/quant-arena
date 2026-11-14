@@ -28,7 +28,12 @@ except ImportError:
 
 from qa.agent.brain import evaluar_setup_con_ia
 from qa.agent.capital import load_costs, open_risk_usd, realized_pnl_usd
-from qa.agent.geometry import adaptive_risk_pct, anti_wick_trailing_sl, fee_roundtrip
+from qa.agent.geometry import (
+    adaptive_risk_pct,
+    anti_wick_trailing_sl,
+    cap_margin_and_size,
+    fee_roundtrip,
+)
 from qa.agent.kronos_oracle import evaluate_kronos_multi_horizon, predict_kline_horizon
 from qa.agent.notifications import notify_event
 from qa.agent.skills_engine import (
@@ -1101,8 +1106,29 @@ def gestionar_y_ejecutar(
                 continue
 
             dist_sl_pct = abs(entry_px - sl) / entry_px
-            tamano_usd = round(riesgo_usd / max(0.005, dist_sl_pct), 2)
-            margen_usd = round(tamano_usd / lev_num, 2)
+
+            # TECHO INQUEBRANTABLE DE MARGEN REAL (MÁX 25% POR OPERACIÓN, ACUMULADO <= 85%)
+            used_margin_4h = sum(
+                float(t.get("margin_usd") or (float(t.get("size_usd", 0.0)) / 4.0))
+                for t in open_trades
+            )
+            margin_sizing = cap_margin_and_size(
+                entry_px=entry_px,
+                dist_sl_pct=dist_sl_pct,
+                risk_usd=riesgo_usd,
+                leverage=float(lev_num),
+                account_capital=capital_total,
+                used_margin=used_margin_4h,
+                max_trade_margin_pct=0.25,
+                max_total_margin_pct=0.85,
+                min_available_margin=50.0,
+            )
+            if not margin_sizing:
+                continue  # Sin cupo de margen disponible (candado <= 85%)
+
+            tamano_usd = margin_sizing["size_usd"]
+            margen_usd = margin_sizing["margin_usd"]
+            riesgo_usd = margin_sizing["risk_usd"]
             kind = "future_long" if direction == "LONG" else "future_short"
 
             trade_rec = open_trade(
