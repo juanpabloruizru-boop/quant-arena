@@ -2,9 +2,9 @@
   "BTCUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 85,
-    "precio_entrada_sugerido": 68228.92,
+    "precio_entrada_sugerido": 68313.25,
     "razonamiento": "Setup de impulso/rebote alcista validado. Entrada activa recomendada.",
-    "timestamp_utc": "2026-11-13T21:40:47+00:00",
+    "timestamp_utc": "2026-11-14T01:52:19+00:00",
     "symbol": "BTCUSDT",
     "direction": "LONG",
     "model_used": "local_heuristics"
@@ -12,9 +12,9 @@
   "ETHUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 2019.85,
-    "razonamiento": "Venta corta extendida -4.8% bajo EMA21. Esperar retroceso correctivo a 2019.85 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-13T21:40:47+00:00",
+    "precio_entrada_sugerido": 2011.32,
+    "razonamiento": "Venta corta extendida -4.3% bajo EMA21. Esperar retroceso correctivo a 2011.32 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-14T01:52:19+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -22,9 +22,9 @@
   "SOLUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 82.32,
-    "razonamiento": "Venta corta extendida -4.0% bajo EMA21. Esperar retroceso correctivo a 82.32 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-13T21:40:47+00:00",
+    "precio_entrada_sugerido": 81.93,
+    "razonamiento": "Venta corta extendida -6.1% bajo EMA21. Esperar retroceso correctivo a 81.93 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-14T01:52:19+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -32,9 +32,9 @@
   "SUIUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 0.798,
+    "precio_entrada_sugerido": 0.7898,
     "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
-    "timestamp_utc": "2026-11-13T21:40:47+00:00",
+    "timestamp_utc": "2026-11-14T01:52:19+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
