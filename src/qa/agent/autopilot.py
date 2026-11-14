@@ -438,21 +438,31 @@ def score_symbol(
     }
 
 
-def calcular_niveles_rr(entry: float, atr14: float, direction: str) -> dict[str, float]:
-    """Construcción de niveles SL, TP1 y TP2 para Modo Carrera (Fat Tails & Asymmetric Alpha):
+def calcular_niveles_rr(entry: float, atr14: float, direction: str) -> dict[str, Any]:
+    """Construcción de niveles SL, TP1, TP2 y TP3 para 4H y 1H:
     - dist_sl = max(1.5 * atr14, 0.015 * entry)
-    - LONG:  sl = entry - dist_sl, tp1 = entry + 3.0 * dist_sl, tp2 = entry + 6.0 * dist_sl
-    - SHORT: sl = entry + dist_sl, tp1 = entry - 3.0 * dist_sl, tp2 = entry - 6.0 * dist_sl
+    - LONG:
+        sl = entry - dist_sl
+        tp1 = entry + 1.8 * dist_sl  (1.8R)
+        tp2 = entry + 3.0 * dist_sl  (3.0R)
+        tp3 = entry + 4.5 * dist_sl  (4.5R)
+    - SHORT:
+        sl = entry + dist_sl
+        tp1 = entry - 1.8 * dist_sl  (1.8R)
+        tp2 = entry - 3.0 * dist_sl  (3.0R)
+        tp3 = entry - 4.5 * dist_sl  (4.5R)
     """
     dist_sl = max(1.5 * atr14, 0.015 * entry)
     if direction == "LONG":
         sl = entry - dist_sl
-        tp1 = entry + 3.0 * dist_sl
-        tp2 = entry + 6.0 * dist_sl
+        tp1 = entry + 1.8 * dist_sl
+        tp2 = entry + 3.0 * dist_sl
+        tp3 = entry + 4.5 * dist_sl
     else:
         sl = entry + dist_sl
-        tp1 = entry - 3.0 * dist_sl
-        tp2 = entry - 6.0 * dist_sl
+        tp1 = entry - 1.8 * dist_sl
+        tp2 = entry - 3.0 * dist_sl
+        tp3 = entry - 4.5 * dist_sl
 
     rr_neto = round(abs(tp2 - entry) / dist_sl, 2)
     nd = 4 if entry < 10 else 2
@@ -461,7 +471,12 @@ def calcular_niveles_rr(entry: float, atr14: float, direction: str) -> dict[str,
         "sl": round(sl, nd),
         "tp1": round(tp1, nd),
         "tp2": round(tp2, nd),
+        "tp3": round(tp3, nd),
+        "tp1_price": round(tp1, nd),
+        "tp2_price": round(tp2, nd),
+        "tp3_price": round(tp3, nd),
         "rr_neto": rr_neto,
+        "rr_ratio": f"1 : {rr_neto:.1f}",
     }
 
 
@@ -1036,7 +1051,12 @@ def gestionar_y_ejecutar(
             sl = geom["sl"]
             tp1 = geom["tp1"]
             tp2 = geom["tp2"]
+            tp3 = geom["tp3"]
+            tp1_px = geom["tp1_price"]
+            tp2_px = geom["tp2_price"]
+            tp3_px = geom["tp3_price"]
             rr_neto = geom["rr_neto"]
+            rr_ratio = geom["rr_ratio"]
 
             # Dimensionamiento Dinámico con Factor de Momentum (40/25/25/10)
             w_sym = momentum_weights.get(sym, 0.25)
@@ -1107,11 +1127,21 @@ def gestionar_y_ejecutar(
                 risk_usd=riesgo_usd,
                 tp1=tp1,
                 tp2=tp2,
+                tp3=tp3,
+                tp1_price=tp1_px,
+                tp2_price=tp2_px,
+                tp3_price=tp3_px,
+                rr_ratio=rr_ratio,
                 thesis=thesis_txt,
                 ai_reasoning=ai_razon,
             )
             trade_rec["tp1"] = tp1
             trade_rec["tp2"] = tp2
+            trade_rec["tp3"] = tp3
+            trade_rec["tp1_price"] = tp1_px
+            trade_rec["tp2_price"] = tp2_px
+            trade_rec["tp3_price"] = tp3_px
+            trade_rec["rr_ratio"] = rr_ratio
             trade_rec["leverage"] = lev
             trade_rec["margin_usd"] = margen_usd
             trade_rec["risk_usd"] = riesgo_usd
@@ -1139,6 +1169,7 @@ def gestionar_y_ejecutar(
             notify_event(
                 "ORDER_OPEN",
                 {
+                    "id": trade_rec.get("id"),
                     "asset": sym,
                     "timeframe": tf,
                     "kind": kind,
@@ -1147,6 +1178,12 @@ def gestionar_y_ejecutar(
                     "sl": sl,
                     "tp1": tp1,
                     "tp2": tp2,
+                    "tp3": tp3,
+                    "tp1_price": tp1_px,
+                    "tp2_price": tp2_px,
+                    "tp3_price": tp3_px,
+                    "rr_ratio": rr_ratio,
+                    "rr": f"{rr_neto:.1f}",
                     "score": score,
                     "risk_usd": riesgo_usd,
                     "risk_pct": risk_pct_adapt,

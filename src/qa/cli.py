@@ -380,6 +380,13 @@ def agent_run() -> None:
         typer.echo(f"CADENA DE SNIPER ROTA: {msg_snip}")
         raise typer.Exit(code=1)
 
+    # Despacho garantizado de Señales a Telegram para operaciones activas (4H y 1H)
+    from qa.agent.notifications import send_trade_signal_telegram
+    for ot in [t for t in trades if t.get("status") == "open"]:
+        send_trade_signal_telegram(ot, root)
+    for sot in (sniper_res.get("open_trades") or []):
+        send_trade_signal_telegram(sot, root)
+
     # telemetria descriptiva + geometria R:R del filtro de disciplina (M5b)
     tele = watchlist_telemetry(
         dict(live["klines"]),
@@ -453,13 +460,45 @@ def agent_run() -> None:
             )
 
     diags = []
+    from qa.agent.capital import realized_pnl_usd
     for t in trades:
         if t.get("status") != "open":
-            diags.append({
+            entry = float(t.get("entry_price") or t.get("entry", 0.0))
+            exit_px = float(t.get("exit_price") or t.get("exit", entry))
+            size = float(t.get("size_usd", 0.0))
+            pnl_info = realized_pnl_usd(t, costs)
+            sl = t.get("sl")
+            r_mult = None
+            if sl is not None and entry > 0:
+                risk_frac = abs(entry - float(sl)) / entry
+                if risk_frac > 0 and size > 0:
+                    r_mult = round(pnl_info["pnl_neto_usd"] / (size * risk_frac), 2)
+            d = dict(t)
+            d.update({
                 **diagnose(t, None, "", []),
                 "example": t.get("example", False),
                 "status": "closed",
+                "entry": entry,
+                "entry_price": entry,
+                "exit": exit_px,
+                "exit_price": exit_px,
+                "size_usd": size,
+                "pnl_neto_usd": pnl_info["pnl_neto_usd"],
+                "pnl_usd": pnl_info["pnl_neto_usd"],
+                "realized_pnl_usd": pnl_info["pnl_neto_usd"],
+                "pnl_bruto_usd": pnl_info["pnl_bruto_usd"],
+                "pnl_pct": pnl_info["pnl_pct"],
+                "r_multiplo": r_mult if r_mult is not None else t.get("r_multiplo", "—"),
+                "closed_at": t.get("closed_at") or t.get("ts_utc"),
+                "close_reason": (
+                    t.get("close_note")
+                    or t.get("note")
+                    or t.get("close_tag")
+                    or t.get("tag", "Cerrada")
+                ),
+                "timeframe": t.get("timeframe", "4h"),
             })
+            diags.append(d)
             continue
         px = prices_map.get(t["asset"])
         base = t["asset"].replace("USDT", "")

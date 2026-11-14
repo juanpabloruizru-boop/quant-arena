@@ -65,6 +65,11 @@ def open_trade(
     tp2: float | None = None,
     thesis: str = "",
     ai_reasoning: str = "",
+    tp3: float | None = None,
+    tp1_price: float | None = None,
+    tp2_price: float | None = None,
+    tp3_price: float | None = None,
+    rr_ratio: str | float | None = None,
 ) -> dict[str, Any]:
     """Registra una operación abierta POR EL USUARIO o AUTOPILOT (tag/ts opcionales, M6.3).
 
@@ -102,6 +107,23 @@ def open_trade(
         "risk_usd": None if risk_usd is None else float(risk_usd),
         "tp1": None if tp1 is None else float(tp1),
         "tp2": None if tp2 is None else float(tp2),
+        "tp3": None if tp3 is None else float(tp3),
+        "tp1_price": (
+            float(tp1_price)
+            if tp1_price is not None
+            else (float(tp1) if tp1 is not None else None)
+        ),
+        "tp2_price": (
+            float(tp2_price)
+            if tp2_price is not None
+            else (float(tp2) if tp2 is not None else None)
+        ),
+        "tp3_price": (
+            float(tp3_price)
+            if tp3_price is not None
+            else (float(tp3) if tp3 is not None else None)
+        ),
+        "rr_ratio": rr_ratio or (f"1 : {rr_neto_inicial:.1f}" if rr_neto_inicial else "1 : 3.0"),
         "thesis": thesis,
         "ai_reasoning": ai_reasoning,
     }
@@ -134,8 +156,18 @@ def close_trade(
     tag: str = "",
     ts_utc: str | None = None,
     example: bool = False,
+    pnl_neto_usd: float | None = None,
 ) -> dict[str, Any]:
-    rec = {
+    from qa.agent.capital import load_costs, realized_pnl_usd
+
+    matched_open: dict[str, Any] | None = None
+    if _log_path(root).exists():
+        for t in load_trades(root):
+            if t.get("id") == trade_id:
+                matched_open = t
+                break
+
+    rec: dict[str, Any] = {
         "action": "close",
         "id": trade_id,
         "ts_utc": ts_utc or datetime.now(UTC).isoformat(timespec="seconds"),
@@ -144,6 +176,38 @@ def close_trade(
         "tag": tag,
         "example": example,
     }
+
+    if matched_open:
+        rec["asset"] = matched_open.get("asset")
+        rec["kind"] = matched_open.get("kind")
+        rec["timeframe"] = matched_open.get("timeframe", "4h")
+        rec["entry_price"] = matched_open.get("entry_price")
+        rec["size_usd"] = matched_open.get("size_usd")
+        rec["risk_usd"] = matched_open.get("risk_usd")
+        rec["leverage"] = matched_open.get("leverage", "4x")
+        rec["sl"] = matched_open.get("sl")
+        rec["tp"] = matched_open.get("tp")
+        rec["tp1"] = matched_open.get("tp1")
+        rec["tp2"] = matched_open.get("tp2")
+        rec["tp3"] = matched_open.get("tp3")
+        rec["tp1_price"] = matched_open.get("tp1_price") or matched_open.get("tp1")
+        rec["tp2_price"] = matched_open.get("tp2_price") or matched_open.get("tp2")
+        rec["tp3_price"] = matched_open.get("tp3_price") or matched_open.get("tp3")
+        rec["rr_ratio"] = matched_open.get("rr_ratio")
+        if pnl_neto_usd is not None:
+            rec["pnl_neto_usd"] = float(pnl_neto_usd)
+        else:
+            try:
+                costs = load_costs(root)
+                calc_trade = dict(matched_open)
+                calc_trade["exit_price"] = float(exit_price)
+                res_pnl = realized_pnl_usd(calc_trade, costs)
+                rec["pnl_neto_usd"] = res_pnl["pnl_neto_usd"]
+            except Exception:
+                pass
+    elif pnl_neto_usd is not None:
+        rec["pnl_neto_usd"] = float(pnl_neto_usd)
+
     return _append(root, rec)
 
 
@@ -159,14 +223,28 @@ def load_trades(root: Path) -> list[dict[str, Any]]:
                 "closed_at": rec["ts_utc"],
                 "exit_price": rec["exit_price"],
                 "close_note": rec.get("note", ""),
+                "close_reason": rec.get("note", ""),
             }
             if rec.get("tag"):
                 updates["close_tag"] = rec["tag"]
+            if "pnl_neto_usd" in rec:
+                updates["pnl_neto_usd"] = float(rec["pnl_neto_usd"])
+                updates["pnl_usd"] = float(rec["pnl_neto_usd"])
+                updates["realized_pnl_usd"] = float(rec["pnl_neto_usd"])
+            if "r_multiplo" in rec:
+                updates["r_multiplo"] = rec["r_multiplo"]
             opens[rec["id"]].update(updates)
         elif rec.get("action") == "update" and rec.get("id") in opens:
             opens[rec["id"]].update(rec.get("updates", {}))
     for t in opens.values():
         t.setdefault("status", "open")
+        t.setdefault("entry", t.get("entry_price"))
+        t.setdefault("sl_price", t.get("sl"))
+        t.setdefault("tp_price", t.get("tp"))
+        t.setdefault("tp1_price", t.get("tp1"))
+        t.setdefault("tp2_price", t.get("tp2"))
+        t.setdefault("tp3_price", t.get("tp3"))
+        t.setdefault("timeframe", "4h")
     return list(opens.values())
 
 
@@ -192,9 +270,10 @@ def diagnose(
         out["pnl_usd"] = 0.0
         out["dist_entry_pct"] = round(abs(price_now - entry) / entry * 100.0, 2)
     else:
-        pnl_pct = (price_now / entry - 1.0) * direction
+        is_short = str(trade.get("kind", "")).lower() == "future_short"
+        pnl_pct = (entry - price_now) / entry if is_short else (price_now - entry) / entry
         out["pnl_pct"] = round(pnl_pct * 100, 3)
-        out["pnl_usd"] = round(pnl_pct * float(trade["size_usd"]), 2)
+        out["pnl_usd"] = round(pnl_pct * float(trade.get("size_usd", 0.0)), 2)
     if trade.get("sl"):
         out["dist_sl_pct"] = round(
             (price_now - float(trade["sl"])) / price_now * 100 * direction, 2

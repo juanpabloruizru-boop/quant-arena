@@ -498,11 +498,13 @@ def test_calcular_niveles_rr_asymmetric() -> None:
     # dist_sl = max(1.5 * 2.0, 0.015 * 100) = 3.0
     assert geom["dist_sl"] == 3.0
     assert geom["sl"] == 97.0
-    # TP1 = 100 + 3.0 * 3.0 = 109.0
-    assert geom["tp1"] == 109.0
-    # TP2 = 100 + 6.0 * 3.0 = 118.0
-    assert geom["tp2"] == 118.0
-    assert geom["rr_neto"] == 6.0
+    # TP1 (1.8R) = 100 + 1.8 * 3.0 = 105.4
+    assert geom["tp1"] == 105.4
+    # TP2 (3.0R) = 100 + 3.0 * 3.0 = 109.0
+    assert geom["tp2"] == 109.0
+    # TP3 (4.5R) = 100 + 4.5 * 3.0 = 113.5
+    assert geom["tp3"] == 113.5
+    assert geom["rr_neto"] == 3.0
 
 
 # ---------------- 8. Telemetría y Notificaciones ----------------

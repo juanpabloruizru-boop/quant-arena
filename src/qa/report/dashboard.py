@@ -21,6 +21,7 @@ conserva su firma y consume las mismas claves que producen `autopilot.py`, `spot
 
 from __future__ import annotations
 
+import contextlib
 import html
 import math
 import re
@@ -2732,49 +2733,65 @@ def _render_clean_active_trades_table(
         live_px = float(prices.get(asset) or tr.get("current_price") or tr.get("exit_price") or entry_px)
         tp1_px = float(tr.get("tp1_price") or tr.get("tp1") or 0.0)
         tp2_px = float(tr.get("tp2_price") or tr.get("tp2") or tr.get("tp") or 0.0)
+        tp3_px = float(tr.get("tp3_price") or tr.get("tp3") or 0.0)
         sl_px = float(tr.get("sl_price") or tr.get("sl") or tr.get("initial_sl") or 0.0)
         size_usd = float(tr.get("size_usd") or tr.get("initial_size_usd") or 0.0)
         margin_usd = float(tr.get("margin_usd") or (size_usd / 4.0 if size_usd > 0 else 1.0))
+        dist_sl = abs(entry_px - sl_px) if (entry_px > 0 and sl_px > 0) else 0.0
 
-        direction = 1.0 if is_long else -1.0
+        if dist_sl > 0:
+            if tp1_px <= 0:
+                tp1_px = round(entry_px + 1.8 * dist_sl if is_long else entry_px - 1.8 * dist_sl, 4 if entry_px < 10 else 2)
+            if tp2_px <= 0:
+                tp2_px = round(entry_px + 3.0 * dist_sl if is_long else entry_px - 3.0 * dist_sl, 4 if entry_px < 10 else 2)
+            if tp3_px <= 0:
+                tp3_px = round(entry_px + 4.5 * dist_sl if is_long else entry_px - 4.5 * dist_sl, 4 if entry_px < 10 else 2)
+
         if entry_px > 0 and live_px > 0 and size_usd > 0:
-            diff_ratio = (live_px / entry_px - 1.0) * direction
+            diff_ratio = ((live_px - entry_px) if is_long else (entry_px - live_px)) / entry_px
             pnl_usd = size_usd * diff_ratio
             pnl_pct = (pnl_usd / margin_usd) * 100.0 if margin_usd > 0 else (diff_ratio * 100.0)
         else:
             pnl_usd = float(tr.get("pnl_usd") or tr.get("pnl_vivo_usd") or 0.0)
             pnl_pct = float(tr.get("pnl_pct") or 0.0)
 
+        r_mult = (pnl_usd / risk_usd) if risk_usd > 0 else 0.0
         pnl_cls = "pos" if pnl_usd >= 0 else "neg"
         pnl_sgn = "+" if pnl_usd >= 0 else ""
-        pnl_str = f"<span class='{pnl_cls} mono' style='font-size:13px;font-weight:800;'>{pnl_sgn}${pnl_usd:.2f} USD ({pnl_sgn}{pnl_pct:.1f}%)</span>"
+        pnl_str = f"<span class='{pnl_cls} mono' style='font-size:13px;font-weight:800;'>{pnl_sgn}${pnl_usd:.2f} USD ({pnl_sgn}{pnl_pct:.1f}% · {r_mult:+.1f}R)</span>"
 
         nd = 4 if entry_px < 10 else 2
         entry_fmt = f"${entry_px:,.{nd}f}"
         live_fmt = f"${live_px:,.{nd}f}"
         sl_fmt = f"${sl_px:,.{nd}f}" if sl_px > 0 else "Dinámico"
 
-        if tp1_px > 0 and tp2_px > 0 and abs(tp1_px - tp2_px) > 1e-4:
-            tp_fmt = f"TP1: ${tp1_px:,.{nd}f} · TP2: ${tp2_px:,.{nd}f}"
-            tp_explain = f"Cobro en TP1 (${tp1_px:,.{nd}f}) y salida total en TP2 (${tp2_px:,.{nd}f})"
-        elif tp2_px > 0:
-            tp_fmt = f"${tp2_px:,.{nd}f}"
-            tp_explain = f"Cobro de ganancia proyectado a ${tp2_px:,.{nd}f}"
-        elif tp1_px > 0:
-            tp_fmt = f"${tp1_px:,.{nd}f}"
-            tp_explain = f"Cobro de ganancia en ${tp1_px:,.{nd}f}"
-        else:
-            tp_fmt = "Trailing Dinámico"
-            tp_explain = "Cierre por seguimiento trailing del beneficio"
+        rr_str = str(tr.get("rr_ratio") or f"1 : {float(tr.get('rr_neto') or 3.0):.1f}")
+        tp_fmt = f"TP1: ${tp1_px:,.{nd}f} · TP2: ${tp2_px:,.{nd}f} · TP3: ${tp3_px:,.{nd}f}"
+        tp_explain = f"TP1 (+1.8R 30%) · TP2 (+3.0R 40%) · TP3 (+4.5R 30% runner) · R:R {rr_str}"
 
-        sl_dir = "cae" if is_long else "sube"
-        sl_explain = f"Cierre automático si el precio {sl_dir} a {sl_fmt} para limitar pérdida a ${risk_usd:.2f} USD"
+        # Detección de Stop Loss ya en Ganancias (Break-Even / Trailing Profit)
+        sl_in_profit = (sl_px > entry_px) if is_long else (sl_px < entry_px and sl_px > 0)
+        sl_at_be = abs(sl_px - entry_px) < 1e-4 if entry_px > 0 else False
+        tp1_hit = bool(tr.get("tp1_hit", False)) or (live_px >= tp1_px if is_long else live_px <= tp1_px if tp1_px > 0 else False)
+
+        if sl_in_profit or sl_at_be:
+            sl_cls = "pos"
+            tp1_mark = " · ✅ TP1 Alcanzado" if tp1_hit else ""
+            if sl_at_be:
+                sl_explain = f"<span style='color:#2ecc71;font-weight:700;'>🔒 ¡Break-Even Blindado!</span> Si el precio se devuelve a {sl_fmt}, sales a riesgo cero{tp1_mark}."
+            else:
+                sl_explain = f"<span style='color:#2ecc71;font-weight:700;'>🔒 ¡Ganancia Asegurada!</span> Si el precio se devuelve a {sl_fmt}, cierras en positivo{tp1_mark}."
+        else:
+            sl_cls = "neg"
+            sl_dir = "cae" if is_long else "sube"
+            sl_explain = f"Cierre automático si el precio {sl_dir} a {sl_fmt} para limitar pérdida a ${risk_usd:.2f} USD"
 
         # BUG 5: Limpieza profunda de razonamiento
         raw_reason = tr.get("ai_reasoning") or tr.get("thesis") or tr.get("note") or ""
         why_clean = _clean_thesis_reasoning(raw_reason)
 
-        asset_col = f"<b style='font-size:13.5px;'>{_esc(asset)}</b>"
+        tf_badge = f"<span class='badge' style='background:rgba(255,255,255,0.08);color:var(--cyan);font-size:10px;margin-left:4px;'>{str(tr.get('timeframe', '4h')).upper()}</span>"
+        asset_col = f"<b style='font-size:13.5px;'>{_esc(asset)}</b> {tf_badge}"
         if show_motor:
             asset_col += f"<br><span class='small' style='color:var(--cyan);'>{motor}</span>"
 
@@ -2783,8 +2800,8 @@ def _render_clean_active_trades_table(
             f"<td>{asset_col}</td>"
             f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt} {lev}</span></td>"
             f"<td class='mono'><b>{entry_fmt}</b> → <b style='color:var(--cyan);'>{live_fmt}</b></td>"
-            f"<td><div class='mono neg' style='font-size:13px;font-weight:800;'>{sl_fmt}</div>"
-            f"<div style='font-size:10px;color:rgba(255,107,129,0.9);margin-top:2px;line-height:1.2;'>{sl_explain}</div></td>"
+            f"<td><div class='mono {sl_cls}' style='font-size:13px;font-weight:800;'>{sl_fmt}</div>"
+            f"<div style='font-size:10px;margin-top:2px;line-height:1.2;'>{sl_explain}</div></td>"
             f"<td><div class='mono pos' style='font-size:13px;font-weight:800;'>{tp_fmt}</div>"
             f"<div style='font-size:10px;color:rgba(46,204,113,0.9);margin-top:2px;line-height:1.2;'>{tp_explain}</div></td>"
             f"<td><div style='font-size:10.5px;color:var(--mut);'>Riesgo: <b class='mono' style='color:#fff;'>${risk_usd:.2f} USD</b></div>"
@@ -2813,33 +2830,60 @@ def _render_clean_closed_trades_table(
     p: list[str] = []
     p.append("<div class='clean-trades-container' style='padding:10px 14px;'>")
     p.append("<table class='clean-trades-tbl'><thead><tr>")
-    p.append("<th>Activo</th><th>Dirección</th><th>Entrada</th><th>Salida</th><th>PnL Neto</th><th>R</th><th>Cierre</th><th>Razón</th>")
+    p.append("<th>Activo</th><th>Dirección / TF</th><th>📍 Entrada Real</th><th>🏁 Salida Real</th><th>💰 PnL Neto Real</th><th>Múltiplo R</th><th>Fecha Cierre</th><th>Motivo Real de Cierre</th>")
     p.append("</tr></thead><tbody>")
     for tr in closed_trades:
-        asset = tr.get("asset", "")
+        asset = str(tr.get("asset", ""))
         kind = str(tr.get("kind", "")).lower()
         is_long = "long" in kind
         bet_cls = "long" if is_long else "short"
-        bet_txt = "LONG" if is_long else "SHORT"
-        entry_px = float(tr.get("entry_price") or tr.get("entry", 0.0))
-        exit_px = float(tr.get("exit_price") or tr.get("exit", 0.0))
-        pnl = float(tr.get("pnl_neto_usd", tr.get("pnl_usd", tr.get("realized_pnl_usd", 0.0))))
-        r_mult = tr.get("r_multiplo", tr.get("r_mult", "—"))
+        bet_txt = "LONG 📈" if is_long else "SHORT 📉"
+        tf = str(tr.get("timeframe", "4h")).upper()
+
+        entry_px = float(tr.get("entry_price") or tr.get("entry") or 0.0)
+        exit_px = float(tr.get("exit_price") or tr.get("exit") or 0.0)
+        pnl = float(tr.get("pnl_neto_usd") if tr.get("pnl_neto_usd") is not None else (tr.get("pnl_usd") if tr.get("pnl_usd") is not None else tr.get("realized_pnl_usd", 0.0)))
+        risk_usd = float(tr.get("risk_usd") or 20.0)
+
+        r_mult_raw = tr.get("r_multiplo", tr.get("r_mult"))
+        if r_mult_raw not in (None, "—", ""):
+            try:
+                r_mult_str = f"{float(r_mult_raw):+.1f}R"
+            except Exception:
+                r_mult_str = str(r_mult_raw)
+        elif risk_usd > 0:
+            r_mult_str = f"{(pnl / risk_usd):+.1f}R"
+        else:
+            r_mult_str = "—"
+
         pnl_cls = "pos" if pnl >= 0 else "neg"
         pnl_sgn = "+" if pnl >= 0 else ""
-        close_ts = str(tr.get("closed_at", tr.get("ts_utc", "")))[:16]
-        reason = tr.get("close_reason", tr.get("exit_reason", tr.get("thesis", "")))
+        close_ts = str(tr.get("closed_at") or tr.get("exit_ts_utc") or tr.get("ts_utc", ""))[:16]
+
+        tag = str(tr.get("close_tag") or tr.get("tag") or "").upper()
+        raw_reason = tr.get("close_reason") or tr.get("close_note") or tr.get("note") or tr.get("thesis") or ""
+        clean_rsn = _clean_dummy_opinion(raw_reason)
+
+        if "TP" in tag or "TP" in clean_rsn.upper():
+            reason_fmt = f"🎯 TP Alcanzado: {clean_rsn}" if clean_rsn else "🎯 Take Profit Alcanzado"
+        elif "BE" in tag or "TRAILING" in tag or "PYRAMID" in tag:
+            reason_fmt = f"🔒 Trailing Profit: {clean_rsn}" if clean_rsn else "🔒 Trailing Stop Protegido"
+        elif "SL" in tag or "SL" in clean_rsn.upper():
+            reason_fmt = f"🛡️ Stop Loss: {clean_rsn}" if clean_rsn else "🛡️ Stop Loss de Protección"
+        else:
+            reason_fmt = clean_rsn or "Cierre de Posición"
+
         nd = 4 if entry_px < 10 else 2
         p.append(
             f"<tr>"
-            f"<td><b>{_esc(asset)}</b></td>"
-            f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt}</span></td>"
+            f"<td><b style='font-size:13px;'>{_esc(asset)}</b></td>"
+            f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt}</span> <span class='badge' style='background:rgba(255,255,255,0.08);color:var(--cyan);font-size:10px;margin-left:2px;'>{tf}</span></td>"
             f"<td class='mono'>${entry_px:,.{nd}f}</td>"
-            f"<td class='mono'>${exit_px:,.{nd}f}</td>"
+            f"<td class='mono'><b>${exit_px:,.{nd}f}</b></td>"
             f"<td class='mono {pnl_cls}'><b>{pnl_sgn}${pnl:.2f} USD</b></td>"
-            f"<td class='mono'><b>{_esc(str(r_mult))}</b></td>"
+            f"<td class='mono {pnl_cls}'><b>{_esc(r_mult_str)}</b></td>"
             f"<td class='mono small'>{_esc(close_ts)}</td>"
-            f"<td class='small' style='color:var(--tx2);max-width:240px;'>{_esc(_clean_dummy_opinion(reason))}</td>"
+            f"<td class='small' style='color:var(--tx2);max-width:280px;line-height:1.35;'>{_esc(reason_fmt)}</td>"
             f"</tr>"
         )
     p.append("</tbody></table></div>")
@@ -2876,6 +2920,9 @@ def _bloque_dummies(
         sniper_eq = sniper_data.get("equity_status") or {}
         open_1h = sniper_data.get("open_trades") or []
         closed_1h = sniper_data.get("closed_trades") or []
+        if not closed_1h:
+            with contextlib.suppress(Exception):
+                closed_1h = [t for t in load_sniper_trades(root) if t.get("status") == "closed"]
 
     open_4h = [t for t in (trades_diag or []) if t.get("status") == "open"]
     closed_4h = [t for t in (trades_diag or []) if t.get("status") == "closed" or t.get("order_state") == "CLOSED"]
@@ -3169,10 +3216,14 @@ def _bloque_dummies(
         "</div>"
     )
 
-    win_4h = sum(1 for t in closed_4h if float(t.get("pnl_usd", t.get("realized_pnl_usd", 0.0))) > 0)
+    def _t_pnl(t: dict[str, Any]) -> float:
+        return float(t.get("pnl_neto_usd") if t.get("pnl_neto_usd") is not None else (t.get("pnl_usd") if t.get("pnl_usd") is not None else t.get("realized_pnl_usd", 0.0)))
+
+    win_4h = sum(1 for t in closed_4h if _t_pnl(t) > 0)
     win_rate_4h = (win_4h / len(closed_4h) * 100.0) if closed_4h else 0.0
-    win_1h = sum(1 for t in closed_1h if float(t.get("pnl_usd", t.get("realized_pnl_usd", 0.0))) > 0)
+    win_1h = sum(1 for t in closed_1h if _t_pnl(t) > 0)
     win_rate_1h = (win_1h / len(closed_1h) * 100.0) if closed_1h else 0.0
+    realizado_1h_calc = sum(_t_pnl(t) for t in closed_1h) if closed_1h else realizado_1h
     compradas_cnt = len([pl for pl in plans if "COMPRADA" in str(pl.get("status", "")) or "TP1" in str(pl.get("status", "")) or "TP2" in str(pl.get("status", ""))])
 
     p.append("<div class='audit-blocks-grid'>")
@@ -3204,7 +3255,7 @@ def _bloque_dummies(
         "<div class='audit-stats-row'>"
         f"<div class='audit-stat-box'><div class='lbl'>Cupos</div><div class='val'>{len(open_1h)}/3</div></div>"
         f"<div class='audit-stat-box'><div class='lbl'>Win Rate</div><div class='val'>{f'{win_rate_1h:.0f}%' if closed_1h else '—'}</div></div>"
-        f"<div class='audit-stat-box'><div class='lbl'>PnL Realizado</div><div class='val'>${realizado_1h:.2f}</div></div>"
+        f"<div class='audit-stat-box'><div class='lbl'>PnL Realizado</div><div class='val'>${realizado_1h_calc:.2f}</div></div>"
         "</div>"
         f"<div class='small' style='color:var(--tx2);margin-bottom:8px;'>Flotante vivo: <b>{sgn_1h}${flotante_1h:.2f} USD</b> · {len(closed_1h)} cerrada(s)</div>"
         "<div style='font-size:11px;color:var(--mut);line-height:1.4;'>Auditoría criptográfica append-only en <code>ledger/user_sniper.jsonl</code>.</div>"
@@ -3230,6 +3281,19 @@ def _bloque_dummies(
 
     p.append("</div>")  # .audit-blocks-grid
 
+    # Tabla unificada consolidada de operaciones cerradas
+    all_closed = closed_4h + closed_1h
+    p.append(
+        "<div class='dummy-sec-title' style='margin-top:28px;'>"
+        "<div><h2><span>📊</span> Trade Audit Unificado (Consolidado 4H + 1H)</h2>"
+        "<div class='dummy-subtitle'>Historial cruzado de operaciones cerradas de todos los motores con trazabilidad auditada</div></div>"
+        "</div>"
+    )
+    p.extend(_render_clean_closed_trades_table(
+        all_closed,
+        "Las operaciones activas están operando y protegiendo el capital. Cada cierre de 4H o 1H quedará auditado con hash criptográfico SHA-256."
+    ))
+
     p.append("</section>")  # .dummy-view
     return p
 
@@ -3254,7 +3318,7 @@ def _bloque_isolated_futures(
 
     open_4h = [t for t in (trades_diag or []) if t.get("status") == "open"]
     closed_4h = [t for t in (trades_diag or []) if t.get("status") == "closed" or t.get("order_state") == "CLOSED"]
-    win_4h = sum(1 for t in closed_4h if float(t.get("pnl_usd", t.get("realized_pnl_usd", 0.0))) > 0)
+    win_4h = sum(1 for t in closed_4h if float(t.get("pnl_neto_usd") if t.get("pnl_neto_usd") is not None else (t.get("pnl_usd") if t.get("pnl_usd") is not None else t.get("realized_pnl_usd", 0.0))) > 0)
     win_rate_4h = (win_4h / len(closed_4h) * 100.0) if closed_4h else 0.0
 
     prices = states.get("prices") or {}
@@ -3336,16 +3400,24 @@ def _bloque_isolated_sniper(
         sniper_eq = sniper_data.get("equity_status") or {}
         open_1h = sniper_data.get("open_trades") or []
         closed_1h = sniper_data.get("closed_trades") or []
+        if not closed_1h:
+            with contextlib.suppress(Exception):
+                closed_1h = [t for t in load_sniper_trades(root) if t.get("status") == "closed"]
 
     patrimonio_1h = float(sniper_eq.get("total_equity", 1000.0))
     flotante_1h = float(sniper_eq.get("floating_pnl", 0.0))
     realizado_1h = float(sniper_eq.get("realized_pnl", 0.0))
+    if realizado_1h == 0.0 and closed_1h:
+        realizado_1h = sum(
+            float(t.get("pnl_neto_usd") if t.get("pnl_neto_usd") is not None else (t.get("pnl_usd") if t.get("pnl_usd") is not None else t.get("realized_pnl_usd", 0.0)))
+            for t in closed_1h
+        )
     pnl_1h = flotante_1h + realizado_1h
     pnl_1h_pct = (pnl_1h / 1000.0) * 100.0
     cls_1h = "pos" if pnl_1h >= 0 else "neg"
     sgn_1h = "+" if pnl_1h >= 0 else ""
 
-    win_1h = sum(1 for t in closed_1h if float(t.get("pnl_usd", t.get("realized_pnl_usd", 0.0))) > 0)
+    win_1h = sum(1 for t in closed_1h if float(t.get("pnl_neto_usd") if t.get("pnl_neto_usd") is not None else (t.get("pnl_usd") if t.get("pnl_usd") is not None else t.get("realized_pnl_usd", 0.0))) > 0)
     win_rate_1h = (win_1h / len(closed_1h) * 100.0) if closed_1h else 0.0
 
     p: list[str] = []

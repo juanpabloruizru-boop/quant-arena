@@ -112,12 +112,22 @@ def realized_pnl_usd(trade: dict[str, Any], costs: dict[str, Any]) -> dict[str, 
     Modelo de comisiones (documentado, coherente con costs.yaml VERIFICADO):
     ida y vuelta taker sobre el nocional de entrada (spot 0.20 %, perp 0.10 %).
     Incluye de forma integrada cualquier ganancia/comisión de cierres parciales previos (TP1).
+    Fórmula exacta:
+    - LONG:  PnL = Size_USD * (Exit - Entry) / Entry - Fees
+    - SHORT: PnL = Size_USD * (Entry - Exit) / Entry - Fees
     """
-    entry = float(trade["entry_price"])
-    exit_px = float(trade.get("exit_price", entry))
+    entry = float(trade.get("entry_price") or trade.get("entry", 0.0))
+    if entry <= 0:
+        return {
+            "pnl_bruto_usd": 0.0,
+            "fees_estimadas_usd": 0.0,
+            "pnl_neto_usd": 0.0,
+            "pnl_pct": 0.0,
+        }
+    exit_px = float(trade.get("exit_price") or trade.get("exit", entry))
     size = float(trade.get("size_usd", 0.0))
-    direction = -1.0 if trade.get("kind") == "future_short" else 1.0
-    bruto_rem = size * (exit_px / entry - 1.0) * direction
+    is_short = str(trade.get("kind", "")).lower() == "future_short"
+    bruto_rem = size * (entry - exit_px) / entry if is_short else size * (exit_px - entry) / entry
     fees_rem = size * fee_roundtrip(str(trade.get("kind", "spot")), costs)
     neto_rem = bruto_rem - fees_rem
 
@@ -135,7 +145,7 @@ def realized_pnl_usd(trade: dict[str, Any], costs: dict[str, Any]) -> dict[str, 
     if initial_size > 0:
         pct = (total_neto / initial_size) * 100.0
     else:
-        pct = (exit_px / entry - 1.0) * 100.0 * direction
+        pct = ((entry - exit_px) if is_short else (exit_px - entry)) / entry * 100.0
     return {
         "pnl_bruto_usd": round(total_bruto, 2),
         "fees_estimadas_usd": round(total_fees, 2),
@@ -204,14 +214,14 @@ def compute_status(
             continue
         px = prices.get(t["asset"])
         size = float(t.get("size_usd", 0.0))
-        entry = float(t.get("entry_price", 0.0))
-        direction = -1.0 if t.get("kind") == "future_short" else 1.0
+        entry = float(t.get("entry_price") or t.get("entry", 0.0))
+        is_short = str(t.get("kind", "")).lower() == "future_short"
         fees_open_est += size * fee_roundtrip(str(t.get("kind", "spot")), costs)
         if px is None or entry <= 0:
             sin_precio.append(t.get("id", "?"))
             floating_detail.append({"id": t.get("id"), "asset": t["asset"], "pnl_usd": None})
             continue
-        pnl = size * (px / entry - 1.0) * direction
+        pnl = size * (entry - px) / entry if is_short else size * (px - entry) / entry
         floating += pnl
         floating_detail.append(
             {"id": t.get("id"), "asset": t["asset"], "price_now": px, "pnl_usd": round(pnl, 2)}

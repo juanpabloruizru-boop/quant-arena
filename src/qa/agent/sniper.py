@@ -91,10 +91,28 @@ def load_sniper_trades(root: Path | None = None) -> list[dict[str, Any]]:
         elif action == "close" and tid in trades:
             trades[tid]["status"] = "closed"
             trades[tid]["exit_price"] = rec.get("exit_price")
+            trades[tid]["closed_at"] = rec.get("ts_utc")
             trades[tid]["exit_ts_utc"] = rec.get("ts_utc")
-            trades[tid]["pnl_neto_usd"] = float(rec.get("pnl_neto_usd", 0.0))
+            pnl_val = float(rec.get("pnl_neto_usd", 0.0))
+            trades[tid]["pnl_neto_usd"] = pnl_val
+            trades[tid]["pnl_usd"] = pnl_val
+            trades[tid]["realized_pnl_usd"] = pnl_val
             trades[tid]["close_tag"] = rec.get("tag", "MANUAL_CLOSE")
             trades[tid]["close_note"] = rec.get("note", "")
+            trades[tid]["close_reason"] = rec.get("note", "")
+            risk = float(trades[tid].get("risk_usd", 20.0))
+            r_fallback = round(pnl_val / risk, 2) if risk > 0 else -1.0
+            trades[tid]["r_multiplo"] = rec.get("r_multiplo") or r_fallback
+
+    for t in trades.values():
+        t.setdefault("status", "open")
+        t.setdefault("timeframe", "1h")
+        t.setdefault("entry", t.get("entry_price"))
+        t.setdefault("sl_price", t.get("sl"))
+        t.setdefault("tp1_price", t.get("tp1"))
+        t.setdefault("tp2_price", t.get("tp2"))
+        t.setdefault("tp3_price", t.get("tp3"))
+        t.setdefault("rr_ratio", "1 : 3.0")
 
     return list(trades.values())
 
@@ -116,6 +134,11 @@ def open_sniper_trade(
     ai_verdict: str = "EJECUTAR_AHORA",
     ai_confidence: int = 80,
     ai_reasoning: str = "",
+    tp3: float = 0.0,
+    tp1_price: float | None = None,
+    tp2_price: float | None = None,
+    tp3_price: float | None = None,
+    rr_ratio: str = "1 : 3.0",
 ) -> dict[str, Any]:
     """Registra una nueva posición en el libro independiente user_sniper.jsonl."""
     if kind is not None:
@@ -124,6 +147,10 @@ def open_sniper_trade(
     now_iso = datetime.now(UTC).isoformat(timespec="seconds")
     trade_kind = "future_long" if direction == "LONG" else "future_short"
     margin_usd = round(size_usd / SNIPER_LEV_NUM, 2)
+
+    tp1_val = float(tp1_price) if tp1_price is not None else float(tp1)
+    tp2_val = float(tp2_price) if tp2_price is not None else float(tp2)
+    tp3_val = float(tp3_price) if tp3_price is not None else float(tp3)
 
     rec = {
         "action": "open",
@@ -137,8 +164,13 @@ def open_sniper_trade(
         "initial_size_usd": float(size_usd),
         "sl": float(sl),
         "initial_sl": float(sl),
-        "tp1": float(tp1),
-        "tp2": float(tp2),
+        "tp1": tp1_val,
+        "tp2": tp2_val,
+        "tp3": tp3_val,
+        "tp1_price": tp1_val,
+        "tp2_price": tp2_val,
+        "tp3_price": tp3_val,
+        "rr_ratio": rr_ratio,
         "tp1_hit": False,
         "risk_usd": float(risk_usd),
         "dist_sl": float(dist_sl),
@@ -185,7 +217,14 @@ def close_sniper_trade(
     note: str = "",
     tag: str = "SNIPER_EXIT",
 ) -> dict[str, Any]:
-    rec = {
+    matched_open: dict[str, Any] | None = None
+    if _sniper_log_path(root).exists():
+        for t in load_sniper_trades(root):
+            if t.get("id") == trade_id:
+                matched_open = t
+                break
+
+    rec: dict[str, Any] = {
         "action": "close",
         "id": trade_id,
         "ts_utc": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -194,6 +233,25 @@ def close_sniper_trade(
         "note": note,
         "tag": tag,
     }
+    if matched_open:
+        rec["asset"] = matched_open.get("asset")
+        rec["kind"] = matched_open.get("kind")
+        rec["timeframe"] = matched_open.get("timeframe", "1h")
+        rec["entry_price"] = matched_open.get("entry_price")
+        rec["size_usd"] = matched_open.get("size_usd")
+        rec["risk_usd"] = matched_open.get("risk_usd")
+        rec["leverage"] = matched_open.get("leverage", "5x")
+        rec["sl"] = matched_open.get("sl")
+        rec["tp1"] = matched_open.get("tp1")
+        rec["tp2"] = matched_open.get("tp2")
+        rec["tp3"] = matched_open.get("tp3")
+        rec["tp1_price"] = matched_open.get("tp1_price") or matched_open.get("tp1")
+        rec["tp2_price"] = matched_open.get("tp2_price") or matched_open.get("tp2")
+        rec["tp3_price"] = matched_open.get("tp3_price") or matched_open.get("tp3")
+        rec["rr_ratio"] = matched_open.get("rr_ratio", "1 : 3.0")
+        risk = float(matched_open.get("risk_usd", 20.0))
+        rec["r_multiplo"] = round(float(pnl_neto_usd) / risk, 2) if risk > 0 else -1.0
+
     append_chained(_sniper_log_path(root), rec)
     return rec
 
@@ -290,13 +348,20 @@ def detect_undercut_and_reclaim(
     if l_last < min_low_5 and wick_ratio_low >= 0.35 and c_last >= min_low_5 and rvol >= 1.05:
         sl = round(l_last * 0.998, 4 if c_last < 10 else 2)
         dist_sl = max(c_last * 0.008, abs(c_last - sl))
+        nd = 4 if c_last < 10 else 2
         return {
             "pattern": "UNDERCUT_AND_RECLAIM",
             "direction": "LONG",
             "entry_price": c_last,
             "sl": sl,
-            "tp1": round(c_last + 1.8 * dist_sl, 4 if c_last < 10 else 2),
-            "tp2": round(c_last + 3.0 * dist_sl, 4 if c_last < 10 else 2),
+            "tp1": round(c_last + 1.8 * dist_sl, nd),
+            "tp2": round(c_last + 3.0 * dist_sl, nd),
+            "tp3": round(c_last + 4.5 * dist_sl, nd),
+            "tp1_price": round(c_last + 1.8 * dist_sl, nd),
+            "tp2_price": round(c_last + 3.0 * dist_sl, nd),
+            "tp3_price": round(c_last + 4.5 * dist_sl, nd),
+            "rr_ratio": "1 : 3.0",
+            "timeframe": "1h",
             "dist_sl": dist_sl,
             "rvol": round(rvol, 2),
             "wick_ratio": round(wick_ratio_low * 100.0, 1),
@@ -313,13 +378,20 @@ def detect_undercut_and_reclaim(
     if h_last > max_high_5 and wick_ratio_high >= 0.35 and c_last <= max_high_5 and rvol >= 1.05:
         sl = round(h_last * 1.002, 4 if c_last < 10 else 2)
         dist_sl = max(c_last * 0.008, abs(sl - c_last))
+        nd = 4 if c_last < 10 else 2
         return {
             "pattern": "UNDERCUT_AND_RECLAIM",
             "direction": "SHORT",
             "entry_price": c_last,
             "sl": sl,
-            "tp1": round(c_last - 1.8 * dist_sl, 4 if c_last < 10 else 2),
-            "tp2": round(c_last - 3.0 * dist_sl, 4 if c_last < 10 else 2),
+            "tp1": round(c_last - 1.8 * dist_sl, nd),
+            "tp2": round(c_last - 3.0 * dist_sl, nd),
+            "tp3": round(c_last - 4.5 * dist_sl, nd),
+            "tp1_price": round(c_last - 1.8 * dist_sl, nd),
+            "tp2_price": round(c_last - 3.0 * dist_sl, nd),
+            "tp3_price": round(c_last - 4.5 * dist_sl, nd),
+            "rr_ratio": "1 : 3.0",
+            "timeframe": "1h",
             "dist_sl": dist_sl,
             "rvol": round(rvol, 2),
             "wick_ratio": round(wick_ratio_high * 100.0, 1),
@@ -387,13 +459,20 @@ def detect_vcp_momentum_burst(
         if trend_long and c_last >= prior_high_4 * 0.998:
             sl = round(c_last - 1.2 * curr_atr, 4 if c_last < 10 else 2)
             dist_sl = max(c_last * 0.008, abs(c_last - sl))
+            nd = 4 if c_last < 10 else 2
             return {
                 "pattern": "VCP_MOMENTUM_BURST",
                 "direction": "LONG",
                 "entry_price": c_last,
                 "sl": sl,
-                "tp1": round(c_last + 1.8 * dist_sl, 4 if c_last < 10 else 2),
-                "tp2": round(c_last + 3.0 * dist_sl, 4 if c_last < 10 else 2),
+                "tp1": round(c_last + 1.8 * dist_sl, nd),
+                "tp2": round(c_last + 3.0 * dist_sl, nd),
+                "tp3": round(c_last + 4.5 * dist_sl, nd),
+                "tp1_price": round(c_last + 1.8 * dist_sl, nd),
+                "tp2_price": round(c_last + 3.0 * dist_sl, nd),
+                "tp3_price": round(c_last + 4.5 * dist_sl, nd),
+                "rr_ratio": "1 : 3.0",
+                "timeframe": "1h",
                 "dist_sl": dist_sl,
                 "rvol": round(rvol, 2),
                 "atr14": curr_atr,
@@ -406,13 +485,20 @@ def detect_vcp_momentum_burst(
         elif not trend_long and c_last <= prior_low_4 * 1.002:
             sl = round(c_last + 1.2 * curr_atr, 4 if c_last < 10 else 2)
             dist_sl = max(c_last * 0.008, abs(c_last - sl))
+            nd = 4 if c_last < 10 else 2
             return {
                 "pattern": "VCP_MOMENTUM_BURST",
                 "direction": "SHORT",
                 "entry_price": c_last,
                 "sl": sl,
-                "tp1": round(c_last - 1.8 * dist_sl, 4 if c_last < 10 else 2),
-                "tp2": round(c_last - 3.0 * dist_sl, 4 if c_last < 10 else 2),
+                "tp1": round(c_last - 1.8 * dist_sl, nd),
+                "tp2": round(c_last - 3.0 * dist_sl, nd),
+                "tp3": round(c_last - 4.5 * dist_sl, nd),
+                "tp1_price": round(c_last - 1.8 * dist_sl, nd),
+                "tp2_price": round(c_last - 3.0 * dist_sl, nd),
+                "tp3_price": round(c_last - 4.5 * dist_sl, nd),
+                "rr_ratio": "1 : 3.0",
+                "timeframe": "1h",
                 "dist_sl": dist_sl,
                 "rvol": round(rvol, 2),
                 "atr14": curr_atr,
@@ -434,6 +520,7 @@ def detect_vcp_momentum_burst(
         sl_val = c_last - dist_sl if dir_imp == "LONG" else c_last + dist_sl
         tp1_val = c_last + 1.8 * dist_sl if dir_imp == "LONG" else c_last - 1.8 * dist_sl
         tp2_val = c_last + 3.0 * dist_sl if dir_imp == "LONG" else c_last - 3.0 * dist_sl
+        tp3_val = c_last + 4.5 * dist_sl if dir_imp == "LONG" else c_last - 4.5 * dist_sl
         rel_pos = "por encima" if dir_imp == "LONG" else "por debajo"
         return {
             "pattern": "IMPULSO_INTRADIA_1H",
@@ -442,6 +529,12 @@ def detect_vcp_momentum_burst(
             "sl": round(sl_val, nd),
             "tp1": round(tp1_val, nd),
             "tp2": round(tp2_val, nd),
+            "tp3": round(tp3_val, nd),
+            "tp1_price": round(tp1_val, nd),
+            "tp2_price": round(tp2_val, nd),
+            "tp3_price": round(tp3_val, nd),
+            "rr_ratio": "1 : 3.0",
+            "timeframe": "1h",
             "dist_sl": dist_sl,
             "rvol": round(rvol, 2),
             "atr14": curr_atr,
@@ -760,6 +853,15 @@ def evaluar_y_gestionar_sniper(
                 f"Tech {tech_sc:.0f} · IA {ai_conf}%] · {reason_txt} · [🧠 IA {ai_mod}: {ai_r}]"
             )
 
+            tp3_px = float(
+                setup.get("tp3")
+                or (
+                    entry_px + 4.5 * dist_sl
+                    if dir_c == "LONG"
+                    else entry_px - 4.5 * dist_sl
+                )
+            )
+
             trade_rec = open_sniper_trade(
                 root,
                 asset=sym,
@@ -768,6 +870,11 @@ def evaluar_y_gestionar_sniper(
                 sl=sl_px,
                 tp1=tp1_px,
                 tp2=tp2_px,
+                tp3=tp3_px,
+                tp1_price=tp1_px,
+                tp2_price=tp2_px,
+                tp3_price=tp3_px,
+                rr_ratio="1 : 3.0",
                 size_usd=size_usd,
                 risk_usd=risk_usd,
                 dist_sl=dist_sl,
@@ -784,6 +891,7 @@ def evaluar_y_gestionar_sniper(
             notify_event(
                 "ORDER_OPEN",
                 {
+                    "id": trade_rec.get("id"),
                     "asset": sym,
                     "timeframe": "1h",
                     "kind": trade_rec["kind"],
@@ -792,6 +900,12 @@ def evaluar_y_gestionar_sniper(
                     "sl": sl_px,
                     "tp1": tp1_px,
                     "tp2": tp2_px,
+                    "tp3": tp3_px,
+                    "tp1_price": tp1_px,
+                    "tp2_price": tp2_px,
+                    "tp3_price": tp3_px,
+                    "rr_ratio": "1 : 3.0",
+                    "rr": "3.0",
                     "score": 90,
                     "risk_usd": risk_usd,
                     "risk_pct": 0.02,
@@ -809,6 +923,7 @@ def evaluar_y_gestionar_sniper(
     return {
         "status": "ok",
         "open_trades": [t for t in load_sniper_trades(root) if t.get("status") == "open"],
+        "closed_trades": [t for t in load_sniper_trades(root) if t.get("status") == "closed"],
         "closed_count": equity_status["closed_count"],
         "equity_status": equity_status,
         "nuevas_abiertas": nuevas_sniper,

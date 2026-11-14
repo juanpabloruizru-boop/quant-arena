@@ -1,42 +1,42 @@
 {
   "BTCUSDT": {
-    "veredicto": "EJECUTAR_AHORA",
+    "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 85,
-    "precio_entrada_sugerido": 65352.71,
-    "razonamiento": "Setup de impulso/rebote alcista validado. Entrada activa recomendada.",
-    "timestamp_utc": "2026-11-14T15:22:19+00:00",
+    "precio_entrada_sugerido": 67947.27,
+    "razonamiento": "Fuerte tendencia bajista (ADX 58.5) pero el RSI en 13.1 indica sobreventa extrema. El riesgo de rebote técnico por reversión a la media es alto. Esperamos retroceso a la EMA9 para optimizar entrada y evitar capitulación de vendedores.",
+    "timestamp_utc": "2026-11-14T18:04:32+00:00",
     "symbol": "BTCUSDT",
-    "direction": "LONG",
-    "model_used": "local_heuristics"
+    "direction": "SHORT",
+    "model_used": "gemini-3-flash-preview"
   },
   "ETHUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 1982.34,
-    "razonamiento": "Venta corta extendida -7.8% bajo EMA21. Esperar retroceso correctivo a 1982.34 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-14T15:22:19+00:00",
+    "confianza": 82,
+    "precio_entrada_sugerido": 1915.21,
+    "razonamiento": "RSI en 21.7 indica sobreventa extrema y Kronos proyecta rebote inminente. No vendemos en mínimos; esperamos retroceso a la EMA9 para capturar la continuación de la tendencia bajista validada por un ADX de 56.3.",
+    "timestamp_utc": "2026-11-14T18:04:41+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
-    "model_used": "local_heuristics"
+    "model_used": "gemini-3-flash-preview"
   },
   "SOLUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 80.29,
-    "razonamiento": "Venta corta extendida -8.8% bajo EMA21. Esperar retroceso correctivo a 80.29 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-14T15:22:19+00:00",
+    "confianza": 82,
+    "precio_entrada_sugerido": 74.8,
+    "razonamiento": "Tendencia bajista sólida (ADX 51) y macro alineado. Sin embargo, RSI en 21.5 indica sobreventa extrema. Se busca entrada en pullback a la zona de ruptura previa (74.80) para evitar ser atrapados en un rebote técnico inminente.",
+    "timestamp_utc": "2026-11-14T18:04:49+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
-    "model_used": "local_heuristics"
+    "model_used": "gemini-3-flash-preview"
   },
   "SUIUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
-    "confianza": 78,
-    "precio_entrada_sugerido": 0.8017,
-    "razonamiento": "Venta corta extendida -8.1% bajo EMA21. Esperar retroceso correctivo a 0.8017 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-14T15:22:19+00:00",
+    "confianza": 82,
+    "precio_entrada_sugerido": 0.778,
+    "razonamiento": "Tendencia bajista sólida (ADX 36.5) y macro negativa, pero RSI en 29.6 indica sobreventa. Evitamos vender en el soporte de 0.73; buscamos pullback a EMA9 (0.78) para optimizar el R/R ante la probable continuación bajista.",
+    "timestamp_utc": "2026-11-14T18:04:56+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
-    "model_used": "local_heuristics"
+    "model_used": "gemini-3-flash-preview"
   }
 }
