@@ -497,6 +497,9 @@ def agent_run() -> None:
                     or t.get("tag", "Cerrada")
                 ),
                 "timeframe": t.get("timeframe", "4h"),
+                "leverage": t.get("leverage") or "4x",
+                "margin_usd": t.get("margin_usd") or (round(size / 4.0, 2) if size > 0 else 0.0),
+                "risk_usd": float(t.get("risk_usd") or 20.0),
             })
             diags.append(d)
             continue
@@ -564,8 +567,9 @@ def agent_run() -> None:
         d["order_state"] = t.get("order_state", "ACTIVE")
         d["target_entry"] = t.get("target_entry")
         d["thesis"] = t.get("thesis") or t.get("note", "")
-        d["margin_usd"] = t.get("margin_usd")
-        d["risk_usd"] = t.get("risk_usd")
+        sz_open = float(d["size_usd"] or 0.0)
+        d["margin_usd"] = t.get("margin_usd") or (round(sz_open / 4.0, 2) if sz_open > 0 else 0.0)
+        d["risk_usd"] = float(t.get("risk_usd") or 20.0)
         d["ai_reasoning"] = t.get("ai_reasoning", "")
         diags.append(d)
 

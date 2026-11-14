@@ -78,6 +78,9 @@ def closed_rows(trades: list[dict[str, Any]], costs: dict[str, Any]) -> list[dic
                 "entry": entry,
                 "exit": exit_px,
                 "size_usd": size,
+                "leverage": t.get("leverage") or "4x",
+                "margin_usd": t.get("margin_usd") or (round(size / 4.0, 2) if size > 0 else 0.0),
+                "risk_usd": float(t.get("risk_usd") or 20.0),
                 "rr_inicial_bruto": rr_ini,
                 "pnl_bruto_usd": pnl["pnl_bruto_usd"],
                 "fees_est_usd": pnl["fees_estimadas_usd"],
@@ -259,11 +262,18 @@ def audit_futures(
 
     # 2. Agregar cerradas
     for r in closed:
+        lev_r = str(r.get("leverage") or "4x")
+        try:
+            lev_num_r = float(lev_r.replace("x", ""))
+        except Exception:
+            lev_num_r = 4.0
+        sz_r = float(r.get("size_usd", 0.0))
+        mg_r = float(r.get("margin_usd") or (round(sz_r / lev_num_r, 2) if sz_r > 0 and lev_num_r > 0 else 0.0))
         master_rows.append({
             "id": r.get("id"),
             "asset": r.get("asset"),
             "kind": r.get("kind"),
-            "leverage": "4x",
+            "leverage": lev_r,
             "timeframe": r.get("timeframe", "4h"),
             "entry_mode": "INSTANTE",
             "order_state": "CLOSED",
@@ -274,8 +284,9 @@ def audit_futures(
             "entry": r.get("entry"),
             "exit": r.get("exit"),
             "live_price": r.get("exit"),
-            "size_usd": r.get("size_usd"),
-            "margin_usd": round(float(r.get("size_usd", 0.0)) / 4.0, 2),
+            "size_usd": sz_r,
+            "margin_usd": mg_r,
+            "risk_usd": float(r.get("risk_usd") or 20.0),
             "sl": "—",
             "tp1": "—",
             "tp2": "—",

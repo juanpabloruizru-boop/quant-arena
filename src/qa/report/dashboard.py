@@ -1284,6 +1284,7 @@ def _trade_view(t: dict[str, Any], now_utc: datetime) -> dict[str, Any]:
         "px": px_now,
         "sl": sl,
         "tp2": tp2,
+        "size": size,
         "margen": margen,
         "riesgo": riesgo,
         "order_state": order_state,
@@ -1312,7 +1313,7 @@ def _pyr_cell(v: dict[str, Any]) -> str:
 
 
 def _active_row(v: dict[str, Any]) -> str:
-    dirpill = f"<span class='dir {'long' if v['is_long'] else 'short'}'>{'▲ LONG' if v['is_long'] else '▼ SHORT'}</span><span class='lev'>{_esc(v['lev'])}</span>"
+    dirpill = f"<span class='dir {'long' if v['is_long'] else 'short'}'>{'▲ LONG' if v['is_long'] else '▼ SHORT'}</span><span class='lev'>⚡ {_esc(v['lev'])}</span>"
     mode_badge = "<span class='badge b-instante'>⚡ AL INSTANTE</span>" if v["mode"] == "INSTANTE" else "<span class='badge b-futuro'>🎯 PROGRAMADA</span>"
     r_txt = f"{_signed(v['r_now'], 2)}R" if v["r_now"] is not None else "—"
     sl_dist = abs(v["px"] - v["sl"]) / v["px"] * 100.0 if v["px"] > 0 and v["sl"] > 0 else 0.0
@@ -1332,7 +1333,8 @@ def _active_row(v: dict[str, Any]) -> str:
         f"<td>{_pyr_cell(v)}</td>"
         f"<td data-v='{v['pnl_usd']:.4f}'><div class='pnl'><b class='{_cls(v['pnl_usd'])}'>{_signed(v['pnl_usd'])} USD</b>"
         f"<span>{_signed(v['pnl_pct'])}% · " + _tip(f"<b class='{_cls(v['r_now'] or 0.0)}'>{r_txt}</b>", "r_mult") + "</span></div></td>"
-        f"<td class='mono'>{_fmt(v['rr'])}x<div class='small'>riesgo ${_fmt(v['riesgo'])}</div></td>"
+        f"<td class='mono'>{_fmt(v['rr'])}x<div class='small'>riesgo ${_fmt(v['riesgo'])}</div>"
+        f"<div class='small' style='color:var(--cyan);margin-top:2px;'>💼 ${_fmt(v.get('margen'))} (📦 ${_fmt(v.get('size'))})</div></td>"
         f"<td><div class='thesis' data-tip-t='Tesis técnica' data-tip='{_esc(v['thesis'])}'>{_esc(v['thesis'])}</div></td></tr>"
     )
 
@@ -1882,7 +1884,7 @@ def _spot_card(m: dict[str, Any]) -> str:
 def _spot_table(metrics: list[dict[str, Any]]) -> str:
     out = [
         "<div class='tablewrap spot-table'><table class='tbl sortable'><thead><tr><th>Activo · horizonte</th><th>Zona</th><th>Precio vivo</th><th>Banda [Min, Max]</th>"
-        "<th>Capital</th><th>TP1 · 30%</th><th>TP2 · 40%</th><th>TP3 · 30%</th><th>SL</th><th>PnL</th><th>Tesis</th></tr></thead><tbody>"
+        "<th>💼 Capital / Margen</th><th>TP1 · 30%</th><th>TP2 · 40%</th><th>TP3 · 30%</th><th>SL</th><th>PnL</th><th>Tesis</th></tr></thead><tbody>"
     ]
     for m in metrics:
         t1, t2, t3 = m["tps"]
@@ -1892,7 +1894,7 @@ def _spot_table(metrics: list[dict[str, Any]]) -> str:
             f"<tr class='fi' data-g='{g}' data-search='{_esc(search)}'><td><div class='asset'><b>{_sym_short(m['sym'])}</b><span class='sub'>{_esc(m['horiz'])}</span></div></td>"
             f"<td>{_zone_badge(m)}<div class='small'>{_esc(m['zone_sub'])}</div></td><td class='mono' data-v='{m['px']}'><b>{_px(m['px'])}</b></td>"
             f"<td class='mono'>{_px(m['b_low'])} – {_px(m['b_high'])}<div class='small'>base {_px(m['b_ref'])} 🔒</div></td>"
-            f"<td class='mono'>${_fmt(m['alloc'])}</td>"
+            f"<td class='mono'><b>${_fmt(m['alloc'])}</b><div class='small' style='color:var(--cyan);margin-top:2px;'>Margen 100% · ⚡ 1x Spot</div></td>"
             + "".join(
                 f"<td class='mono' style='color:var(--gold)'><b>{_px(t['val'])}</b><div class='small'>{_signed(t['gain'], 1, '%')} · ≈ ${_fmt(t['proceeds'])}</div></td>"
                 for t in (t1, t2, t3)
@@ -2022,7 +2024,7 @@ def _seccion_audit_tabs(
     p.append("<h3>Libro maestro de futuros (activas, programadas y cerradas)</h3>")
     p.append(
         "<div class='tablewrap'><table class='tbl sortable'><thead><tr><th>ID / Activo</th><th>Modo &amp; marco</th><th>Estado</th><th>Apertura</th>"
-        "<th>Entrada</th><th>Actual / Salida</th><th>Tamaño $</th><th>Stop loss</th><th>TP2 final</th><th>R:R neto</th><th>PnL $</th><th>R logrado</th><th>Tesis / razón</th></tr></thead><tbody>"
+        "<th>Entrada</th><th>Actual / Salida</th><th>Tamaño $ &amp; Margen</th><th>Stop loss</th><th>TP2 final</th><th>R:R neto</th><th>PnL $</th><th>R logrado</th><th>Tesis / razón</th></tr></thead><tbody>"
     )
     for r in fut_master:
         mode = r.get("entry_mode", "INSTANTE")
@@ -2030,12 +2032,20 @@ def _seccion_audit_tabs(
         pnl = _f(r.get("pnl_neto_usd", r.get("pnl_vivo_usd")))
         sl = r.get("sl", "—")
         tp2 = r.get("tp2", "—")
+        sz_m = float(r.get("size_usd") or 0.0)
+        lev_m = str(r.get("leverage") or "4x")
+        try:
+            ln = float(lev_m.replace("x", ""))
+        except Exception:
+            ln = 4.0
+        mg_m = float(r.get("margin_usd") or (sz_m / ln if sz_m > 0 and ln > 0 else 0.0))
         search = f"{r.get('asset', '')} {r.get('id', '')} {r.get('status', '')} {mode} {r.get('thesis', '')}".lower()
         p.append(
             f"<tr data-search='{_esc(search)}'><td><div class='asset'><b>{_esc(r.get('asset', '—'))}</b><span class='sub'>ID {_esc(r.get('id', '—'))}</span></div></td>"
             f"<td>{mode_badge} <span class='small'>{_esc(str(r.get('timeframe', '4h')).upper())}</span></td>"
             f"<td class='small'>{_esc(r.get('status', '🟢 ACTIVA'))}</td><td class='mono small'>{_esc(str(r.get('opened_at', ''))[:19])}</td>"
-            f"<td class='mono'>{_px(r.get('entry'))}</td><td class='mono'><b>{_px(r.get('exit', r.get('entry')))}</b></td><td class='mono'>${_fmt(r.get('size_usd'))}</td>"
+            f"<td class='mono'>{_px(r.get('entry'))}</td><td class='mono'><b>{_px(r.get('exit', r.get('entry')))}</b></td>"
+            f"<td class='mono'><b>${_fmt(sz_m)}</b><div class='small' style='color:var(--cyan);margin-top:2px;'>💼 ${_fmt(mg_m)} (⚡ {lev_m})</div></td>"
             f"<td class='mono neg'>{_px(sl) if sl != '—' else '—'}</td><td class='mono pos'>{_px(tp2) if tp2 != '—' else '—'}</td>"
             f"<td class='mono'>{_fmt(r.get('rr_neto', 2.8))}x</td>{_pnl_td(pnl)}<td class='mono'><b>{_esc(r.get('r_multiplo', '—'))}</b></td>"
             f"<td><div class='thesis' data-tip-t='Tesis' data-tip='{_esc(r.get('thesis', '—'))}'>{_esc(r.get('thesis', '—'))}</div></td></tr>"
@@ -2333,10 +2343,13 @@ def _seccion_sniper(
                 else "<span class='badge b-ok'>⚡ ACTIVA</span>"
             )
 
+            lev_s = str(t.get("leverage") or "5x")
+            mg_s = float(t.get("margin_usd") or (sz / 5.0 if sz > 0 else 0.0))
             p.append(
                 f"<tr>"
                 f"<td class='mono small'>{_esc(t.get('id', ''))}</td>"
-                f"<td><b>{_esc(sym)}</b> <span class='small muted'>1H {t.get('leverage', '5x')}</span></td>"
+                f"<td><b>{_esc(sym)}</b> <span class='badge' style='background:rgba(255,215,0,0.15);color:#ffd700;font-size:10px;'>⚡ {lev_s}</span>"
+                f"<div class='small' style='color:var(--cyan);font-size:9.5px;'>💼 Margen: ${mg_s:,.2f} (📦 ${sz:,.2f})</div></td>"
                 f"<td><span class='badge b-sniper'>{pat_lbl}</span></td>"
                 f"<td class='mono'>${entry:,.{nd}f}</td>"
                 f"<td class='mono'><b>${px:,.{nd}f}</b></td>"
@@ -2710,7 +2723,8 @@ def _render_clean_active_trades_table(
     p.append("<div class='clean-trades-container'>")
     p.append("<table class='clean-trades-tbl'><thead><tr>")
     p.append("<th>Moneda / Activo</th>")
-    p.append("<th>Dirección</th>")
+    p.append("<th>Dirección &amp; Palanca</th>")
+    p.append("<th>💼 Capital de Operación</th>")
     p.append("<th>📍 Entrada vs Hoy</th>")
     p.append("<th>🛡️ Freno de Seguridad (Stop Loss)</th>")
     p.append("<th>🎯 Meta para Ganar (Take Profit)</th>")
@@ -2725,8 +2739,17 @@ def _render_clean_active_trades_table(
         is_long = "long" in kind
         bet_cls = "long" if is_long else "short"
         bet_txt = "📈 Sube (LONG)" if is_long else "📉 Baja (SHORT)"
-        lev = tr.get("leverage", "1x")
-        risk_usd = float(tr.get("risk_usd") or tr.get("initial_risk_usd") or 0.0)
+        tf_raw = str(tr.get("timeframe", "4h")).lower()
+        is_1h = tf_raw == "1h" or "sniper" in str(tr.get("_motor", "")).lower() or "sniper" in str(tr.get("thesis", "")).lower()
+        lev_default = "5x" if is_1h else "4x"
+        lev_str = str(tr.get("leverage") or lev_default).lower()
+        lev = f"{lev_str}x" if not lev_str.endswith("x") else lev_str
+        try:
+            lev_num = float(lev.replace("x", ""))
+        except Exception:
+            lev_num = 5.0 if is_1h else 4.0
+
+        risk_usd = float(tr.get("risk_usd") or tr.get("initial_risk_usd") or 20.0)
 
         # BUG 1 (CRÍTICO): Fallback seguro de lectura de campos 4H vs 1H
         entry_px = float(tr.get("entry_price") or tr.get("entry") or tr.get("target_entry") or 0.0)
@@ -2736,7 +2759,7 @@ def _render_clean_active_trades_table(
         tp3_px = float(tr.get("tp3_price") or tr.get("tp3") or 0.0)
         sl_px = float(tr.get("sl_price") or tr.get("sl") or tr.get("initial_sl") or 0.0)
         size_usd = float(tr.get("size_usd") or tr.get("initial_size_usd") or 0.0)
-        margin_usd = float(tr.get("margin_usd") or (size_usd / 4.0 if size_usd > 0 else 1.0))
+        margin_usd = float(tr.get("margin_usd") or (size_usd / lev_num if size_usd > 0 and lev_num > 0 else 0.0))
         dist_sl = abs(entry_px - sl_px) if (entry_px > 0 and sl_px > 0) else 0.0
 
         if dist_sl > 0:
@@ -2798,13 +2821,16 @@ def _render_clean_active_trades_table(
         p.append(
             f"<tr>"
             f"<td>{asset_col}</td>"
-            f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt} {lev}</span></td>"
+            f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt}</span> <span class='badge' style='background:rgba(255,215,0,0.15);color:#ffd700;font-weight:800;font-size:10.5px;border:1px solid rgba(255,215,0,0.3);margin-left:3px;'>⚡ {lev}</span></td>"
+            f"<td><div style='font-size:12px;color:#fff;'>💼 Margen: <b class='mono'>${margin_usd:,.2f} USD</b></div>"
+            f"<div style='font-size:10.5px;color:var(--cyan);margin-top:2px;'>📦 Total: <span class='mono'>${size_usd:,.2f} USD</span> <span style='color:var(--mut);'>(x{lev_num:g})</span></div>"
+            f"<div style='font-size:10px;color:var(--mut);margin-top:1px;'>Cuenta: $1,000 USD base</div></td>"
             f"<td class='mono'><b>{entry_fmt}</b> → <b style='color:var(--cyan);'>{live_fmt}</b></td>"
             f"<td><div class='mono {sl_cls}' style='font-size:13px;font-weight:800;'>{sl_fmt}</div>"
             f"<div style='font-size:10px;margin-top:2px;line-height:1.2;'>{sl_explain}</div></td>"
             f"<td><div class='mono pos' style='font-size:13px;font-weight:800;'>{tp_fmt}</div>"
             f"<div style='font-size:10px;color:rgba(46,204,113,0.9);margin-top:2px;line-height:1.2;'>{tp_explain}</div></td>"
-            f"<td><div style='font-size:10.5px;color:var(--mut);'>Riesgo: <b class='mono' style='color:#fff;'>${risk_usd:.2f} USD</b></div>"
+            f"<td><div style='font-size:10.5px;color:var(--mut);'>🛡️ Riesgo Stop: <b class='mono' style='color:#fff;'>${risk_usd:.2f} USD</b></div>"
             f"<div style='margin-top:3px;'>{pnl_str}</div></td>"
             f"<td style='max-width:280px;font-size:11.5px;color:var(--tx2);line-height:1.45;'>“{_esc(why_clean)}”</td>"
             f"</tr>"
@@ -2830,7 +2856,7 @@ def _render_clean_closed_trades_table(
     p: list[str] = []
     p.append("<div class='clean-trades-container' style='padding:10px 14px;'>")
     p.append("<table class='clean-trades-tbl'><thead><tr>")
-    p.append("<th>Activo</th><th>Dirección / TF</th><th>📍 Entrada Real</th><th>🏁 Salida Real</th><th>💰 PnL Neto Real</th><th>Múltiplo R</th><th>Fecha Cierre</th><th>Motivo Real de Cierre</th>")
+    p.append("<th>Activo</th><th>Dirección / TF</th><th>💼 Capital &amp; Posición</th><th>📍 Entrada Real</th><th>🏁 Salida Real</th><th>💰 PnL Neto Real</th><th>Múltiplo R</th><th>Fecha Cierre</th><th>Motivo Real de Cierre</th>")
     p.append("</tr></thead><tbody>")
     for tr in closed_trades:
         asset = str(tr.get("asset", ""))
@@ -2840,10 +2866,22 @@ def _render_clean_closed_trades_table(
         bet_txt = "LONG 📈" if is_long else "SHORT 📉"
         tf = str(tr.get("timeframe", "4h")).upper()
 
+        tf_lower = str(tr.get("timeframe", "4h")).lower()
+        is_1h = tf_lower == "1h" or "sniper" in str(tr.get("_motor", "")).lower() or "sniper" in str(tr.get("tag", "")).lower() or "sniper" in str(tr.get("close_tag", "")).lower()
+        lev_raw = str(tr.get("leverage") or ("5x" if is_1h else "4x")).lower()
+        lev = f"{lev_raw}x" if not lev_raw.endswith("x") else lev_raw
+        try:
+            lev_num = float(lev.replace("x", ""))
+        except Exception:
+            lev_num = 5.0 if is_1h else 4.0
+
+        size_usd = float(tr.get("size_usd") or tr.get("initial_size_usd") or 0.0)
+        margin_usd = float(tr.get("margin_usd") or (size_usd / lev_num if size_usd > 0 and lev_num > 0 else 0.0))
+        risk_usd = float(tr.get("risk_usd") or tr.get("initial_risk_usd") or 20.0)
+
         entry_px = float(tr.get("entry_price") or tr.get("entry") or 0.0)
         exit_px = float(tr.get("exit_price") or tr.get("exit") or 0.0)
         pnl = float(tr.get("pnl_neto_usd") if tr.get("pnl_neto_usd") is not None else (tr.get("pnl_usd") if tr.get("pnl_usd") is not None else tr.get("realized_pnl_usd", 0.0)))
-        risk_usd = float(tr.get("risk_usd") or 20.0)
 
         r_mult_raw = tr.get("r_multiplo", tr.get("r_mult"))
         if r_mult_raw not in (None, "—", ""):
@@ -2877,7 +2915,10 @@ def _render_clean_closed_trades_table(
         p.append(
             f"<tr>"
             f"<td><b style='font-size:13px;'>{_esc(asset)}</b></td>"
-            f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt}</span> <span class='badge' style='background:rgba(255,255,255,0.08);color:var(--cyan);font-size:10px;margin-left:2px;'>{tf}</span></td>"
+            f"<td><span class='trade-bet-badge {bet_cls}'>{bet_txt}</span> <span class='badge' style='background:rgba(255,255,255,0.08);color:var(--cyan);font-size:10px;margin-left:2px;'>{tf}</span> <span class='badge' style='background:rgba(255,215,0,0.15);color:#ffd700;font-weight:800;font-size:10px;border:1px solid rgba(255,215,0,0.3);margin-left:2px;'>⚡ {lev}</span></td>"
+            f"<td><div style='font-size:11.5px;color:#fff;'>💼 Margen: <b class='mono'>${margin_usd:,.2f} USD</b></div>"
+            f"<div style='font-size:10px;color:var(--cyan);margin-top:1px;'>📦 Posición: <span class='mono'>${size_usd:,.2f} USD</span></div>"
+            f"<div style='font-size:10px;color:var(--mut);margin-top:1px;'>🛡️ Riesgo Inicial: <span class='mono'>${risk_usd:.2f} USD</span></div></td>"
             f"<td class='mono'>${entry_px:,.{nd}f}</td>"
             f"<td class='mono'><b>${exit_px:,.{nd}f}</b></td>"
             f"<td class='mono {pnl_cls}'><b>{pnl_sgn}${pnl:.2f} USD</b></td>"
@@ -3187,7 +3228,7 @@ def _bloque_dummies(
             f"<div class='coin-card-top'>"
             f"<div class='coin-name-group'>"
             f"<span class='coin-icon'>{icon}</span>"
-            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code} · Asignado: ${alloc:.2f} USD</div></div>"
+            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code} · Capital: ${alloc:.2f} USD (⚡ 1x Spot)</div></div>"
             f"</div>"
             f"</div>"
             f"<div class='coin-price'>{cur_fmt}</div>"
@@ -3552,7 +3593,7 @@ def _bloque_isolated_spot(
             f"<div class='coin-card-top'>"
             f"<div class='coin-name-group'>"
             f"<span class='coin-icon'>{icon}</span>"
-            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code} · Asignado: ${alloc:.2f} USD</div></div>"
+            f"<div><div class='coin-title'>{name}</div><div class='coin-sym'>{code} · Capital: ${alloc:.2f} USD (⚡ 1x Spot)</div></div>"
             f"</div>"
             f"</div>"
             f"<div class='coin-price'>{cur_fmt}</div>"
@@ -3578,7 +3619,7 @@ def _bloque_isolated_spot(
     )
     p.append("<div class='clean-trades-container' style='padding:10px 14px;'>")
     p.append("<table class='clean-trades-tbl'><thead><tr>")
-    p.append("<th>Activo</th><th>Asignación</th><th>Estado</th><th>Zona de Compra Fija</th><th>Precio Vivo</th><th>PnL Flotante</th><th>Tesis</th>")
+    p.append("<th>Activo</th><th>💼 Capital / Margen</th><th>Estado</th><th>Zona de Compra Fija</th><th>Precio Vivo</th><th>PnL Flotante</th><th>Tesis</th>")
     p.append("</tr></thead><tbody>")
     for pl in plans:
         sym = str(pl.get("asset") or pl.get("symbol") or "")
@@ -3594,7 +3635,7 @@ def _bloque_isolated_spot(
         p.append(
             f"<tr>"
             f"<td><b>{_esc(sym)}</b></td>"
-            f"<td class='mono'>${alloc:.2f} USD</td>"
+            f"<td class='mono'><b>${alloc:,.2f} USD</b><div class='small' style='color:var(--cyan);margin-top:2px;'>Margen 100% · ⚡ 1x Spot</div></td>"
             f"<td class='small'>{_esc(str(pl.get('status', '🎯 ESPERANDO')))}</td>"
             f"<td class='mono'>${b_min:,.{nd}f} – ${b_max:,.{nd}f}</td>"
             f"<td class='mono'><b>${cur_px:,.{nd}f}</b></td>"

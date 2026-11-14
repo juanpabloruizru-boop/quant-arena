@@ -113,6 +113,9 @@ def load_sniper_trades(root: Path | None = None) -> list[dict[str, Any]]:
         t.setdefault("tp2_price", t.get("tp2"))
         t.setdefault("tp3_price", t.get("tp3"))
         t.setdefault("rr_ratio", "1 : 3.0")
+        t.setdefault("leverage", "5x")
+        sz = float(t.get("size_usd", 0.0))
+        t.setdefault("margin_usd", round(sz / 5.0, 2) if sz > 0 else 0.0)
 
     return list(trades.values())
 
@@ -241,6 +244,11 @@ def close_sniper_trade(
         rec["size_usd"] = matched_open.get("size_usd")
         rec["risk_usd"] = matched_open.get("risk_usd")
         rec["leverage"] = matched_open.get("leverage", "5x")
+        rec["margin_usd"] = matched_open.get("margin_usd") or (
+            round(float(matched_open.get("size_usd", 0.0)) / 5.0, 2)
+            if float(matched_open.get("size_usd", 0.0)) > 0
+            else None
+        )
         rec["sl"] = matched_open.get("sl")
         rec["tp1"] = matched_open.get("tp1")
         rec["tp2"] = matched_open.get("tp2")

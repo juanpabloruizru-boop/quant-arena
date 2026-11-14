@@ -136,6 +136,15 @@ def format_trade_signal(trade: dict[str, Any]) -> str:
     rr_str = f"{rr_num:.1f}"
 
     risk_usd = float(trade.get("risk_usd") or 20.0)
+    size_usd = float(trade.get("size_usd") or trade.get("initial_size_usd") or 0.0)
+    try:
+        lev_val_num = float(lev_val)
+    except Exception:
+        lev_val_num = 5.0 if is_1h else 4.0
+    margin_usd = float(
+        trade.get("margin_usd")
+        or (size_usd / lev_val_num if size_usd > 0 and lev_val_num > 0 else 0.0)
+    )
 
     fallback_reason = "Sinergia técnica confirmada con oráculo Kronos e IA Gemini."
     raw_reason = (
@@ -167,6 +176,8 @@ def format_trade_signal(trade: dict[str, Any]) -> str:
         f"🎯 <b>TP3 (Runner 30%):</b> ${tp3:,.{nd}f} (+4.5R)\n\n"
         f"⚖️ <b>Riesgo / Beneficio:</b> 1 : {rr_str} ({rr_str}R)\n"
         f"💵 <b>Riesgo Asignado:</b> ${risk_usd:.2f} USD\n"
+        f"💼 <b>Capital en Operación (Margen):</b> ${margin_usd:,.2f} USD "
+        f"(Posición ${size_usd:,.2f} con {leverage})\n"
         f"🧠 <b>Tesis IA + Kronos:</b> {escaped_reasoning}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )

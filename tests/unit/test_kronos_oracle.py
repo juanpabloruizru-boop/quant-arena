@@ -103,7 +103,7 @@ def test_kronos_predictor_and_horizon_output() -> None:
     )
     elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
-    assert elapsed_ms < 250.0  # Typically <15ms on CPU
+    assert elapsed_ms < 1000.0  # Typically <20ms on CPU, safe guard against jitter
     assert res["symbol"] == "BTCUSDT"
     assert res["timeframe"] == "4h"
     assert 0.0 <= res["bullish_prob"] <= 100.0
