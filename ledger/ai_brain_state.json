@@ -1,20 +1,20 @@
 {
   "BTCUSDT": {
-    "veredicto": "EJECUTAR_AHORA",
-    "confianza": 85,
-    "precio_entrada_sugerido": 64037.31,
-    "razonamiento": "Setup de impulso/rebote alcista validado. Entrada activa recomendada.",
-    "timestamp_utc": "2026-11-14T23:49:42+00:00",
+    "veredicto": "ORDEN_LIMITE_PULLBACK",
+    "confianza": 78,
+    "precio_entrada_sugerido": 68976.16,
+    "razonamiento": "Venta corta extendida -5.6% bajo EMA21. Esperar retroceso correctivo a 68976.16 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-15T03:14:06+00:00",
     "symbol": "BTCUSDT",
-    "direction": "LONG",
+    "direction": "SHORT",
     "model_used": "local_heuristics"
   },
   "ETHUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 1956.65,
-    "razonamiento": "Venta corta extendida -9.9% bajo EMA21. Esperar retroceso correctivo a 1956.65 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-14T23:49:42+00:00",
+    "precio_entrada_sugerido": 1939.29,
+    "razonamiento": "Venta corta extendida -6.1% bajo EMA21. Esperar retroceso correctivo a 1939.29 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-15T03:14:06+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -22,9 +22,9 @@
   "SOLUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 79.0,
-    "razonamiento": "Venta corta extendida -11.6% bajo EMA21. Esperar retroceso correctivo a 79.0 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-14T23:49:43+00:00",
+    "precio_entrada_sugerido": 78.2,
+    "razonamiento": "Venta corta extendida -8.4% bajo EMA21. Esperar retroceso correctivo a 78.2 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-15T03:14:06+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -32,9 +32,9 @@
   "SUIUSDT": {
     "veredicto": "ORDEN_LIMITE_PULLBACK",
     "confianza": 78,
-    "precio_entrada_sugerido": 0.7896,
-    "razonamiento": "Venta corta extendida -11.8% bajo EMA21. Esperar retroceso correctivo a 0.7896 para entrar con mejor R:R.",
-    "timestamp_utc": "2026-11-14T23:49:43+00:00",
+    "precio_entrada_sugerido": 0.7814,
+    "razonamiento": "Venta corta extendida -7.9% bajo EMA21. Esperar retroceso correctivo a 0.7814 para entrar con mejor R:R.",
+    "timestamp_utc": "2026-11-15T03:14:06+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
