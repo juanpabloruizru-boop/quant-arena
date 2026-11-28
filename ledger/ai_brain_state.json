@@ -2,9 +2,9 @@
   "BTCUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 59177.97,
+    "precio_entrada_sugerido": 59314.84,
     "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
-    "timestamp_utc": "2026-11-28T13:21:05+00:00",
+    "timestamp_utc": "2026-11-28T21:07:42+00:00",
     "symbol": "BTCUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -12,9 +12,9 @@
   "ETHUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 1645.82,
+    "precio_entrada_sugerido": 1646.0,
     "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
-    "timestamp_utc": "2026-11-28T13:21:06+00:00",
+    "timestamp_utc": "2026-11-28T21:07:42+00:00",
     "symbol": "ETHUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -22,9 +22,9 @@
   "SOLUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 70.7,
+    "precio_entrada_sugerido": 70.43,
     "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
-    "timestamp_utc": "2026-11-28T13:21:06+00:00",
+    "timestamp_utc": "2026-11-28T21:07:42+00:00",
     "symbol": "SOLUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
@@ -32,9 +32,9 @@
   "SUIUSDT": {
     "veredicto": "EJECUTAR_AHORA",
     "confianza": 82,
-    "precio_entrada_sugerido": 0.6618,
+    "precio_entrada_sugerido": 0.6534,
     "razonamiento": "Presión bajista confirmada bajo EMA21 con momentum vendedor.",
-    "timestamp_utc": "2026-11-28T13:21:06+00:00",
+    "timestamp_utc": "2026-11-28T21:07:42+00:00",
     "symbol": "SUIUSDT",
     "direction": "SHORT",
     "model_used": "local_heuristics"
